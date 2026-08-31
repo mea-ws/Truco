@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Truco - v0.11.8</title>
+    <title>Truco - v0.11.10</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♣</text></svg>">
     <style>
         /* THEME VARIABLES */
@@ -237,6 +237,7 @@
 
         .btn-esc { position: absolute; right: 15px; opacity: 0.5; }
         .btn-esc:hover { opacity: 1; }
+        #btn-invite-more { position: absolute; left: 15px; }
 
         .key-box { background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); padding: 3px 8px; border-radius: 4px; font-weight: bold; color: var(--txt); display: inline-block; }
         .key-box.highlight { background: rgba(239, 68, 68, 0.2); border-color: var(--dang); color: var(--dang); }
@@ -297,6 +298,7 @@
             .legend-group { gap: 6px; }
             .play-text { display: none; }
             .btn-esc { position: relative; right: 0; opacity: 0.6; padding: 8px 12px; }
+            #btn-invite-more { position: relative; left: 0; }
             
             #ui-turn { font-size: clamp(0.65rem, 2.5vw, 0.8rem); }
             
@@ -1175,10 +1177,13 @@
 
             // --- CORREÇÃO: Visão de Mesa Ativa (Impede Truco Suicida) ---
             var highestEnemyPwr = -1;
-            var highestPartnerPwr = -1;
+            var highestPartnerPwr = -1; // só parceiros DE VERDADE (nunca eu mesmo)
+            var myPlayedPwr = -1; // minha própria carta já jogada nesta vaza, se houver
             for(var t = 0; t < st.table.length; t++) {
                 var tp = st.table[t].hidden ? -1 : getPower(st.table[t].c);
-                if(getTeam(st.table[t].p) === oppTeam) {
+                if (st.table[t].p === pid) {
+                    myPlayedPwr = tp;
+                } else if(getTeam(st.table[t].p) === oppTeam) {
                     if(tp > highestEnemyPwr) highestEnemyPwr = tp;
                 } else {
                     if(tp > highestPartnerPwr) highestPartnerPwr = tp;
@@ -1191,7 +1196,7 @@
             }
 
             // Se o inimigo já jogou uma carta na mesa imbatível neste turno...
-            if(highestEnemyPwr > myBestCardPwr && highestEnemyPwr > highestPartnerPwr) {
+            if(highestEnemyPwr > myBestCardPwr && highestEnemyPwr > highestPartnerPwr && highestEnemyPwr > myPlayedPwr) {
                 prob -= 50; 
                 // Se a dupla inimiga já tem 1 vaza, ou é a última vaza, a rodada acabou.
                 if(opW === 1 || st.trickResults.length === 2) {
@@ -1199,12 +1204,37 @@
                 }
             }
             
-            // Bônus: Se o meu parceiro já garantiu a mão com a carta suprema da mesa
-            if(highestPartnerPwr > highestEnemyPwr && highestPartnerPwr > myBestCardPwr) {
+            // Bônus real: um PARCEIRO (nunca eu mesmo) já garantiu a vaza com a carta suprema da mesa
+            if(highestPartnerPwr > -1 && highestPartnerPwr > highestEnemyPwr && highestPartnerPwr > myBestCardPwr) {
                 prob += 20;
             }
 
+            // Se EU já joguei uma carta fraca nesta vaza — comprometida, não dá
+            // mais pra melhorar, e o adversário já viu — isso é sinal de
+            // fraqueza, não de força, mesmo que ninguém tenha jogado nada
+            // mais forte ainda (era exatamente esse o bug: a própria carta
+            // fraca "ganhando" a mesa por falta de concorrência virava bônus).
+            var weakThreshold = getActiveVals().length / 2;
+            if(myPlayedPwr > -1 && myPlayedPwr < weakThreshold && highestEnemyPwr === -1 && highestPartnerPwr === -1) {
+                prob -= 15;
+            }
+
             return Math.max(0, Math.min(100, prob));
+        }
+
+        // Ajuste pelo placar atual — quanto a IA está na frente ou atrás.
+        // Escalado por dificuldade, seguindo a personalidade de cada uma:
+        // Insana fica mais provocadora/blefadora na frente, mais calculista
+        // atrás; Difícil reage de forma moderada; Normal, um pouco reativa;
+        // Fácil não pondera o placar (não pensa tanto assim).
+        function scoreContextBonus(pid) {
+            var myTeam = getTeam(pid);
+            var oppTeam = getOppTeam(myTeam);
+            var delta = st.scores[myTeam] - st.scores[oppTeam];
+            if (aiDifficulty === 4) return delta * 2.5;
+            if (aiDifficulty === 3) return delta * 1.2;
+            if (aiDifficulty === 2) return delta * 0.6;
+            return 0;
         }
 
         // Todos os assentos de um time específico (inclui quem pergunta, se for do time)
@@ -1257,6 +1287,7 @@
                 prob += Math.min(30, gone * weight);
                 if (getNumPlayers() > 2) prob += aiTeamStrengthBonus(pid);
             }
+            prob += scoreContextBonus(pid);
             return Math.max(0, Math.min(100, prob));
         }
 
@@ -2829,6 +2860,10 @@
                     st.nicks[1] = myLocalNick;
                     st.nicks[2] = window._webrtcRemoteNick || 'Guest';
                     startGame('webrtc', 1);
+                    // Crítico: sem isso, checkAiTurn() vê o assento 2 como "sem
+                    // humano" e o Host começa a jogar/decidir pelo Guest que
+                    // ACABOU de conectar, sem nunca dar a vez pra ele de verdade.
+                    if (st.humanSeats.indexOf(2) === -1) st.humanSeats.push(2);
                     setTimeout(maybeOfferInviteMore, 2500);
                 } else {
                     startGame('webrtc', window._webrtcAssignedPid || 2);
