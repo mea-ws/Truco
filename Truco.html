@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Truco - v0.12.0</title>
+    <title>Truco - v0.12.3</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♣</text></svg>">
     <style>
         /* THEME VARIABLES */
@@ -235,9 +235,10 @@
         .action-btn.danger { background: rgba(239, 68, 68, 0.15); border-color: var(--dang); color: var(--txt); }
         .action-btn.danger:hover { background: rgba(239, 68, 68, 0.3); }
 
-        .btn-esc { position: absolute; right: 15px; opacity: 0.5; }
-        .btn-esc:hover { opacity: 1; }
-        #btn-invite-more { position: absolute; left: 15px; }
+        .btn-esc, .btn-theme-pause { position: absolute; opacity: 0.5; }
+        .btn-esc { right: 15px; }
+        .btn-theme-pause { left: 15px; }
+        .btn-esc:hover, .btn-theme-pause:hover { opacity: 1; }
 
         .key-box { background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); padding: 3px 8px; border-radius: 4px; font-weight: bold; color: var(--txt); display: inline-block; }
         .key-box.highlight { background: rgba(239, 68, 68, 0.2); border-color: var(--dang); color: var(--dang); }
@@ -247,7 +248,14 @@
         .danger-zone { animation: dangerPulse 1s infinite alternate ease-in-out; }
         @keyframes dangerPulse { 0% { border-color: rgba(234, 179, 8, 0.4); box-shadow: 0 0 10px rgba(234, 179, 8, 0.2); } 100% { border-color: rgba(234, 179, 8, 1); box-shadow: 0 0 30px rgba(234, 179, 8, 0.6); } }
 
-        #sync-ui { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); background: var(--btn-s-bg); padding: 4px 10px; border-radius: 6px; font-size: 0.7rem; font-weight: bold; border: 1px solid var(--glass-border); display: flex; align-items: center; gap: 6px; z-index: 5; }
+        /* Menu de Pausa aberto: borda amarela FIXA (sem piscar) — diferencia de
+           danger-zone (que pisca) e sinaliza "jogo em segundo plano, olhando opções". */
+        .pause-zone { border-color: rgba(234, 179, 8, 1); box-shadow: 0 0 30px rgba(234, 179, 8, 0.6); }
+        /* Confirmação de saída (dentro do Menu de Pausa): pisca em VERMELHO. */
+        .exit-zone { animation: dangerPulseRed 1s infinite alternate ease-in-out; }
+        @keyframes dangerPulseRed { 0% { border-color: rgba(239, 68, 68, 0.4); box-shadow: 0 0 10px rgba(239, 68, 68, 0.2); } 100% { border-color: rgba(239, 68, 68, 1); box-shadow: 0 0 30px rgba(239, 68, 68, 0.6); } }
+
+        #sync-ui { position: absolute; left: 15px; bottom: 15px; z-index: 25; background: var(--glass-bg); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); padding: 8px 14px; border-radius: 8px; border: 1px solid var(--glass-border); color: var(--txt); font-size: 0.75rem; font-weight: bold; display: flex; align-items: center; gap: 8px; }
         .sync-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--prim); box-shadow: 0 0 6px var(--prim); animation: blink 1.5s infinite ease-in-out; }
         @keyframes blink { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.8); } 100% { opacity: 1; transform: scale(1); } }
 
@@ -297,8 +305,9 @@
             .panel h1 { font-size: 2rem; }
             .legend-group { gap: 6px; }
             .play-text { display: none; }
-            .btn-esc { position: relative; right: 0; opacity: 0.6; padding: 8px 12px; }
-            #btn-invite-more { position: relative; left: 0; }
+            .btn-esc, .btn-theme-pause { opacity: 0.6; padding: 8px 12px; }
+            .btn-esc { right: 8px; }
+            .btn-theme-pause { left: 8px; }
             
             #ui-turn { font-size: clamp(0.65rem, 2.5vw, 0.8rem); }
             
@@ -312,6 +321,7 @@
             .table.fmt-3v3 .hand-right2 { right: -25px; width: 50px; }
 
             #btn-hide-card { right: 5px; bottom: 5px; padding: 6px 10px; font-size: 0.7rem; }
+            #sync-ui { left: 5px; bottom: 5px; padding: 6px 10px; font-size: 0.7rem; }
         }
     </style>
 </head>
@@ -638,13 +648,14 @@
             <div id="box-my" class="hand-my"></div>
             
             <button id="btn-hide-card" onclick="toggleHide()" disabled class="disabled">ESCONDER <span class="key-box">E</span></button>
-        </div>
 
-        <div id="action-bar" class="glass-panel legend-container">
             <div id="sync-ui" class="hidden">
                 <div class="sync-dot"></div>
                 <span id="sync-timer-txt" style="color: var(--txt-d);">Sincronizando...</span>
             </div>
+        </div>
+
+        <div id="action-bar" class="glass-panel legend-container">
 
             <div id="grp-normal" class="legend-group active">
                 <div class="static-info"><span class="key-box">1</span><span class="key-box">2</span><span class="key-box">3</span> <span class="play-text">JOGAR CARTA</span></div>
@@ -676,14 +687,19 @@
                 <button class="action-btn" onclick="respondMao11(false)"><span class="key-box">C</span> CORRER</button>
             </div>
 
+            <div id="grp-pause-menu" class="legend-group">
+                <button id="btn-theme-pause" class="action-btn btn-theme-pause" onclick="toggleTheme()"><span class="key-box">W</span> <span id="theme-pause-icon">☀️</span></button>
+                <button id="btn-invite-more" class="action-btn hidden" onclick="startInviteMoreFlow('scr-game')">➕ CONVIDAR</button>
+                <button class="action-btn danger" onclick="requestExit()">SAIR</button>
+            </div>
+
             <div id="grp-confirm-exit" class="legend-group">
                 <span class="static-info" style="color: var(--warn); font-weight: bold;">Sair do Jogo?</span>
                 <button class="action-btn danger" onclick="location.reload()"><span class="key-box highlight">S</span> SIM</button>
                 <button class="action-btn" onclick="cancelExit()"><span class="key-box">N</span> NÃO</button>
             </div>
 
-            <button id="btn-invite-more" class="action-btn hidden" onclick="startInviteMoreFlow('scr-game')">➕ CONVIDAR</button>
-            <button class="action-btn btn-esc" onclick="requestExit()"><span class="key-box">ESC</span> SAIR</button>
+            <button id="btn-pause-toggle" class="action-btn btn-esc" onclick="togglePauseMenu()"><span class="key-box">ESC</span> ⋮</button>
         </div>
     </div>
 
@@ -765,16 +781,19 @@
         window.toggleTheme = function() {
             var body = document.body;
             var btn = document.querySelector('.btn-theme');
+            var pauseIcon = getEl('theme-pause-icon');
             if (currentTheme === 'dark') {
                 currentTheme = 'light';
                 body.classList.remove('theme-dark');
                 body.classList.add('theme-light');
-                btn.innerText = "🌙 MODO ESCURO";
+                if (btn) btn.innerText = "🌙 MODO ESCURO";
+                if (pauseIcon) pauseIcon.innerText = "🌙";
             } else {
                 currentTheme = 'dark';
                 body.classList.remove('theme-light');
                 body.classList.add('theme-dark');
-                btn.innerText = "☀️ MODO CLARO";
+                if (btn) btn.innerText = "☀️ MODO CLARO";
+                if (pauseIcon) pauseIcon.innerText = "☀️";
             }
             try { localStorage.setItem('trucoTheme', currentTheme); } catch(e) {}
         };
@@ -943,11 +962,16 @@
             getEl('grp-confirm-exit').classList.remove('active');
             getEl('grp-mao11').classList.remove('active');
             getEl('grp-partner-fold').classList.remove('active');
+            getEl('grp-pause-menu').classList.remove('active');
             if (id) getEl(id).classList.add('active');
         }
 
+        // Estado (só de UI, não faz parte de st) do Menu de Pausa — ver
+        // togglePauseMenu/requestExit/cancelExit logo abaixo.
+        var isPaused = false;
+
         window.toggleHide = function() {
-            if(animLock || st.turn !== myPID || st.trucoState !== 'none' || st.isMaoDeX || st.maoDeFerro) return;
+            if(animLock || st.turn !== myPID || st.trucoState !== 'none' || st.isMaoDeX || st.maoDeFerro || isPaused) return;
             
             if(st.trickResults.length === 0) {
                 showMsg("A 1ª carta não pode ser escondida!", 'warn', 2000);
@@ -972,16 +996,52 @@
             btn.innerHTML = 'ESCONDER <span class="key-box">E</span>';
         }
 
+        // Botão único (⋮ / ESC) que abre o Menu de Pausa, e também funciona como
+        // "voltar": se a confirmação de saída estiver aberta, volta pro Menu de
+        // Pausa; se o Menu de Pausa já estiver aberto, retoma o jogo (deixando o
+        // updateUI() recalcular do zero o estado certo, pra não reaparecer um
+        // estado desatualizado caso algo tenha mudado — ex: a IA pediu Truco —
+        // enquanto o menu estava aberto). De qualquer outro estado, abre o menu.
+        window.togglePauseMenu = function() {
+            if(animLock && st.trucoState !== 'mao11') return;
+            var actionBar = getEl('action-bar');
+
+            if (getEl('grp-confirm-exit').classList.contains('active')) {
+                actionBar.classList.remove('exit-zone');
+                actionBar.classList.add('pause-zone');
+                setBottomGroup('grp-pause-menu');
+                return;
+            }
+
+            if (isPaused) {
+                isPaused = false;
+                actionBar.classList.remove('pause-zone');
+                updateUI();
+                return;
+            }
+
+            isPaused = true;
+            actionBar.classList.remove('danger-zone');
+            actionBar.classList.add('pause-zone');
+            setBottomGroup('grp-pause-menu');
+            updateUI();
+        };
+
+        // Só chamado pelo botão SAIR de dentro do Menu de Pausa.
         window.requestExit = function() {
-            if(animLock && st.trucoState !== 'mao11') return; 
+            var actionBar = getEl('action-bar');
+            actionBar.classList.remove('pause-zone');
+            actionBar.classList.add('exit-zone');
             setBottomGroup('grp-confirm-exit');
-            getEl('action-bar').classList.add('danger-zone');
         };
         
+        // "NÃO" da confirmação de saída — volta pro Menu de Pausa (não retoma
+        // o jogo direto; pra isso, o usuário aperta ⋮/ESC de novo).
         window.cancelExit = function() {
-            setBottomGroup(null);
-            getEl('action-bar').classList.remove('danger-zone');
-            updateUI(); 
+            var actionBar = getEl('action-bar');
+            actionBar.classList.remove('exit-zone');
+            actionBar.classList.add('pause-zone');
+            setBottomGroup('grp-pause-menu');
         };
 
         document.addEventListener('keydown', function(e) {
@@ -989,14 +1049,18 @@
             var key = e.key.toUpperCase();
             
             if (key === 'ESCAPE') {
-                if (getEl('grp-confirm-exit').classList.contains('active')) cancelExit();
-                else requestExit();
+                togglePauseMenu();
                 return;
             }
 
             if (getEl('grp-confirm-exit').classList.contains('active')) {
                 if (key === 'S') location.reload();
                 else if (key === 'N') cancelExit();
+                return;
+            }
+
+            if (isPaused) {
+                if (key === 'W') toggleTheme();
                 return;
             }
 
@@ -1579,35 +1643,39 @@
             if (st.trucoState === 'mao11') {
                 btnHide.setAttribute('disabled', 'true'); btnHide.classList.add('disabled');
                 if (st.maoDeXTeam === getTeam(myPID) && myPID !== 0) {
-                    if(!isExiting) { setBottomGroup('grp-mao11'); actionBar.classList.add('danger-zone'); }
+                    if(!isExiting && !isPaused) { setBottomGroup('grp-mao11'); actionBar.classList.add('danger-zone'); }
                     getEl('txt-mao11-title').innerText = st.rules === 'mineiro' ? "Mão de 10!" : "Mão de 11!";
                     uiTurn.innerText = st.rules === 'mineiro' ? "MÃO DE 10: DECIDA!" : "MÃO DE 11: DECIDA!"; uiTurn.style.color = "var(--warn)";
                 } else {
-                    if(!isExiting) { setBottomGroup(null); actionBar.classList.remove('danger-zone'); }
+                    if(!isExiting && !isPaused) { setBottomGroup(null); actionBar.classList.remove('danger-zone'); }
                     var rivalWord = st.gameFormat === '1v1' ? "RIVAL PENSANDO" : "RIVAIS PENSANDO";
                     uiTurn.innerText = st.rules === 'mineiro' ? (rivalWord + " (MÃO DE 10)...") : (rivalWord + " (MÃO DE 11)..."); uiTurn.style.color = "var(--warn)";
                 }
             }
             else if (st.trucoState === 'partner_fold') {
                 btnHide.setAttribute('disabled', 'true'); btnHide.classList.add('disabled');
-                if (!isExiting) { setBottomGroup('grp-partner-fold'); actionBar.classList.add('danger-zone'); }
+                if (!isExiting && !isPaused) { setBottomGroup('grp-partner-fold'); actionBar.classList.add('danger-zone'); }
                 uiTurn.innerText = "DECISÃO DE FUGA!"; uiTurn.style.color = "var(--warn)";
             }
             else if (st.trucoState === 'pending') {
                 btnHide.setAttribute('disabled', 'true'); btnHide.classList.add('disabled');
                 if (getTeam(st.trucoBy) !== getTeam(myPID) && myPID !== 0) {
-                    if(!isExiting) { setBottomGroup('grp-respond'); actionBar.classList.add('danger-zone'); }
+                    if(!isExiting && !isPaused) { setBottomGroup('grp-respond'); actionBar.classList.add('danger-zone'); }
                     uiTurn.innerText = "⚠️ DECIDA! ⚠️"; uiTurn.style.color = "var(--warn)";
                     
                     if(st.gameFormat !== '1v1') {
                         var partners = getPartnerPIDs();
                         if (partners.length === 1) {
-                            // 2v2 — mesmo texto e mesmo comportamento de sempre
+                            // 2v2 — mesmo texto e mesmo comportamento de sempre.
+                            // Usa st.proposedVal (o valor em negociação AGORA),
+                            // não st.handVal (o valor já travado antes do pedido) —
+                            // senão o conselho de "aumentar" continuava aparecendo
+                            // mesmo quando o pedido já estava no telhado (12).
                             var partnerProb = aiContextProb(partners[0]);
-                            var advice = adviceTextFor(partnerProb, st.handVal);
+                            var advice = adviceTextFor(partnerProb, st.proposedVal);
                             indicatorText = advice.toUpperCase();
-                            if(window.lastAdviceLevel !== st.handVal) {
-                                window.lastAdviceLevel = st.handVal;
+                            if(window.lastAdviceLevel !== st.proposedVal) {
+                                window.lastAdviceLevel = st.proposedVal;
                                 setTimeout(function() {
                                     if (st.trucoState === 'pending') { showMsg(advice, 'pos', 2300); }
                                 }, 1500);
@@ -1616,7 +1684,7 @@
                             // 3v3/Trios — se os parceiros concordam, uma frase só;
                             // se discordam, lista cada um (Parceiro 1: X - Parceiro 2: Y).
                             var cats = partners.map(function(pPid, idx) {
-                                return { pid: pPid, idx: idx, cat: adviceCategoryFor(aiContextProb(pPid), st.handVal) };
+                                return { pid: pPid, idx: idx, cat: adviceCategoryFor(aiContextProb(pPid), st.proposedVal) };
                             });
                             var allAgree = cats.every(function(c) { return c.cat.key === cats[0].cat.key; });
 
@@ -1628,8 +1696,8 @@
                                 }).join(" - ");
                             }
 
-                            if(window.lastAdviceLevel !== st.handVal) {
-                                window.lastAdviceLevel = st.handVal;
+                            if(window.lastAdviceLevel !== st.proposedVal) {
+                                window.lastAdviceLevel = st.proposedVal;
                                 cats.forEach(function(c) {
                                     var pMsg = partnerLabel(c.pid, c.idx) + ": " + c.cat.label;
                                     setTimeout(function() {
@@ -1646,12 +1714,12 @@
                         btnRaise.innerHTML = '<span class="key-box highlight">T</span> PEDIR ' + getTrucoName(nextVal) + '!'; 
                     } else { btnRaise.classList.add('hidden'); }
                 } else {
-                    if(!isExiting) { setBottomGroup(null); actionBar.classList.remove('danger-zone'); }
+                    if(!isExiting && !isPaused) { setBottomGroup(null); actionBar.classList.remove('danger-zone'); }
                     uiTurn.innerText = st.gameFormat === '1v1' ? "AGUARDANDO RIVAL..." : "AGUARDANDO RIVAIS..."; uiTurn.style.color = "var(--warn)";
                 }
             } else {
-                if (!grpConfirmFold.classList.contains('active') && !isExiting && myPID !== 0) { setBottomGroup('grp-normal'); actionBar.classList.remove('danger-zone'); }
-                if (myPID === 0) { setBottomGroup(null); actionBar.classList.remove('danger-zone'); }
+                if (!grpConfirmFold.classList.contains('active') && !isExiting && !isPaused && myPID !== 0) { setBottomGroup('grp-normal'); actionBar.classList.remove('danger-zone'); }
+                if (myPID === 0 && !isExiting && !isPaused) { setBottomGroup(null); actionBar.classList.remove('danger-zone'); }
                 
                 if (st.maoDeFerro) { uiTurn.innerText = isMyTurn ? "SUA VEZ (MÃO DE FERRO)" : ("VEZ DE: " + getPlayerName(st.turn).toUpperCase()); }
                 else { uiTurn.innerText = isMyTurn ? "SUA VEZ JOGAR" : ("VEZ DE: " + getPlayerName(st.turn).toUpperCase()); }
@@ -2104,7 +2172,7 @@
         };
 
 		window.playCard = function(idx) {
-            if(animLock || st.turn !== myPID || (st.trucoState !== 'none' && st.trucoState !== 'pending')) return;
+            if(animLock || st.turn !== myPID || (st.trucoState !== 'none' && st.trucoState !== 'pending') || isPaused) return;
             
             var isHid = window.isHiding;
             var c = st.hands[myPID].splice(idx, 1)[0];
@@ -2310,11 +2378,14 @@
             var accept = (prob >= T.acceptAt);
             if (!accept && T.bluffChance && prob >= T.bluffAt && Math.random() < T.bluffChance) accept = true;
 
-            // Retruco: só considera se aceitou, mão ainda pode subir e não é
-            // Mão de X do meu time. raiseAt é o limiar "seguro"; raiseBluffAt/
-            // raiseBluffChance é uma segunda chance de blefe (só Difícil/Insano).
+            // Retruco: só considera se aceitou, o valor PROPOSTO agora ainda
+            // pode subir (12 é o teto) e não é Mão de X do meu time. Importante
+            // checar st.proposedVal (o que está em negociação) e não st.handVal
+            // (o valor já travado ANTES deste pedido) — usar handVal aqui fazia
+            // a IA "retrucar" um pedido de 12 pedindo 12 de novo, devolvendo a
+            // decisão pro jogador em vez de aceitar/correr (bug corrigido na v0.12.3).
             var raise = false;
-            if (accept && T.raiseAt !== undefined && st.handVal < 12 && !myX) {
+            if (accept && T.raiseAt !== undefined && st.proposedVal < 12 && !myX) {
                 if (prob >= T.raiseAt) raise = true;
                 else if (T.raiseBluffChance && prob >= T.raiseBluffAt && Math.random() < T.raiseBluffChance) raise = true;
             }
@@ -3216,6 +3287,8 @@
                 currentTheme = 'light';
                 var themeBtn = document.querySelector('.btn-theme');
                 if (themeBtn) themeBtn.innerText = "🌙 MODO ESCURO";
+                var pauseIconInit = getEl('theme-pause-icon');
+                if (pauseIconInit) pauseIconInit.innerText = "🌙";
             }
         } catch(e) {}
 
