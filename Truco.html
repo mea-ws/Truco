@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Truco - v0.11.10</title>
+    <title>Truco - v0.12.0</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♣</text></svg>">
     <style>
         /* THEME VARIABLES */
@@ -1113,7 +1113,136 @@
             return w;
         }
 
-        // --- CÉREBRO DA IA ---
+        // ====================================================================
+        // CÉREBRO DA IA — PERFIS DE DIFICULDADE (v0.12: consolidação)
+        // ----------------------------------------------------------------------
+        // Cada dificuldade (1=Fácil, 2=Normal, 3=Difícil, 4=Insano) tem AQUI,
+        // num só lugar, todos os números/parâmetros que definem seu
+        // comportamento. As funções de decisão (scoreContextBonus,
+        // applyAiIntel, aiDecideTruco, aiPlay, aiDecideMao11) só CONSULTAM
+        // este objeto — nenhuma delas deve voltar a ter números soltos presos
+        // a "if(aiDifficulty === N)". Pra ajustar qualquer dificuldade numa
+        // versão futura, mexa só no perfil dela abaixo.
+        //
+        // Campos de cada perfil:
+        //   scoreWeight    — multiplicador do placar atual (scoreContextBonus).
+        //                    0 = ignora o placar (Fácil "não pensa tanto assim").
+        //   intel          — null (não analisa nada) ou
+        //                    {goneCardWeight, teamStrength}: quanto pondera
+        //                    cartas fortes já jogadas (countStrongerCardsGone)
+        //                    e se soma a força estimada do time (Trios).
+        //   maoDeXAcceptAt — limiar de aceite na Mão de 11/10. Hoje igual (42)
+        //                    pra todas as dificuldades, mas já fica parametrizado
+        //                    aqui pra facilitar diferenciar isso no futuro.
+        //   trucoResponse  — decisão ao RESPONDER um pedido de Truco:
+        //                    acceptAt (limiar normal), bluffAt/bluffChance
+        //                    (chance de aceitar blefando mesmo com mão fraca,
+        //                    só Difícil/Insano), raiseAt/raiseBluffAt/
+        //                    raiseBluffChance (quando também retruca).
+        //   askTruco       — decisão de PEDIR Truco durante a própria jogada:
+        //                    baseAt (limiar normal); fallbackAt/fallbackChance
+        //                    (blefe único, só a Normal usa esse formato);
+        //                    extraGateAt (a "trava": só rola as chances extra
+        //                    abaixo se a mão tiver pelo menos esse tanto de
+        //                    prob, evitando pedir Truco com mão de lixo);
+        //                    firstPlayChance (pedir de cara, 1ª carta da mão);
+        //                    wonFirstTrickChance/wonFirstTrickNeedsLead (pedir
+        //                    depois de já ter ganho a 1ª vaza — a Difícil só
+        //                    conta se NINGUÉM do time adversário venceu ainda,
+        //                    a Insana conta mesmo com uma vaza perdida);
+        //                    losingDecentAt/losingDecentChance (só a Insana:
+        //                    pedir mesmo perdendo 0x1, se a mão ainda for boa);
+        //                    finalFallbackChance/finalFallbackNeedsTricks
+        //                    (última chance de blefe puro).
+        //   openPlay       — 'random' (chuta entre a carta mais fraca/forte,
+        //                    Fácil e Normal) ou 'smart' (seguraa manilha na
+        //                    1ª vaza, meio-de-mão se já ganhando — Difícil e
+        //                    Insano) ao ABRIR uma vaza.
+        //   usesMistakes/mistakeChance — só a Fácil: chance de "errar" e jogar
+        //                    uma carta pior do que a ideal ao responder a mesa.
+        //   hideAsRival    — null (nunca esconde carta como adversária) ou
+        //                    {whenPartnerWinning, whenNoWinningCard} — só
+        //                    Difícil/Insano escondem carta do lado rival.
+        //   canHideWhenExposed — se, como parceira, pode esconder a carta
+        //                    quando NÃO tem vencedora nesta vaza (a Fácil
+        //                    nunca; as demais sempre podem — ver observação
+        //                    abaixo sobre o caso "parceiro já ganhando").
+        //   fold           — null (nunca vai ao baralho — caso do Insano) ou
+        //                    {prob, chance, teamGate}: teamGate=true significa
+        //                    que a decisão é "combinada" com o time (só folda
+        //                    se ninguém parecer bem [aiHandStrength dos
+        //                    parceiros também abaixo do limiar]); teamGate=
+        //                    false (Fácil) decide sozinha, sem consultar
+        //                    ninguém — erro proposital, faz parte do perfil.
+        //
+        // Observação (achada durante a consolidação, não alterada): quando o
+        // PARCEIRO já está ganhando a vaza, a chance de "esconder por sobra"
+        // (AI_PARTNER_HIDE abaixo) vale pra QUALQUER dificuldade, inclusive a
+        // Fácil — só a chance "como rival" exige Difícil/Insano. Já quando a
+        // IA está exposta (sem vencedora), a Fácil nunca esconde. Essa
+        // assimetria já existia antes da consolidação; mantida como estava.
+        // ====================================================================
+        var AI_PROFILES = {
+            1: { // FÁCIL
+                label: 'Fácil',
+                scoreWeight: 0,
+                intel: null,
+                maoDeXAcceptAt: 42,
+                trucoResponse: { acceptAt: 72 },
+                askTruco: { baseAt: 85 },
+                openPlay: 'random',
+                usesMistakes: true, mistakeChance: 0.20,
+                hideAsRival: null,
+                canHideWhenExposed: false,
+                fold: { prob: 15, chance: 0.88, teamGate: false }
+            },
+            2: { // NORMAL
+                label: 'Normal',
+                scoreWeight: 0.6,
+                intel: { goneCardWeight: 3, teamStrength: true },
+                maoDeXAcceptAt: 42,
+                trucoResponse: { acceptAt: 52, raiseAt: 82 },
+                askTruco: { baseAt: 70, fallbackAt: 40, fallbackChance: 0.10 },
+                openPlay: 'random',
+                usesMistakes: false, mistakeChance: 0,
+                hideAsRival: null,
+                canHideWhenExposed: true,
+                fold: { prob: 10, chance: 0.50, teamGate: true }
+            },
+            3: { // DIFÍCIL
+                label: 'Difícil',
+                scoreWeight: 1.2,
+                intel: { goneCardWeight: 3, teamStrength: true },
+                maoDeXAcceptAt: 42,
+                trucoResponse: { acceptAt: 32, bluffAt: 15, bluffChance: 0.10, raiseAt: 60, raiseBluffAt: 30, raiseBluffChance: 0.22 },
+                askTruco: { baseAt: 55, extraGateAt: 20, firstPlayChance: 0.20, wonFirstTrickChance: 0.40, wonFirstTrickNeedsLead: true, finalFallbackChance: 0.10, finalFallbackNeedsTricks: false },
+                openPlay: 'smart',
+                usesMistakes: false, mistakeChance: 0,
+                hideAsRival: { whenPartnerWinning: 0.5, whenNoWinningCard: 0.6 },
+                canHideWhenExposed: true,
+                fold: { prob: 5, chance: 0.35, teamGate: true }
+            },
+            4: { // INSANO
+                label: 'Insano',
+                scoreWeight: 2.5,
+                intel: { goneCardWeight: 6, teamStrength: true },
+                maoDeXAcceptAt: 42,
+                trucoResponse: { acceptAt: 15, bluffAt: 10, bluffChance: 0.40, raiseAt: 45, raiseBluffAt: 25, raiseBluffChance: 0.50 },
+                askTruco: { baseAt: 40, extraGateAt: 20, firstPlayChance: 0.65, wonFirstTrickChance: 0.72, wonFirstTrickNeedsLead: false, losingDecentAt: 30, losingDecentChance: 0.40, finalFallbackChance: 0.30, finalFallbackNeedsTricks: true },
+                openPlay: 'smart',
+                usesMistakes: false, mistakeChance: 0,
+                hideAsRival: { whenPartnerWinning: 0.5, whenNoWinningCard: 0.6 },
+                canHideWhenExposed: true,
+                fold: null // Insano nunca vai ao baralho sozinho
+            }
+        };
+
+        // Chance de um parceiro-IA (nunca eu mesma, nunca rival) esconder a
+        // carta quando o time já está com a vaza garantida ou perdida — igual
+        // pra todas as dificuldades (decisão simples de "sobra", não depende
+        // de quão "esperta" a IA é).
+        var AI_PARTNER_HIDE = { whenPartnerWinning: 0.6, whenNoWinningCard: 0.7 };
+
         function aiHandStrength(pid) {
             var myCards = st.hands[pid];
             var activeVals = getActiveVals();
@@ -1223,18 +1352,15 @@
         }
 
         // Ajuste pelo placar atual — quanto a IA está na frente ou atrás.
-        // Escalado por dificuldade, seguindo a personalidade de cada uma:
-        // Insana fica mais provocadora/blefadora na frente, mais calculista
-        // atrás; Difícil reage de forma moderada; Normal, um pouco reativa;
-        // Fácil não pondera o placar (não pensa tanto assim).
+        // O peso (scoreWeight) vem do perfil da dificuldade: Insana fica mais
+        // provocadora/blefadora na frente e mais calculista atrás; Difícil
+        // reage de forma moderada; Normal, um pouco reativa; Fácil não
+        // pondera o placar (scoreWeight: 0 — "não pensa tanto assim").
         function scoreContextBonus(pid) {
             var myTeam = getTeam(pid);
             var oppTeam = getOppTeam(myTeam);
             var delta = st.scores[myTeam] - st.scores[oppTeam];
-            if (aiDifficulty === 4) return delta * 2.5;
-            if (aiDifficulty === 3) return delta * 1.2;
-            if (aiDifficulty === 2) return delta * 0.6;
-            return 0;
+            return delta * AI_PROFILES[aiDifficulty].scoreWeight;
         }
 
         // Todos os assentos de um time específico (inclui quem pergunta, se for do time)
@@ -1277,15 +1403,17 @@
             return (avgPartner - 40) * 0.15;
         }
 
-        // Todas as IAs a partir do Difícil "contam" manilhas já jogadas e,
-        // no Trios, também levam em conta a força do time — o Insano tira
-        // o máximo proveito disso (não erra, analisa friamente cada mão).
+        // Todas as IAs a partir da Normal "contam" cartas fortes já jogadas
+        // (intel.goneCardWeight) e, no Trios, também levam em conta a força
+        // estimada do time (intel.teamStrength) — a Insana tira o máximo
+        // proveito disso (peso 6, contra 3 das demais). A Fácil não analisa
+        // nada disso (intel: null no perfil).
         function applyAiIntel(prob, pid) {
-            if (aiDifficulty >= 2) {
+            var ai = AI_PROFILES[aiDifficulty];
+            if (ai.intel) {
                 var gone = countStrongerCardsGone(pid);
-                var weight = aiDifficulty === 4 ? 6 : 3;
-                prob += Math.min(30, gone * weight);
-                if (getNumPlayers() > 2) prob += aiTeamStrengthBonus(pid);
+                prob += Math.min(30, gone * ai.intel.goneCardWeight);
+                if (ai.intel.teamStrength && getNumPlayers() > 2) prob += aiTeamStrengthBonus(pid);
             }
             prob += scoreContextBonus(pid);
             return Math.max(0, Math.min(100, prob));
@@ -1919,7 +2047,7 @@
             var seats = getTeamPIDs(decidingTeam);
             var prob = 0;
             seats.forEach(function(p) { prob = Math.max(prob, aiContextProb(p)); });
-            var accept = (prob >= 42); 
+            var accept = (prob >= AI_PROFILES[aiDifficulty].maoDeXAcceptAt); 
             var txt = st.rules === 'mineiro' ? "10" : "11";
             
             if (accept) {
@@ -2173,33 +2301,22 @@
             var myTeam = getTeam(pid);
             var thres = st.rules === 'mineiro' ? 10 : 11;
             var myX   = (st.scores[myTeam] === thres);
-            var prob   = applyAiIntel(aiContextProb(pid), pid);
-            var accept = false, raise = false;
+            var prob  = applyAiIntel(aiContextProb(pid), pid);
+            var ai    = AI_PROFILES[aiDifficulty];
+            var T     = ai.trucoResponse;
 
-            if(aiDifficulty === 1) {
-                accept = (prob >= 72);
-            }
-            else if(aiDifficulty === 2) {
-                accept = (prob >= 52);
-                if(accept && prob >= 82 && st.handVal < 12 && !myX) raise = true;
-            }
-            else if(aiDifficulty === 3) {
-                accept = (prob >= 32);
-                if(!accept && prob >= 15 && Math.random() < 0.10) accept = true; 
-                if(accept && st.handVal < 12 && !myX) {
-                    if(prob >= 60) raise = true;
-                    else if(prob >= 30 && Math.random() < 0.22) raise = true; 
-                }
-            }
-            else if(aiDifficulty === 4) {
-                accept = (prob >= 15);
-                if(!accept && prob >= 10 && Math.random() < 0.40) accept = true; 
-                
-                if(accept && st.handVal < 12 && !myX) {
-                    if(prob >= 45) raise = true;
-                    // IA Insana SÓ retruca com blefe se a mão tiver um pingo de chance (prob >= 25)
-                    else if(prob >= 25 && Math.random() < 0.50) raise = true; 
-                }
+            // Aceite normal, com chance de blefe (só Difícil/Insano têm
+            // bluffChance no perfil — Fácil/Normal nunca aceitam blefando).
+            var accept = (prob >= T.acceptAt);
+            if (!accept && T.bluffChance && prob >= T.bluffAt && Math.random() < T.bluffChance) accept = true;
+
+            // Retruco: só considera se aceitou, mão ainda pode subir e não é
+            // Mão de X do meu time. raiseAt é o limiar "seguro"; raiseBluffAt/
+            // raiseBluffChance é uma segunda chance de blefe (só Difícil/Insano).
+            var raise = false;
+            if (accept && T.raiseAt !== undefined && st.handVal < 12 && !myX) {
+                if (prob >= T.raiseAt) raise = true;
+                else if (T.raiseBluffChance && prob >= T.raiseBluffAt && Math.random() < T.raiseBluffChance) raise = true;
             }
 
             if(raise) {
@@ -2237,6 +2354,7 @@
             var oppX    = (st.scores[oppTeam] === thres);
             var maoDeFerro = (myX && oppX);
             var isRival = (myTeam !== getTeam(myPID));
+            var ai      = AI_PROFILES[aiDifficulty];
 
             var h       = aiHandStrength(pid);
             var prob    = applyAiIntel(aiContextProb(pid), pid);
@@ -2250,29 +2368,31 @@
                 var canRaise = isRival ? true : !st.humanAccepted;
                 var isFirstPlay = (nTricks === 0 && st.table.length === 0);
 
-                // Só permite pedir Truco se a IA não tiver acabado de aceitar um
+                // Só permite pedir Truco se a IA não tiver acabado de aceitar um.
+                // AT.extraGateAt é a "trava": as chances extra abaixo (pedir
+                // logo de cara, depois de ganhar a 1ª vaza, etc.) só rolam se
+                // a mão tiver pelo menos esse tanto de prob — evita pedir
+                // Truco com mão de lixo mesmo nas dificuldades mais agressivas.
 				if(canRaise && !st.aiJustAccepted) {
-                    if(aiDifficulty === 1) { if(prob >= 85) askTruco = true; }
-                    else if(aiDifficulty === 2) {
-                        if(prob >= 70) askTruco = true;
-                        if(!askTruco && prob >= 40 && Math.random() < 0.10) askTruco = true; 
+                    var AT = ai.askTruco;
+                    if (prob >= AT.baseAt) askTruco = true;
+
+                    if (AT.fallbackChance && !askTruco && prob >= AT.fallbackAt && Math.random() < AT.fallbackChance) {
+                        askTruco = true;
                     }
-                    else if(aiDifficulty === 3) {
-                        if(prob >= 55) askTruco = true;
-                        if(prob >= 20) {
-                            if(isFirstPlay && Math.random() < 0.20) askTruco = true;      
-                            if(myW === 1 && opW === 0 && Math.random() < 0.40) askTruco = true; 
-                            if(!askTruco && Math.random() < 0.10) askTruco = true;        
+
+                    if (AT.extraGateAt !== undefined && prob >= AT.extraGateAt) {
+                        if (isFirstPlay && Math.random() < AT.firstPlayChance) askTruco = true;
+
+                        var wonFirstOk = AT.wonFirstTrickNeedsLead ? (myW === 1 && opW === 0) : (myW === 1);
+                        if (wonFirstOk && Math.random() < AT.wonFirstTrickChance) askTruco = true;
+
+                        if (AT.losingDecentChance && opW === 1 && myW === 0 && prob >= AT.losingDecentAt && Math.random() < AT.losingDecentChance) {
+                            askTruco = true;
                         }
-                    }
-                    else if(aiDifficulty === 4) {
-                        if(prob >= 40) askTruco = true;
-                        // A Trava do Insano: Ele NÃO PODE pedir Truco se a mão for um lixo (prob < 20)
-                        if(prob >= 20) {
-                            if(isFirstPlay && Math.random() < 0.65) askTruco = true;       
-                            if(myW === 1 && Math.random() < 0.72) askTruco = true;         
-                            if(opW === 1 && myW === 0 && prob >= 30 && Math.random() < 0.40) askTruco = true; 
-                            if(!askTruco && nTricks > 0 && Math.random() < 0.30) askTruco = true;                      
+
+                        if (!askTruco && (!AT.finalFallbackNeedsTricks || nTricks > 0) && Math.random() < AT.finalFallbackChance) {
+                            askTruco = true;
                         }
                     }
                 }
@@ -2315,29 +2435,31 @@
 
             if (respondingToEnemy) {
                 if (partnerIsWinning) {
+                    // Parceiro já garantiu a vaza — jogo a pior carta. A chance
+                    // de esconder "por sobra" (AI_PARTNER_HIDE) vale pra
+                    // qualquer dificuldade aqui; só a chance "como rival"
+                    // exige Difícil/Insano (ai.hideAsRival).
                     playedIdx = indexed[0].idx;
-                    if (canHide && isRival && aiDifficulty >= 3 && Math.random() < 0.5) hideThisCard = true;
-                    if (canHide && !isRival && Math.random() < 0.6) hideThisCard = true;
+                    if (canHide && isRival && ai.hideAsRival && Math.random() < ai.hideAsRival.whenPartnerWinning) hideThisCard = true;
+                    if (canHide && !isRival && Math.random() < AI_PARTNER_HIDE.whenPartnerWinning) hideThisCard = true;
                 } else {
                     var winningCards = indexed.filter(x => x.p > highestEnemyPwr);
                     if (winningCards.length > 0) {
-                        if (aiDifficulty === 1) {
-                            playedIdx = (Math.random() < 0.20) ? winningCards[Math.floor(Math.random() * winningCards.length)].idx : winningCards[0].idx;
+                        if (ai.usesMistakes && Math.random() < ai.mistakeChance) {
+                            playedIdx = winningCards[Math.floor(Math.random() * winningCards.length)].idx;
                         } else {
                             playedIdx = winningCards[0].idx;
                         }
+                    } else if (ai.usesMistakes && Math.random() < ai.mistakeChance) {
+                        playedIdx = indexed[indexed.length - 1].idx;
                     } else {
-                        if (aiDifficulty === 1) {
-                            playedIdx = (Math.random() < 0.20) ? indexed[indexed.length - 1].idx : indexed[0].idx;
-                        } else {
-                            playedIdx = indexed[0].idx;
-                            if (canHide && isRival && aiDifficulty >= 3 && Math.random() < 0.6) hideThisCard = true;
-                            if (canHide && !isRival && Math.random() < 0.7) hideThisCard = true;
-                        }
+                        playedIdx = indexed[0].idx;
+                        if (canHide && isRival && ai.hideAsRival && Math.random() < ai.hideAsRival.whenNoWinningCard) hideThisCard = true;
+                        if (canHide && !isRival && ai.canHideWhenExposed && Math.random() < AI_PARTNER_HIDE.whenNoWinningCard) hideThisCard = true;
                     }
                 }
             } else {
-                if (aiDifficulty <= 2) {
+                if (ai.openPlay === 'random') {
                     playedIdx = (Math.random() > 0.5) ? indexed[0].idx : indexed[indexed.length - 1].idx;
                 } else {
                     if (nTricks === 0 && h.manilhas > 0 && indexed.length > 1) {
@@ -2350,29 +2472,25 @@
                 }
             }
 
-            if(st.table.length === 0 && !myX && !st.isMaoDeX && !maoDeFerro) {
-                var foldProb = 0; var foldChance = 0;
-                if(aiDifficulty === 1) { foldProb = 15; foldChance = 0.88; }      
-                else if(aiDifficulty === 2) { foldProb = 10; foldChance = 0.50; } 
-                else if(aiDifficulty === 3) { foldProb = 5;  foldChance = 0.35; } // só em mãos absolutamente horríveis
-
+            if(st.table.length === 0 && !myX && !st.isMaoDeX && !maoDeFerro && ai.fold) {
                 // Na Normal e na Difícil, em Duplas/Trios, ir ao baralho precisa ser
-                // "combinado" com o time inteiro — sem ver as cartas exatas dos
-                // aliados, mas considerando se o time como um todo parece fraco. Só
-                // folda se NINGUÉM do time (nem quem decide, nem os parceiros)
-                // parecer bem. A Fácil não tem esse cuidado, decide sozinha mesmo
-                // (erro proposital). A Insana nunca folda (foldProb=0 já resolve isso).
+                // "combinado" com o time inteiro (ai.fold.teamGate) — sem ver as
+                // cartas exatas dos aliados, mas considerando se o time como um
+                // todo parece fraco. Só folda se NINGUÉM do time (nem quem
+                // decide, nem os parceiros) parecer bem. A Fácil não tem esse
+                // cuidado, decide sozinha mesmo (erro proposital, teamGate:
+                // false no perfil). A Insana nunca folda (fold: null no perfil).
                 var teamAllowsFold = true;
-                if (aiDifficulty === 2 || aiDifficulty === 3) {
+                if (ai.fold.teamGate) {
                     var foldPartners = getPartnerPIDs();
                     if (foldPartners.length > 0) {
                         var teamBest = prob;
                         foldPartners.forEach(function(p) { teamBest = Math.max(teamBest, aiHandStrength(p).prob); });
-                        teamAllowsFold = (teamBest <= foldProb);
+                        teamAllowsFold = (teamBest <= ai.fold.prob);
                     }
                 }
 
-                if(foldProb > 0 && prob <= foldProb && Math.random() < foldChance && teamAllowsFold) {
+                if(prob <= ai.fold.prob && Math.random() < ai.fold.chance && teamAllowsFold) {
                     if (isRival) {
                         var fMsg = st.gameFormat === '1v1' ? "O Rival foi ao baralho!" : "Os Rivais foram ao baralho!";
                         showMsg(fMsg, 'pos');
