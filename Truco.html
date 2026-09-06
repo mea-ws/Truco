@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Truco - v0.8.5</title>
+    <title>Truco - v0.8.7</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♣</text></svg>">
     <style>
         /* BASE & THEME */
@@ -26,8 +26,16 @@
 
         .hidden { display: none !important; }
 
-        /* UI PANELS */
-        .panel { width: 90%; max-width: 400px; background: rgba(30, 41, 59, 0.85); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); padding: 2rem; border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.6); text-align: center; border: 1px solid rgba(255,255,255,0.1); z-index: 50; max-height: 90vh; overflow-y: auto; }
+        /* UI PANELS - NOW WITH FULL GLASSMORPHISM */
+        .panel { 
+            width: 90%; max-width: 400px; 
+            background: rgba(15, 23, 42, 0.45); 
+            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); 
+            padding: 2rem; border-radius: 20px; 
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); 
+            text-align: center; border: 1px solid rgba(255,255,255,0.1); 
+            z-index: 50; max-height: 90vh; overflow-y: auto; 
+        }
         .panel h1 { font-size: 2.5rem; margin: 0 0 1.5rem; font-weight: 900; letter-spacing: -2px; }
         .btn-stack { display: flex; flex-direction: column; gap: 10px; }
         
@@ -38,7 +46,7 @@
         .btn-s:hover { background: rgba(255,255,255,0.1); transform: translateY(-2px); }
         
         .diff-selector { display: flex; gap: 8px; margin-bottom: 15px; }
-        .diff-btn { flex: 1; padding: 8px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: transparent; color: var(--txt-d); font-size: 0.8rem; cursor: pointer; transition: var(--trans); }
+        .diff-btn { flex: 1; padding: 6px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: transparent; color: var(--txt-d); font-size: 0.75rem; cursor: pointer; transition: var(--trans); }
         .diff-btn.active { background: var(--prim); color: white; border-color: var(--prim); font-weight: bold; transform: scale(1.05); box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3); }
         .diff-btn.insano.active { background: var(--dang); border-color: var(--dang); box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3); }
         .section-label { color: var(--txt-d); font-size: 0.8rem; margin-bottom: 8px; text-align: left; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
@@ -84,7 +92,6 @@
         .card.back { background: var(--card-b); border: 3px solid #475569; color: transparent !important; cursor: default; }
         .card.back::after { content: '♣'; color: rgba(255,255,255,0.05); font-size: 2.5rem; position: absolute; }
         
-        /* Brilho do Turno Ativo Suavizado */
         .card.active-turn { 
             outline: 2px solid rgba(59, 130, 246, 0.8); outline-offset: 1px;
             box-shadow: 0 0 10px rgba(59, 130, 246, 0.5), inset 0 0 5px rgba(59, 130, 246, 0.2), 0 6px 15px rgba(0,0,0,0.5); 
@@ -94,7 +101,7 @@
         .card-wrapper.interactive:hover { transform: translateY(-10px); z-index: 15; }
         .key-hint { position: absolute; bottom: -22px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.6); color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; border: 1px solid rgba(255,255,255,0.2); pointer-events: none; }
 
-        /* PLAYER POSITIONS (Com Clipping Permanente) */
+        /* PLAYER POSITIONS */
         .hand-my { display: flex; justify-content: center; gap: 15px; height: 105px; width: 100%; margin-bottom: 5px; z-index: 15; }
         .hand-top { position: absolute; top: -35px; left: 50%; transform: translateX(-50%); display: flex; justify-content: center; gap: 8px; z-index: 5; }
         .hand-left { position: absolute; left: -35px; top: 50%; transform: translateY(-50%) rotate(90deg); display: flex; justify-content: center; gap: 8px; z-index: 5; }
@@ -106,7 +113,7 @@
         .played-area { display: flex; justify-content: center; align-items: center; width: 100%; height: 100%; position: relative; }
         #box-table { position: relative; width: 180px; height: 180px; display: flex; align-items: center; justify-content: center; }
 
-        /* DECK PILE E VIRA (Dentro da Mesa) */
+        /* DECK PILE E VIRA */
         #deck-area { position: absolute; top: 15px; right: 10px; z-index: 10; display: flex; flex-direction: row; align-items: center; gap: 8px; }
         #deck-area-label { font-size: 0.75rem; color: var(--txt-d); font-weight: bold; letter-spacing: 2px; writing-mode: vertical-rl; opacity: 0.8; margin-bottom: 4px; }
         .deck-stack-container { position: relative; width: 50px; height: 75px; }
@@ -115,7 +122,7 @@
         
         #vira-container { position: absolute; top: 15px; left: -35px; transform: rotate(-15deg); z-index: 5; }
 
-        /* GHOST MANILHA (Dentro da Mesa) */
+        /* GHOST MANILHA */
         #ghost-manilha { position: absolute; top: 15px; left: 10px; z-index: 10; display: flex; flex-direction: row; align-items: center; gap: 8px; transition: opacity 0.5s ease; }
         #ghost-manilha.hidden { opacity: 0; pointer-events: none; }
         #ghost-m-label { font-size: 0.75rem; color: var(--prim); font-weight: bold; letter-spacing: 2px; writing-mode: vertical-rl; transform: rotate(180deg); text-shadow: 0 0 8px rgba(16,185,129,0.4); opacity: 0.8; margin-bottom: 4px; }
@@ -157,12 +164,12 @@
         .sync-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--prim); box-shadow: 0 0 6px var(--prim); animation: blink 1.5s infinite ease-in-out; }
         @keyframes blink { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.8); } 100% { opacity: 1; transform: scale(1); } }
 
-        /* END GAME OVERLAY */
+        /* END GAME OVERLAY - WITH FULL GLASSMORPHISM */
         #scr-end { position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; display: flex; align-items: center; justify-content: center; z-index: 200; flex-direction: column; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); opacity: 0; pointer-events: none; transition: opacity 0.8s ease, background 0.8s ease; }
         #scr-end.show { opacity: 1; pointer-events: auto; }
         .end-win { background: rgba(16, 185, 129, 0.85); }
         .end-loss { background: rgba(239, 68, 68, 0.85); }
-        .end-content { text-align: center; padding: 40px; background: rgba(15, 23, 42, 0.6); border-radius: 20px; border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 25px 50px rgba(0,0,0,0.5); transform: translateY(20px); transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .end-content { text-align: center; padding: 40px; background: rgba(15, 23, 42, 0.45); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 25px 50px rgba(0,0,0,0.5); transform: translateY(20px); transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         #scr-end.show .end-content { transform: translateY(0); }
         .end-content h1 { font-size: 3rem; margin: 0 0 10px; text-shadow: 0 4px 10px rgba(0,0,0,0.3); }
         .end-content p { font-size: 1.1rem; margin-bottom: 30px; opacity: 0.9; }
@@ -216,10 +223,11 @@
         </div>
 
         <div class="section-label">Dificuldade da IA:</div>
-        <div class="diff-selector">
+        <div class="diff-selector" style="flex-wrap: wrap;">
             <button class="diff-btn" id="btn-diff-1" onclick="setDiff(1)">FÁCIL</button>
             <button class="diff-btn active" id="btn-diff-2" onclick="setDiff(2)">NORMAL</button>
-            <button class="diff-btn insano" id="btn-diff-3" onclick="setDiff(3)">INSANO</button>
+            <button class="diff-btn" id="btn-diff-3" onclick="setDiff(3)">DIFÍCIL</button>
+            <button class="diff-btn insano" id="btn-diff-4" onclick="setDiff(4)">INSANO</button>
         </div>
         <div class="btn-stack">
             <button class="btn-p" onclick="startGame('pc', 1)">JOGAR AGORA</button>
@@ -326,7 +334,14 @@
                 <button class="action-btn" onclick="cancelFold()"><span class="key-box">N</span> NÃO</button>
             </div>
 
-            <button class="action-btn btn-esc" onclick="location.reload()"><span class="key-box">ESC</span> SAIR</button>
+            <!-- CONTROLES DE CONFIRMAÇÃO DE SAÍDA -->
+            <div id="grp-confirm-exit" class="legend-group">
+                <span class="static-info" style="color: var(--warn); font-weight: bold;">Sair do Jogo?</span>
+                <button class="action-btn danger" onclick="location.reload()"><span class="key-box highlight">S</span> SIM</button>
+                <button class="action-btn" onclick="cancelExit()"><span class="key-box">N</span> NÃO</button>
+            </div>
+
+            <button class="action-btn btn-esc" onclick="requestExit()"><span class="key-box">ESC</span> SAIR</button>
         </div>
     </div>
 
@@ -353,7 +368,7 @@
         var st = {
             version: 0, roundId: 0, turn: 1, handVal: 1, 
             trucoBy: 0, trucoState: 'none', lastTruco: 0,
-            needsNewRound: false, nextFirstPlayer: 1,
+            needsNewRound: false, nextFirstPlayer: 1, humanAccepted: false,
             gameFormat: '1v1',
             scores: { 1: 0, 2: 0 }, vazas: { 1: 0, 2: 0 },
             hands: { 1: [], 2: [], 3: [], 4: [] }, table: [], lastTable: [], trickResults: [],
@@ -418,14 +433,37 @@
             getEl('grp-normal').classList.remove('active');
             getEl('grp-respond').classList.remove('active');
             getEl('grp-confirm-fold').classList.remove('active');
+            getEl('grp-confirm-exit').classList.remove('active');
             if (id) getEl(id).classList.add('active');
         }
+
+        window.requestExit = function() {
+            setBottomGroup('grp-confirm-exit');
+            getEl('action-bar').classList.add('danger-zone');
+        };
+        
+        window.cancelExit = function() {
+            setBottomGroup('grp-normal');
+            getEl('action-bar').classList.remove('danger-zone');
+            updateUI(); // Retorna aos controles corretos do estado atual do jogo
+        };
 
         // --- CONTROLES DE TECLADO ---
         document.addEventListener('keydown', function(e) {
             if (getEl('scr-game').classList.contains('hidden') || animLock) return;
             var key = e.key.toUpperCase();
-            if (key === 'ESCAPE') { location.reload(); return; }
+            
+            if (key === 'ESCAPE') {
+                if (getEl('grp-confirm-exit').classList.contains('active')) cancelExit();
+                else requestExit();
+                return;
+            }
+
+            if (getEl('grp-confirm-exit').classList.contains('active')) {
+                if (key === 'S') location.reload();
+                else if (key === 'N') cancelExit();
+                return;
+            }
 
             if (getEl('grp-confirm-fold').classList.contains('active')) {
                 if (key === 'S') executeFold();
@@ -540,15 +578,16 @@
             var me11 = (myTeamScore === 11); var opp11 = (oppTeamScore === 11); var maoDeFerro = (me11 && opp11);
             var isMyTurn = (st.turn === myPID);
             var uiTurn = getEl('ui-turn');
-            var grpConfirm = getEl('grp-confirm-fold');
+            var grpConfirmFold = getEl('grp-confirm-fold');
+            var isExiting = getEl('grp-confirm-exit').classList.contains('active');
             var btnTruco = getEl('cmd-truco'); var btnFold = getEl('cmd-fold'); var btnRaise = getEl('cmd-raise');
             var actionBar = getEl('action-bar');
 
-            if(grpConfirm.classList.contains('active') && (!isMyTurn || st.trucoState !== 'none')) cancelFold();
+            if(grpConfirmFold.classList.contains('active') && (!isMyTurn || st.trucoState !== 'none')) cancelFold();
 
             if (st.trucoState === 'pending') {
                 if (getTeam(st.trucoBy) !== getTeam(myPID)) {
-                    setBottomGroup('grp-respond'); actionBar.classList.add('danger-zone');
+                    if(!isExiting) { setBottomGroup('grp-respond'); actionBar.classList.add('danger-zone'); }
                     uiTurn.innerText = "⚠️ DECIDA! ⚠️"; uiTurn.style.color = "var(--warn)";
                     
                     var advice = getPartnerAdvice();
@@ -567,11 +606,11 @@
                         btnRaise.innerHTML = '<span class="key-box highlight">T</span> PEDIR ' + TRUCO_NAMES[st.handVal + 3] + '!'; 
                     } else { btnRaise.classList.add('hidden'); }
                 } else {
-                    setBottomGroup(null); actionBar.classList.remove('danger-zone');
+                    if(!isExiting) { setBottomGroup(null); actionBar.classList.remove('danger-zone'); }
                     uiTurn.innerText = "AGUARDANDO RIVAL..."; uiTurn.style.color = "var(--warn)";
                 }
             } else {
-                if (!grpConfirm.classList.contains('active')) { setBottomGroup('grp-normal'); actionBar.classList.remove('danger-zone'); }
+                if (!grpConfirmFold.classList.contains('active') && !isExiting) { setBottomGroup('grp-normal'); actionBar.classList.remove('danger-zone'); }
                 uiTurn.innerText = isMyTurn ? "SUA VEZ JOGAR" : ("VEZ DE: " + getPlayerName(st.turn).toUpperCase()); 
                 uiTurn.style.color = isMyTurn ? "var(--prim)" : "var(--txt-d)";
                 
@@ -633,7 +672,8 @@
             }
         }
 
-        function renderMesa(customTable, animOriginPID) {
+        // Parâmetro isDealing impede que as cartas pisquem e dêem spoiler das mãos na inicialização
+        function renderMesa(customTable, animOriginPID, isDealing) {
             var bMy = getEl('box-my'); var bTop = getEl('box-top'); var bLeft = getEl('box-left'); var bRight = getEl('box-right');
             var bTb = getEl('box-table'); 
             bMy.innerHTML = ''; bTop.innerHTML = ''; bLeft.innerHTML = ''; bRight.innerHTML = ''; bTb.innerHTML = '';
@@ -646,7 +686,9 @@
                 if (!dest) continue;
                 for (var i = 0; i < hand.length; i++) {
                     var isMy = (p === myPID);
-                    dest.appendChild(createCardDOM(hand[i], !isMy, isMy, i, false, pos));
+                    var dom = createCardDOM(hand[i], !isMy, isMy, i, false, pos);
+                    if(isDealing) dom.style.opacity = '0'; // Impede o flicker da revelação
+                    dest.appendChild(dom);
                 }
             }
 
@@ -677,6 +719,7 @@
                 viraDOM.firstChild.style.width = '50px'; viraDOM.firstChild.style.height = '75px'; viraDOM.firstChild.style.fontSize = '1.1rem';
                 if(window.innerWidth <= 768) { viraDOM.firstChild.style.width = '45px'; viraDOM.firstChild.style.height = '65px'; }
                 viraDOM.firstChild.id = 'vira-anim-target';
+                if(isDealing) viraDOM.style.opacity = '0'; // Impede o flicker
                 viraDest.appendChild(viraDOM);
             }
 
@@ -699,11 +742,11 @@
         }
 
         function animDeal() {
-            animLock = true; renderMesa(); 
+            animLock = true; 
+            renderMesa(null, null, true); // true = isDealing, não deixa ninguem ver o HTML antes do fim
+
             var allWrappers = document.querySelectorAll('.table .card-wrapper, #vira-container .card-wrapper');
             var deckRect = getEl('deck-pile').getBoundingClientRect();
-
-            allWrappers.forEach(w => w.style.opacity = '0');
 
             var flyCards = [];
             var delay = 0;
@@ -718,7 +761,7 @@
                 flyCard.style.position = 'fixed';
                 flyCard.style.left = deckRect.left + 'px';
                 flyCard.style.top = deckRect.top + 'px';
-                flyCard.style.zIndex = '25'; // Fix z-index para não sobrepor o placar (z-index: 30)
+                flyCard.style.zIndex = '25'; // Fisicamente ABAIXO do HUD (30)
                 flyCard.style.margin = '0';
                 flyCard.style.transition = 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
                 document.body.appendChild(flyCard);
@@ -768,7 +811,7 @@
         window.startGame = function(modeStr, playerID) {
             gameMode = modeStr; myPID = playerID; 
             st.gameFormat = pendingFormat;
-            st.scores = {1:0, 2:0}; window.lastAdviceLevel = 0;
+            st.scores = {1:0, 2:0}; window.lastAdviceLevel = 0; st.humanAccepted = false;
             
             if (myPID === 1) st.deckMode = pendingDeckMode;
             
@@ -777,10 +820,15 @@
         };
 
         function startRound(firstPlayer) {
-            var deck = []; window.lastAdviceLevel = 0;
+            var deck = []; window.lastAdviceLevel = 0; st.humanAccepted = false;
             var activeVals = getActiveVals();
             for(var s=0; s<4; s++) { for(var v=0; v<activeVals.length; v++) { deck.push({s: SUITS[s], v: activeVals[v]}); } }
-            deck.sort(function() { return 0.5 - Math.random(); });
+            
+            // Fisher-Yates (Matematicamente imprevisível) - Randomização Genuína
+            for (var r = deck.length - 1; r > 0; r--) {
+                var j = Math.floor(Math.random() * (r + 1));
+                var temp = deck[r]; deck[r] = deck[j]; deck[j] = temp;
+            }
             
             st.roundId = Date.now(); 
             var numP = getNumPlayers();
@@ -894,6 +942,7 @@
         window.respondTruco = function(accept) {
             if(animLock) return;
             if(accept) {
+                st.humanAccepted = true; // Informa a IA parceira que a sua dupla já aceitou as condições
                 showMsg("Você Aceitou!", 'pos'); st.trucoState = 'none'; updateUI(); autoSave();
                 animLock = false; checkAiTurn();
             } else {
@@ -945,11 +994,27 @@
         function aiDecideTruco(pid) {
             var prob = getHandWinProb(pid); var accept = false; var raise = false;
             
-            if (aiDifficulty === 1) { if(prob >= 75) accept = true; } 
-            else if (aiDifficulty === 2) { if(prob >= 45) accept = true; if(prob >= 85 && st.handVal < 12 && Math.random() > 0.5) raise = true; } 
-            else { 
-                if(prob >= 30) accept = true; if(prob < 30 && Math.random() < 0.25) accept = true; 
-                if(accept && st.handVal < 12 && st.scores[getTeam(pid)] !== 11) { if(prob >= 70 || Math.random() < 0.3) raise = true; }
+            if (aiDifficulty === 1) { // FÁCIL
+                if(prob >= 55) accept = true; 
+                if(prob < 30 && Math.random() < 0.15) accept = true; 
+            } 
+            else if (aiDifficulty === 2) { // NORMAL
+                if(prob >= 45) accept = true; 
+                if(prob >= 85 && st.handVal < 12 && Math.random() > 0.5) raise = true; 
+            } 
+            else if (aiDifficulty === 3) { // DIFÍCIL
+                if(prob >= 35) accept = true; 
+                if(prob < 35 && Math.random() < 0.20) accept = true; 
+                if(accept && st.handVal < 12 && st.scores[getTeam(pid)] !== 11) { 
+                    if(prob >= 75 || Math.random() < 0.25) raise = true; 
+                }
+            }
+            else if (aiDifficulty === 4) { // INSANO
+                if(prob >= 25) accept = true; 
+                if(prob < 25 && Math.random() < 0.35) accept = true; 
+                if(accept && st.handVal < 12 && st.scores[getTeam(pid)] !== 11) { 
+                    if(prob >= 65 || Math.random() < 0.45) raise = true; 
+                }
             }
 
             if (raise) {
@@ -961,7 +1026,9 @@
             if(accept) {
                 showMsg(getPlayerName(pid) + " ACEITOU!", 'neg'); st.trucoState = 'none'; animLock = false; updateUI(); checkAiTurn();
             } else {
-                showMsg(getPlayerName(pid) + " CORREU!", 'pos'); st.trucoState = 'none'; st.scores[getOppTeam(getTeam(pid))] += (st.handVal === 3) ? 1 : (st.handVal - 3); animLock = false; 
+                var msg = st.gameFormat === '1v1' ? "O Rival CORREU!" : (getPlayerName(pid) + " CORREU!");
+                showMsg(msg, 'pos'); 
+                st.trucoState = 'none'; st.scores[getOppTeam(getTeam(pid))] += (st.handVal === 3) ? 1 : (st.handVal - 3); animLock = false; 
                 if(st.scores[getOppTeam(getTeam(pid))] >= 12) { triggerEndGame(getTeam(myPID) === getOppTeam(getTeam(pid))); return; }
                 setTimeout(function(){ startRound(getNextTurn(st.nextFirstPlayer || 1)); }, 2000);
             }
@@ -976,9 +1043,28 @@
 
             if(!my11 && !maoDeFerro && st.handVal < 12 && getTeam(st.lastTruco) !== myTeam) {
                 var askTruco = false;
-                if (aiDifficulty === 1 && prob >= 90) askTruco = true;
-                else if (aiDifficulty === 2 && prob >= 65 && Math.random() > 0.3) askTruco = true;
-                else if (aiDifficulty === 3) { if (prob >= 50) askTruco = true; if (prob <= 20 && Math.random() < 0.40) askTruco = true; }
+                
+                // Impede parceiro de atropelar o pedido após o humano aceitar de bom grado
+                var isPartner = (getTeam(pid) === getTeam(myPID));
+                var canRaise = !(isPartner && st.humanAccepted);
+
+                if (canRaise) {
+                    if (aiDifficulty === 1) { 
+                        if (prob >= 85 && Math.random() > 0.2) askTruco = true; 
+                        if (prob < 20 && Math.random() < 0.05) askTruco = true; 
+                    }
+                    else if (aiDifficulty === 2) { 
+                        if (prob >= 65 && Math.random() > 0.3) askTruco = true; 
+                    }
+                    else if (aiDifficulty === 3) { 
+                        if (prob >= 50) askTruco = true; 
+                        if (prob <= 25 && Math.random() < 0.25) askTruco = true; 
+                    }
+                    else if (aiDifficulty === 4) { 
+                        if (prob >= 40) askTruco = true; 
+                        if (prob <= 30 && Math.random() < 0.40) askTruco = true; 
+                    }
+                }
 
                 if (askTruco) {
                     st.handVal = (st.handVal === 1) ? 3 : st.handVal + 3; st.trucoBy = pid; st.lastTruco = pid; st.trucoState = 'pending'; 
@@ -996,15 +1082,19 @@
                 var winningCards = indexedCards.filter(x => x.p > maxOppPower);
                 if (winningCards.length > 0) playedIdx = winningCards[0].idx; else playedIdx = indexedCards[0].idx; 
             } else { 
-                if (aiDifficulty === 1) playedIdx = indexedCards[indexedCards.length - 1].idx; 
-                else if (aiDifficulty === 2) playedIdx = (Math.random() > 0.5) ? indexedCards[0].idx : indexedCards[indexedCards.length - 1].idx;
-                else { if (indexedCards[indexedCards.length - 1].p > 99 && st.trickResults.length === 0) playedIdx = indexedCards[0].idx; else playedIdx = indexedCards[indexedCards.length - 1].idx; }
+                if (aiDifficulty <= 2) playedIdx = (Math.random() > 0.5) ? indexedCards[0].idx : indexedCards[indexedCards.length - 1].idx;
+                else playedIdx = indexedCards[indexedCards.length - 1].idx; 
             }
 
-            if(st.table.length === 0 && prob < 10 && aiDifficulty < 3 && !my11) {
-                var shouldFold = (aiDifficulty === 1) ? true : (Math.random() < 0.4);
+            if(st.table.length === 0 && prob < 15 && aiDifficulty < 4 && !my11) {
+                var shouldFold = false;
+                if (aiDifficulty === 1) shouldFold = (Math.random() < 0.7);
+                else if (aiDifficulty === 2) shouldFold = (Math.random() < 0.4);
+                else if (aiDifficulty === 3) shouldFold = (Math.random() < 0.15);
+                
                 if(shouldFold) {
-                    showMsg(getPlayerName(pid) + " foi ao baralho!", 'pos'); st.scores[oppTeam] += st.handVal;
+                    var msg = st.gameFormat === '1v1' ? "O Rival foi ao baralho!" : (getPlayerName(pid) + " foi ao baralho!");
+                    showMsg(msg, 'pos'); st.scores[oppTeam] += st.handVal;
                     if(st.scores[oppTeam] >= 12) { animLock = false; triggerEndGame(getTeam(myPID) === oppTeam); return; }
                     animLock = false; setTimeout(function(){ startRound(getNextTurn(st.nextFirstPlayer || 1)); }, 2000); return;
                 }
