@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Truco - v0.11.0</title>
+    <title>Truco - v0.11.1</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♣</text></svg>">
     <style>
         /* THEME VARIABLES */
@@ -1144,6 +1144,24 @@
             return prefix + "Bora!";
         }
 
+        // Versão "categoria" da sugestão — usada quando há mais de um parceiro,
+        // pra poder comparar se eles concordam e montar o rótulo certo.
+        function adviceCategoryFor(prob, handVal) {
+            if (prob < 35) return { key: 'correr', label: 'Correr', verb: 'correr' };
+            if (prob < 65) return { key: 'aceitar', label: 'Aceitar', verb: 'aceitar' };
+            if (handVal < 12) return { key: 'aumentar', label: 'Aumentar', verb: 'aumentar' };
+            return { key: 'bora', label: 'Bora!', verb: 'ir com tudo' };
+        }
+
+        // Nome de exibição de um parceiro: usa o nick real se existir
+        // (multiplayer), senão cai pra "Parceiro 1"/"Parceiro 2" — evita que
+        // dois parceiros sem nick fiquem ambíguos ("Seu Parceiro" duas vezes).
+        function partnerLabel(pid, idx) {
+            if (window.wsPlayers && window.wsPlayers[pid]) return window.wsPlayers[pid];
+            if (gameMode !== 'pc' && st.nicks && st.nicks[pid]) return st.nicks[pid];
+            return "Parceiro " + (idx + 1);
+        }
+
         function updateTurnGlow() {
             document.querySelectorAll('.card').forEach(c => c.classList.remove('active-turn'));
             if (animLock && st.trucoState !== 'mao11') return;
@@ -1295,17 +1313,28 @@
                                 }, 1500);
                             }
                         } else if (partners.length > 1) {
-                            // 3v3/Trios — cada parceiro opina, mostrados um de cada vez
-                            // no Sistema de Notificações (showMsg), em sequência.
-                            indicatorText = "VEJA AS SUGESTÕES DOS PARCEIROS";
+                            // 3v3/Trios — se os parceiros concordam, uma frase só;
+                            // se discordam, lista cada um (Parceiro 1: X - Parceiro 2: Y).
+                            var cats = partners.map(function(pPid, idx) {
+                                return { pid: pPid, idx: idx, cat: adviceCategoryFor(aiContextProb(pPid), st.handVal) };
+                            });
+                            var allAgree = cats.every(function(c) { return c.cat.key === cats[0].cat.key; });
+
+                            if (allAgree) {
+                                indicatorText = "PARCEIROS QUEREM " + cats[0].cat.verb.toUpperCase() + "!";
+                            } else {
+                                indicatorText = cats.map(function(c) {
+                                    return partnerLabel(c.pid, c.idx).toUpperCase() + ": " + c.cat.label.toUpperCase();
+                                }).join(" - ");
+                            }
+
                             if(window.lastAdviceLevel !== st.handVal) {
                                 window.lastAdviceLevel = st.handVal;
-                                partners.forEach(function(pPid, idx) {
-                                    var pProb = aiContextProb(pPid);
-                                    var pAdvice = getPlayerName(pPid) + ": " + adviceTextFor(pProb, st.handVal, true);
+                                cats.forEach(function(c) {
+                                    var pMsg = partnerLabel(c.pid, c.idx) + ": " + c.cat.label;
                                     setTimeout(function() {
-                                        if (st.trucoState === 'pending') { showMsg(pAdvice, 'pos', 2000); }
-                                    }, 1500 + idx * 2200);
+                                        if (st.trucoState === 'pending') { showMsg(pMsg, 'pos', 2000); }
+                                    }, 1500 + c.idx * 2200);
                                 });
                             }
                         }
@@ -1425,7 +1454,16 @@
                 var dom = createCardDOM(tblCard.c, tblCard.hidden, false, 0, false, 'table');
                 dom.style.position = 'absolute';
                 
-                var posOffset = {
+                var posOffset = st.gameFormat === '3v3' ? {
+                    // Trios: 6 cartas na mesa — leque hexagonal bem mais espaçado
+                    // pra dar pra identificar cada carta sem precisar adivinhar.
+                    'left': 'translate(-72px, 40px) rotate(-25deg)',
+                    'right': 'translate(72px, 40px) rotate(25deg)',
+                    'top': 'translate(0px, -72px) rotate(6deg)',
+                    'my': 'translate(0px, 68px) rotate(-8deg)',
+                    'left2': 'translate(-62px, -55px) rotate(-15deg)',
+                    'right2': 'translate(62px, -55px) rotate(15deg)'
+                } : {
                     'left': 'translate(-55px, -10px) rotate(-20deg)',
                     'right': 'translate(55px, 10px) rotate(20deg)',
                     'top': 'translate(10px, -50px) rotate(10deg)',
@@ -1441,6 +1479,7 @@
                 if (st.trickWinners && st.trickWinners.includes(tblCard.p) && st.table.length === 0 && !isDealing) {
                     var innerCard = dom.querySelector('.card');
                     if (innerCard) innerCard.classList.add('winner-anim');
+                    dom.style.zIndex = 100;
                 }
 
                 bTb.appendChild(dom);
@@ -1787,6 +1826,7 @@
                 if(winners.includes(st.table[i].p)) {
                     var innerCard = bTb[i].querySelector('.card');
                     if (innerCard) innerCard.classList.add('winner-anim'); 
+                    bTb[i].style.zIndex = 100;
                 }
             }
 
@@ -2683,6 +2723,7 @@
                         if(st.trickWinners && st.trickWinners.includes(st.lastTable[i].p)) {
                             var innerCard = bTb[i].querySelector('.card');
                             if (innerCard) innerCard.classList.add('winner-anim');
+                            bTb[i].style.zIndex = 100;
                         }
                     }
                     
