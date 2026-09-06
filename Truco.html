@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Truco - v0.10.6</title>
+    <title>Truco - v0.11.0</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♣</text></svg>">
     <style>
         /* THEME VARIABLES */
@@ -172,8 +172,8 @@
         .hand-left { position: absolute; left: -35px; top: 50%; transform: translateY(-50%) rotate(90deg); display: flex; justify-content: center; gap: 8px; z-index: 5; }
         .hand-right { position: absolute; right: -35px; top: 50%; transform: translateY(-50%) rotate(-90deg); display: flex; justify-content: center; gap: 8px; z-index: 5; }
 
-        /* Assentos extras do Trios (3v3) — inertes até .table ganhar .fmt-3v3.
-           Preparação de terreno: layout completo, ainda sem gatilho no menu. */
+        /* Assentos extras do Trios (3v3) — ativos quando .table ganha .fmt-3v3
+           (aplicado em updateUI() sempre que st.gameFormat === '3v3'). */
         .hand-left2, .hand-right2 { display: none; justify-content: center; gap: 8px; z-index: 5; position: absolute; }
         .table.fmt-3v3 .hand-left { top: 70%; }
         .table.fmt-3v3 .hand-right { top: 70%; }
@@ -363,6 +363,7 @@
         <div class="diff-selector">
             <button class="diff-btn active" id="btn-fmt-1v1-sp" onclick="setPendingFormat('1v1', 'sp')">1 X 1</button>
             <button class="diff-btn" id="btn-fmt-2v2-sp" onclick="setPendingFormat('2v2', 'sp')">DUPLAS (2 X 2)</button>
+            <button class="diff-btn" id="btn-fmt-3v3-sp" onclick="setPendingFormat('3v3', 'sp')">TRIOS (3 X 3)</button>
         </div>
 
         <div class="section-label">Selecione o Baralho:</div>
@@ -419,6 +420,7 @@
         <div class="diff-selector">
             <button class="diff-btn active" id="btn-fmt-1v1-mp" onclick="setPendingFormat('1v1', 'mp')">1 X 1</button>
             <button class="diff-btn" id="btn-fmt-2v2-mp" onclick="setPendingFormat('2v2', 'mp')">DUPLAS (2 X 2)</button>
+            <button class="diff-btn" id="btn-fmt-3v3-mp" onclick="setPendingFormat('3v3', 'mp')">TRIOS (3 X 3)</button>
         </div>
 
         <div class="section-label">Selecione o Baralho:</div>
@@ -493,6 +495,7 @@
         <div class="diff-selector">
             <button class="diff-btn active" id="btn-fmt-1v1-on" onclick="setPendingFormat('1v1', 'on')">1 X 1</button>
             <button class="diff-btn" id="btn-fmt-2v2-on" onclick="setPendingFormat('2v2', 'on')">DUPLAS (2 X 2)</button>
+            <button class="diff-btn" id="btn-fmt-3v3-on" onclick="setPendingFormat('3v3', 'on')">TRIOS (3 X 3)</button>
         </div>
 
         <div class="section-label">Selecione o Baralho:</div>
@@ -664,6 +667,13 @@
             playedCards: [], 
             vira: null, manilha: '', deckMode: 'sujo', viraRevealed: false,
             nicks: { 1: '', 2: '', 3: '', 4: '', 5: '', 6: '' },
+            // Quais assentos são controlados por um humano de verdade (local
+            // ou remoto) nesta partida. Hoje sempre [1,2] em qualquer modo
+            // multiplayer (só Host+Guest) — isso é o que permite estender
+            // pra até 6 humanos sem tocar na lógica de jogo em si: quem
+            // decide se um assento é IA ou não passa a ser esse array, não
+            // mais um número de pid fixo espalhado pelo código.
+            humanSeats: [1, 2],
             partnerFoldPid: 0
         };
 
@@ -752,6 +762,7 @@
             var prefix = screen;
             getEl('btn-fmt-1v1-' + prefix).classList.remove('active');
             getEl('btn-fmt-2v2-' + prefix).classList.remove('active');
+            getEl('btn-fmt-3v3-' + prefix).classList.remove('active');
             getEl('btn-fmt-' + fmt + '-' + prefix).classList.add('active');
         };
 
@@ -911,7 +922,7 @@
                 return;
             }
 
-            if (st.trucoState === 'mao11' && st.maoDeXTeam === 1 && myPID !== 0) {
+            if (st.trucoState === 'mao11' && st.maoDeXTeam === getTeam(myPID) && myPID !== 0) {
                 if (key === 'A') respondMao11(true);
                 else if (key === 'C') respondMao11(false);
                 return;
@@ -1116,7 +1127,7 @@
         }
 
         // Todos os assentos do meu time, exceto eu mesmo — length=1 em 2v2
-        // (comportamento atual), length=2 em 3v3/Trios (ainda não selecionável).
+        // (comportamento atual), length=2 em 3v3/Trios.
         function getPartnerPIDs() {
             var partners = [];
             for (var p = 1; p <= getNumPlayers(); p++) {
@@ -1174,7 +1185,7 @@
 
         function isAwaitingMyAction() {
             if (st.trucoState === 'pending') return getTeam(st.trucoBy) !== getTeam(myPID);
-            if (st.trucoState === 'mao11') return st.maoDeXTeam === 1;
+            if (st.trucoState === 'mao11') return st.maoDeXTeam === getTeam(myPID);
             if (st.trucoState === 'partner_fold') return true;
             return st.turn === myPID;
         }
@@ -1343,7 +1354,7 @@
                 }
             }
             
-            if (!(st.trucoState === 'mao11' && st.maoDeXTeam === 1 && st.gameFormat === '2v2')) {
+            if (!(st.trucoState === 'mao11' && st.maoDeXTeam === getTeam(myPID) && st.gameFormat !== '1v1')) {
                 getEl('ui-deck-indicator').innerText = indicatorText;
             }
 
@@ -1552,7 +1563,8 @@
             st.gameFormat = pendingFormat;
             st.rules = pendingRules;
             st.scores = {1:0, 2:0}; window.lastAdviceLevel = 0; st.humanAccepted = false;
-            if (modeStr === 'pc') { st.nicks = {1:'',2:'',3:'',4:''}; window.wsPlayers = {}; }
+            if (modeStr === 'pc') { st.nicks = {1:'',2:'',3:'',4:'',5:'',6:''}; window.wsPlayers = {}; st.humanSeats = [1]; }
+            else if (modeStr === 'json' || (modeStr === 'webrtc' && !webrtcResuming)) { st.humanSeats = [1, 2]; }
             
             if (myPID === 1) st.deckMode = pendingDeckMode;
             
@@ -1627,7 +1639,7 @@
         }
 
         function handleMao11() {
-            if (st.maoDeXTeam === 1 && myPID !== 0) {
+            if (st.maoDeXTeam === getTeam(myPID) && myPID !== 0) {
                 if (st.gameFormat !== '1v1') {
                     renderMesa(null, null, false, true); 
                     var partners = getPartnerPIDs();
@@ -1648,9 +1660,11 @@
                     showMsg(m, 'warn', 3000);
                 }
                 updateUI();
-            } else if (st.maoDeXTeam === 2 && gameMode === 'pc') {
+            } else if (amICoordinatingTeam(st.maoDeXTeam)) {
                 animLock = true; updateUI();
-                setTimeout(aiDecideMao11, 2500);
+                setTimeout(function(){ aiDecideMao11(st.maoDeXTeam); }, 2500);
+            } else {
+                updateUI();
             }
         }
 
@@ -1668,16 +1682,19 @@
                 var msgRej = st.gameFormat === '1v1' ? "Você Correu da Mão de "+txt+"!" : "Vocês Correram da Mão de "+txt+"!";
                 showMsg(msgRej, 'neg'); 
                 st.trucoState = 'none'; 
-                st.scores[2] += st.rules === 'mineiro' ? 2 : 1; 
-                if(st.scores[2] >= 12) { autoSave(); triggerEndGame(false); return; }
+                var oppT = getOppTeam(getTeam(myPID));
+                st.scores[oppT] += st.rules === 'mineiro' ? 2 : 1; 
+                if(st.scores[oppT] >= 12) { autoSave(); triggerEndGame(false); return; }
                 var nxtFirst = getNextTurn(st.firstPlayerOfRound); 
                 if (myPID === 1 || gameMode !== 'json') { startRound(nxtFirst); } else { st.needsNewRound = true; st.nextFirstPlayer = nxtFirst; autoSave(); }
             }
         };
 
-        function aiDecideMao11() {
-            var prob = aiContextProb(2);
-            getTeamPIDs(2).forEach(function(p) { if (p !== 2) prob = Math.max(prob, aiContextProb(p)); });
+        function aiDecideMao11(team) {
+            var decidingTeam = team || 2;
+            var seats = getTeamPIDs(decidingTeam);
+            var prob = 0;
+            seats.forEach(function(p) { prob = Math.max(prob, aiContextProb(p)); });
             var accept = (prob >= 42); 
             var txt = st.rules === 'mineiro' ? "10" : "11";
             
@@ -1685,12 +1702,13 @@
                 var msg = st.gameFormat === '1v1' ? "O Rival aceitou a Mão de "+txt+"!" : "Os Rivais aceitaram a Mão de "+txt+"!";
                 showMsg(msg, 'neg');
                 st.trucoState = 'none';
-                animLock = false; updateUI(); checkAiTurn();
+                animLock = false; updateUI(); autoSave(); checkAiTurn();
             } else {
                 var msg = st.gameFormat === '1v1' ? "O Rival correu da Mão de "+txt+"!" : "Os Rivais correram da Mão de "+txt+"!";
                 showMsg(msg, 'pos');
-                st.scores[1] += st.rules === 'mineiro' ? 2 : 1;
-                if(st.scores[1] >= 12) { triggerEndGame(true); return; }
+                st.scores[getOppTeam(decidingTeam)] += st.rules === 'mineiro' ? 2 : 1;
+                autoSave();
+                if(st.scores[getOppTeam(decidingTeam)] >= 12) { triggerEndGame(getTeam(myPID) === getOppTeam(decidingTeam)); return; }
                 setTimeout(function(){ startRound(getNextTurn(st.firstPlayerOfRound)); }, 2000);
             }
         }
@@ -1718,8 +1736,9 @@
             if(accept) {
                 showMsg("Vocês correram!", 'neg');
                 st.trucoState = 'none';
-                st.scores[2] += st.handVal;
-                if(st.scores[2] >= 12) { autoSave(); triggerEndGame(false); return; }
+                var oppT2 = getOppTeam(getTeam(myPID));
+                st.scores[oppT2] += st.handVal;
+                if(st.scores[oppT2] >= 12) { autoSave(); triggerEndGame(false); return; }
                 var nxtFirst = getNextTurn(st.firstPlayerOfRound);
                 if (myPID === 1 || gameMode !== 'json') { startRound(nxtFirst); } else { st.needsNewRound = true; st.nextFirstPlayer = nxtFirst; autoSave(); }
             } else {
@@ -1859,11 +1878,40 @@
             }
         };
 
+        // Um assento é "humano" se estiver na lista de assentos ocupados
+        // por gente de verdade nesta partida (ver comentário no default de `st`).
+        function isHumanSeat(pid) {
+            var seats = (st.humanSeats && st.humanSeats.length) ? st.humanSeats : [1, 2];
+            return seats.indexOf(pid) !== -1;
+        }
+
+        // Verdadeiro se EU sou responsável por simular a IA de um time
+        // específico nesta partida — ou seja, ninguém humano está nesse
+        // time, e eu sou quem coordena a IA (assento humano de menor
+        // número entre os presentes). Usado tanto pra decisões de Truco
+        // quanto de Mão de 11/10 quando o time que precisa responder não
+        // tem nenhum jogador humano (comum com cobertura parcial no Trios).
+        function amICoordinatingTeam(team) {
+            if (gameMode === 'pc') return team === getOppTeam(getTeam(myPID));
+            var seats = (st.humanSeats && st.humanSeats.length) ? st.humanSeats : [1, 2];
+            var lowestHuman = Math.min.apply(null, seats);
+            if (myPID !== lowestHuman) return false;
+            return !getTeamPIDs(team).some(function(p) { return isHumanSeat(p); });
+        }
+
         function checkAiTurn() {
             if(animLock || st.trucoState !== 'none') return;
             var t = st.turn; var isAi = false;
             if(gameMode === 'pc') { if(t !== 1) isAi = true; } 
-            else { if(myPID === 1 && t > 2) isAi = true; } 
+            else {
+                // Só quem ocupa o assento humano de MENOR número simula os
+                // assentos vagos (sem humano) — hoje isso é sempre o pid 1
+                // (Host), exatamente como antes. Com mais humanos na mesa,
+                // continua sendo o de menor número entre os presentes.
+                var seats = (st.humanSeats && st.humanSeats.length) ? st.humanSeats : [1, 2];
+                var lowestHuman = Math.min.apply(null, seats);
+                if(myPID === lowestHuman && !isHumanSeat(t)) isAi = true;
+            } 
             
             if(isAi) { animLock = true; setTimeout(() => aiPlay(t), 1200); }
         }
@@ -1874,9 +1922,23 @@
             var aiNeedsToAnswer = false; var aiPid = 0;
             
             if (gameMode === 'pc') {
-                if (answeringTeam === 2) { aiNeedsToAnswer = true; aiPid = 2; }
+                if (answeringTeam === 2) { 
+                    aiNeedsToAnswer = true; 
+                    aiPid = getTeamPIDs(2).reduce(function(best, p) { 
+                        return aiContextProb(p) > aiContextProb(best) ? p : best; 
+                    }, 2); 
+                }
             } else { 
-                aiNeedsToAnswer = false; 
+                // Multiplayer com cobertura humana parcial: se NINGUÉM humano
+                // está no time que precisa responder, quem coordena a IA decide
+                // por eles — senão o pedido de truco ficaria pendente pra sempre.
+                if (amICoordinatingTeam(answeringTeam)) {
+                    aiNeedsToAnswer = true;
+                    var answeringSeats = getTeamPIDs(answeringTeam);
+                    aiPid = answeringSeats.reduce(function(best, p) {
+                        return aiContextProb(p) > aiContextProb(best) ? p : best;
+                    }, answeringSeats[0]);
+                }
             } 
             
             if (aiNeedsToAnswer) { animLock = true; setTimeout(() => aiDecideTruco(aiPid), 1800); }
@@ -1920,19 +1982,20 @@
                 st.trucoBy = pid; st.lastTruco = pid;
                 var tMsg = st.gameFormat === '1v1' ? "O Rival pediu " : "Os Rivais pediram ";
                 showMsg(tMsg + getTrucoName(st.proposedVal) + "!", 'neg');
-                animLock = false; updateUI(); updateTurnGlow(); checkAiTrucoDecision(); return;
+                animLock = false; updateUI(); updateTurnGlow(); autoSave(); checkAiTrucoDecision(); return;
             }
             if(accept) {
                 st.handVal = st.proposedVal; st.proposedVal = 0;
                 st.aiJustAccepted = true; 
                 showMsg(st.gameFormat === '1v1' ? "O Rival ACEITOU!" : "Os Rivais ACEITARAM!", 'neg');
-                st.trucoState = 'none'; animLock = false; updateUI(); checkAiTurn();
+                st.trucoState = 'none'; animLock = false; updateUI(); autoSave(); checkAiTurn();
             } else {
                 var msg = st.gameFormat === '1v1' ? "O Rival CORREU!" : "Os Rivais CORRERAM!";
                 showMsg(msg, 'pos');
                 st.trucoState = 'none';
                 var pts = st.handVal;
                 st.scores[getOppTeam(myTeam)] += pts; animLock = false;
+                autoSave();
                 if(st.scores[getOppTeam(myTeam)] >= 12) { triggerEndGame(getTeam(myPID) === getOppTeam(myTeam)); return; }
                 setTimeout(function(){ startRound(getNextTurn(st.firstPlayerOfRound)); }, 2000);
             }
@@ -2123,9 +2186,26 @@
                         startGame(method, 1); 
                     } else { 
                         var [handle] = await window.showOpenFilePicker({ types: [{ description: 'JSON', accept: {'application/json': ['.json']} }]}); 
-                        fileHandle = handle; startGame(method, 2); await autoLoad(); 
-                        st.nicks = st.nicks || {1:'',2:'',3:'',4:''};
-                        st.nicks[2] = myLocalNick;
+                        fileHandle = handle; 
+                        // Espia o arquivo ANTES de entrar, pra saber quais assentos
+                        // já estão ocupados — necessário quando um 3º+ humano abre
+                        // o mesmo arquivo compartilhado (senão colidiria com pid 2).
+                        var assignedPid = 2;
+                        try {
+                            var peekFile = await fileHandle.getFile();
+                            var peekContents = await peekFile.text();
+                            if (peekContents) {
+                                var peekSt = JSON.parse(peekContents);
+                                var tmpNumP = FORMAT_SEATS[peekSt.gameFormat] || 2;
+                                var tmpSeats = (peekSt.humanSeats && peekSt.humanSeats.length) ? peekSt.humanSeats : [1, 2];
+                                for (var pk = 1; pk <= tmpNumP; pk++) { if (tmpSeats.indexOf(pk) === -1) { assignedPid = pk; break; } }
+                            }
+                        } catch(e) {}
+                        startGame(method, assignedPid); await autoLoad(); 
+                        st.nicks = st.nicks || {1:'',2:'',3:'',4:'',5:'',6:''};
+                        st.nicks[assignedPid] = myLocalNick;
+                        if (!st.humanSeats) st.humanSeats = [1, 2];
+                        if (st.humanSeats.indexOf(assignedPid) === -1) st.humanSeats.push(assignedPid);
                         autoSave();
                     }
                     getEl('sync-ui').classList.remove('hidden'); startSyncTimer();
@@ -2160,6 +2240,7 @@
                     st.rules = pendingRules;
                 } else if (data.type === 'players_info') {
                     window.wsPlayers = data.players;
+                    st.humanSeats = Object.keys(data.players).map(Number);
                 } else if (data.type === 'room_full') {
                     setTimeout(() => {
                         nav('scr-lobby', 'scr-game');
@@ -2215,6 +2296,102 @@
         ];
         var webrtcResuming = false;
         var webrtcGatherTimer = null;
+
+        // ═══════════════════════════════════════════════════════════════
+        // SUPORTE A MAIS DE 2 HUMANOS (WebRTC) — topologia estrela
+        //
+        // O Host mantém uma RTCPeerConnection própria pra CADA convidado
+        // ALÉM do primeiro; convidados nunca falam entre si, só com o Host,
+        // que retransmite. O guest #1 (o fluxo de hoje) continua usando as
+        // variáveis clássicas `pc`/`dc` sem nenhuma mudança de comportamento
+        // — isso é 100% aditivo: com `hostPeers` vazio (situação de hoje,
+        // já que só 1v1/2v2 são selecionáveis), autoSave() e o resto do
+        // fluxo funcionam exatamente como antes.
+        //
+        // A tela de "convidar mais um jogador" ainda não existe (fica pra
+        // quando os Trios forem ligados na UI) mas o motor abaixo já
+        // funciona e pode ser chamado assim que essa tela existir.
+        // ═══════════════════════════════════════════════════════════════
+        var hostPeers = {}; // { pid: { pc, dc, gatheringDone } }
+
+        function webrtcBroadcastToExtras(payload, exceptPid) {
+            Object.keys(hostPeers).forEach(function(pidKey) {
+                if (exceptPid && Number(pidKey) === exceptPid) return;
+                var peer = hostPeers[pidKey];
+                if (peer && peer.dc && peer.dc.readyState === 'open') { peer.dc.send(payload); }
+            });
+        }
+
+        // Próximo assento humano livre (menor pid ainda não ocupado), até
+        // o limite de assentos do formato atual. Retorna 0 se a mesa já
+        // está cheia de humanos.
+        function getNextOpenHumanSeat() {
+            var seats = (st.humanSeats && st.humanSeats.length) ? st.humanSeats : [1, 2];
+            for (var p = 1; p <= getNumPlayers(); p++) {
+                if (seats.indexOf(p) === -1) return p;
+            }
+            return 0;
+        }
+
+        // Chamado pelo Host pra convidar mais um jogador além do guest
+        // principal. Gera um código de convite igual ao clássico, só que
+        // já embutindo qual pid o novo jogador vai ocupar.
+        function setupExtraGuestPeer(targetPid) {
+            var peer = { pc: null, dc: null, gatheringDone: false };
+            peer.pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+            peer.dc = peer.pc.createDataChannel('truco');
+            setupExtraPeerDataChannel(targetPid, peer);
+            peer.pc.createOffer().then(function(offer) { peer.pc.setLocalDescription(offer); });
+
+            peer.pc.onicecandidate = function(event) {
+                if (!event.candidate && !peer.gatheringDone) {
+                    peer.gatheringDone = true;
+                    var payload = { sdp: peer.pc.localDescription, nick: myLocalNick, assignedPid: targetPid };
+                    window._extraInviteCodes = window._extraInviteCodes || {};
+                    window._extraInviteCodes[targetPid] = btoa(JSON.stringify(payload));
+                }
+            };
+
+            hostPeers[targetPid] = peer;
+            return peer;
+        }
+
+        // Confirma a resposta (SDP answer) de um convidado extra específico.
+        function webrtcConfirmExtraGuest(targetPid, answerCodeStr) {
+            var peer = hostPeers[targetPid];
+            if (!peer) return;
+            try {
+                var parsed = JSON.parse(atob(answerCodeStr));
+                var answer = parsed.sdp || parsed;
+                if (parsed.nick) { st.nicks = st.nicks || {}; st.nicks[targetPid] = parsed.nick.substring(0, 10); }
+                peer.pc.setRemoteDescription(answer);
+            } catch(e) { showMsg("Código de resposta inválido.", 'neg'); }
+        }
+
+        function setupExtraPeerDataChannel(pid, peer) {
+            peer.dc.onopen = function() {
+                if (!st.humanSeats) st.humanSeats = [1, 2];
+                if (st.humanSeats.indexOf(pid) === -1) st.humanSeats.push(pid);
+                st.version++;
+                var payload = JSON.stringify(st);
+                if (dc && dc.readyState === 'open') { dc.send(payload); }
+                webrtcBroadcastToExtras(payload);
+                showMsg(getPlayerName(pid) + " entrou na mesa!", 'pos');
+                updateUI();
+            };
+            peer.dc.onmessage = function(event) {
+                processLoadedState(JSON.parse(event.data));
+                if (dc && dc.readyState === 'open') { dc.send(event.data); }
+                webrtcBroadcastToExtras(event.data, pid);
+            };
+            peer.dc.onclose = function() {
+                var idx = st.humanSeats ? st.humanSeats.indexOf(pid) : -1;
+                if (idx !== -1) st.humanSeats.splice(idx, 1);
+                delete hostPeers[pid];
+                showMsg(getPlayerName(pid) + " saiu da mesa.", 'neg');
+                updateUI();
+            };
+        }
 
         window.selectLocalMethod = function(method) {
             pendingLocalMethod = method;
@@ -2335,7 +2512,10 @@
                     startGame('webrtc', 2);
                 }
             };
-            dc.onmessage = event => { processLoadedState(JSON.parse(event.data)); };
+            dc.onmessage = event => {
+                processLoadedState(JSON.parse(event.data));
+                if (isHostWebRTC) { webrtcBroadcastToExtras(event.data); }
+            };
             dc.onclose = () => { handleWebrtcDisconnect(); };
         }
 
@@ -2465,8 +2645,10 @@
             
             if (gameMode === 'json' && fileHandle) {
                 try { const writable = await fileHandle.createWritable(); await writable.write(JSON.stringify(st)); await writable.close(); } catch (e) {} 
-            } else if (gameMode === 'webrtc' && dc && dc.readyState === 'open') {
-                dc.send(JSON.stringify(st));
+            } else if (gameMode === 'webrtc') {
+                var payload = JSON.stringify(st);
+                if (dc && dc.readyState === 'open') { dc.send(payload); }
+                if (isHostWebRTC) { webrtcBroadcastToExtras(payload); }
             } else if (gameMode === 'ws' && window.wsConn && window.wsConn.readyState === WebSocket.OPEN) {
                 window.wsConn.send(JSON.stringify({ type: 'state_update', st: st }));
             }
