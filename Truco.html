@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Truco - v0.8.20</title>
+    <title>Truco - v0.8.21</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♣</text></svg>">
     <style>
         /* BASE & THEME */
@@ -101,7 +101,7 @@
             width: 70px; height: 105px; background: var(--card-f); border-radius: 8px; box-shadow: 0 6px 15px rgba(0,0,0,0.5);
             display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 900; font-size: 1.4rem; color: #1e293b;
             position: relative; user-select: none; transform-style: preserve-3d;
-            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-sizing: border-box;
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease, border-color 0.3s ease; box-sizing: border-box;
         }
         .card.red { color: var(--dang); }
         .card.back { background: var(--card-b); border: 3px solid #475569; color: transparent !important; cursor: default; }
@@ -111,14 +111,6 @@
             outline: 2px solid rgba(59, 130, 246, 0.8); outline-offset: 1px;
             box-shadow: 0 0 10px rgba(59, 130, 246, 0.5), inset 0 0 5px rgba(59, 130, 246, 0.2), 0 6px 15px rgba(0,0,0,0.5); 
         }
-
-        /* ANIMAÇÃO DA CARTA VENCEDORA */
-        @keyframes winnerPulse {
-            0% { transform: scale(1) translateY(0); box-shadow: 0 6px 15px rgba(0,0,0,0.5); border: none; }
-            40% { transform: scale(1.15) translateY(-15px); box-shadow: 0 0 35px var(--warn); border: 2px solid var(--warn); z-index: 50; }
-            100% { transform: scale(1.05) translateY(-5px); box-shadow: 0 0 20px var(--warn); border: 2px solid var(--warn); z-index: 50; }
-        }
-        .card.winner-anim { animation: winnerPulse 1s forwards; }
 
         .card-wrapper { position: relative; cursor: pointer; transition: var(--trans); }
         .card-wrapper.interactive:hover { transform: translateY(-10px); z-index: 15; }
@@ -159,13 +151,14 @@
 
         /* BOTÃO DE ESCONDER CARTA */
         #btn-hide-card {
-            position: absolute; right: 15px; bottom: 125px; z-index: 25;
+            position: absolute; right: 15px; bottom: 15px; z-index: 25;
             background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
             padding: 8px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2);
             color: var(--txt); font-size: 0.75rem; font-weight: bold; cursor: pointer;
             display: flex; align-items: center; gap: 8px; transition: var(--trans);
         }
-        #btn-hide-card:hover { background: rgba(255,255,255,0.1); transform: translateY(-2px); }
+        #btn-hide-card:hover:not(.disabled) { background: rgba(255,255,255,0.1); transform: translateY(-2px); }
+        #btn-hide-card.disabled { opacity: 0.4; pointer-events: none; filter: grayscale(1); }
         #btn-hide-card.escondendo { 
             border-color: white !important; box-shadow: 0 0 15px rgba(255,255,255,0.4); 
             background: rgba(255,255,255,0.15); color: white;
@@ -215,7 +208,7 @@
         .mp-tabs { display: flex; gap: 5px; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; }
         .mp-tab { flex: 1; padding: 8px; border-radius: 8px; background: rgba(0,0,0,0.3); border: 1px solid transparent; color: var(--txt-d); font-size: 0.75rem; cursor: pointer; font-weight: bold; }
         .mp-tab.active { background: rgba(59, 130, 246, 0.2); border-color: rgba(59, 130, 246, 0.5); color: white; }
-        #webrtc-data { width: 100%; height: 50px; font-size: 0.7rem; background: rgba(0,0,0,0.5); color: var(--prim); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; padding: 8px; margin-bottom: 10px; box-sizing: border-box; resize: none; }
+        #webrtc-data { width: 100%; height: 50px; font-size: 0.7rem; background: rgba(0,0,0,0.5); color: var(--prim); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; padding: 8px; margin-bottom: 10px; box-sizing: border-box; resize: none; outline: none; }
 
         /* MOBILE ADJUSTMENTS */
         @media (max-width: 768px), (pointer: coarse) {
@@ -239,7 +232,7 @@
             .hand-left { left: -25px; }
             .hand-right { right: -25px; }
 
-            #btn-hide-card { bottom: 100px; right: 5px; padding: 8px; }
+            #btn-hide-card { right: 5px; bottom: 5px; padding: 6px 10px; font-size: 0.7rem; }
         }
     </style>
 </head>
@@ -311,7 +304,7 @@
 
         <!-- MODO WEBRTC -->
         <div id="mp-webrtc-area" class="btn-stack hidden">
-            <textarea id="webrtc-data" placeholder="O código de conexão aparecerá ou deverá ser colado aqui..."></textarea>
+            <textarea id="webrtc-data" placeholder="O código de conexão aparecerá ou deverá ser colado aqui..." onclick="this.select()"></textarea>
             <button class="btn-p" onclick="startMultiplayer('host', 'webrtc')" style="background: rgba(59, 130, 246, 0.8);">1. GERAR CONVITE (HOST)</button>
             <button class="btn-s" onclick="startMultiplayer('guest', 'webrtc')">2. ENTRAR C/ CÓDIGO (GUEST)</button>
             <button class="btn-p" onclick="webrtcConfirmAnswer()" style="background: rgba(16, 185, 129, 0.8);">3. CONFIRMAR RESPOSTA (HOST)</button>
@@ -366,7 +359,7 @@
             
             <div id="box-my" class="hand-my"></div>
             
-            <button id="btn-hide-card" onclick="toggleHide()">ESCONDER <span class="key-box">E</span></button>
+            <button id="btn-hide-card" onclick="toggleHide()" class="hidden">ESCONDER <span class="key-box">E</span></button>
         </div>
 
         <div id="action-bar" class="glass-panel legend-container">
@@ -440,7 +433,7 @@
             firstPlayerOfRound: 1, humanAccepted: false,
             isMaoDe11: false, maoDe11Team: 0, maoDeFerro: false,
             gameFormat: '1v1',
-            scores: { 1: 0, 2: 0 }, trickResults: [],
+            scores: { 1: 0, 2: 0 }, trickResults: [], trickWinners: [],
             hands: { 1: [], 2: [], 3: [], 4: [] }, table: [], lastTable: [],
             playedCards: [], 
             vira: null, manilha: '', deckMode: 'sujo', viraRevealed: false
@@ -605,7 +598,9 @@
                     var idx = parseInt(key) - 1;
                     if (idx < st.hands[myPID].length) playCard(idx);
                 }
-                else if (key === 'E') toggleHide();
+                else if (key === 'E') {
+                    if (!getEl('btn-hide-card').classList.contains('disabled')) toggleHide();
+                }
                 else if (key === 'T' && !getEl('cmd-truco').classList.contains('hidden')) requestTruco();
                 else if (key === 'D' && !getEl('cmd-fold').classList.contains('hidden')) requestFold();
             }
@@ -648,7 +643,7 @@
             st.vazas = { 1: 0, 2: 0 };
             st.firstPlayerOfRound = 1;
             
-            if (gameMode === 'webrtc') {
+            if (gameMode === 'webrtc' || gameMode === 'json') {
                 autoSave(); // Sincroniza o reset pro Guest
             }
             startRound(st.firstPlayerOfRound);
@@ -870,8 +865,14 @@
                 
                 if(isMyTurn && !st.maoDeFerro) btnFold.classList.remove('hidden'); else btnFold.classList.add('hidden');
 
-                if (isMyTurn && !st.maoDeFerro && !st.isMaoDe11 && !(st.trickResults.length === 0 && st.table.length === 0)) {
+                if (isMyTurn && !st.maoDeFerro && !st.isMaoDe11) {
                     btnHide.classList.remove('hidden');
+                    var canHide = (st.trickResults.length > 0 || st.table.length > 0);
+                    if (canHide) btnHide.classList.remove('disabled');
+                    else {
+                        btnHide.classList.add('disabled');
+                        resetHideBtn();
+                    }
                 } else {
                     btnHide.classList.add('hidden');
                     resetHideBtn();
@@ -938,7 +939,6 @@
             for (var k = 0; k < tableToRender.length; k++) {
                 var tblCard = tableToRender[k];
                 var tPos = getUIPos(tblCard.p);
-                // Render hidden cards as 'back'
                 var dom = createCardDOM(tblCard.c, tblCard.hidden, false, 0, false, 'table');
                 dom.style.position = 'absolute';
                 
@@ -952,6 +952,11 @@
                 
                 dom.style.transform = posOffset[tPos];
                 dom.style.zIndex = zIndexMap[tPos] + k;
+                
+                if (st.trickWinners && st.trickWinners.includes(tblCard.p) && st.table.length === 0 && !isDealing) {
+                    dom.firstChild.classList.add('winner-anim');
+                }
+
                 bTb.appendChild(dom);
             }
 
@@ -1092,7 +1097,7 @@
             st.vira = deck.pop(); st.viraRevealed = false;
             st.manilha = activeVals[(activeVals.indexOf(st.vira.v) + 1) % activeVals.length];
             
-            st.table = []; st.lastTable = []; st.trickResults = []; 
+            st.table = []; st.lastTable = []; st.trickResults = []; st.trickWinners = [];
             st.playedCards = []; 
             
             st.handVal = 1; st.trucoBy = 0; st.trucoState = 'none'; 
@@ -1148,7 +1153,7 @@
                 st.scores[2] += 1; 
                 if(st.scores[2] >= 12) { autoSave(); triggerEndGame(false); return; }
                 var nxtFirst = getNextTurn(st.firstPlayerOfRound); 
-                if (myPID === 1 || gameMode === 'pc') { startRound(nxtFirst); } else { st.needsNewRound = true; st.nextFirstPlayer = nxtFirst; autoSave(); }
+                if (myPID === 1 || gameMode !== 'json') { startRound(nxtFirst); } else { st.needsNewRound = true; st.nextFirstPlayer = nxtFirst; autoSave(); }
             }
         };
 
@@ -1187,7 +1192,7 @@
             showMsg("Você correu!", 'neg'); st.scores[getOppTeam(getTeam(myPID))] += st.handVal;
             if(st.scores[getOppTeam(getTeam(myPID))] >= 12) { autoSave(); triggerEndGame(false); return; }
             var nxtFirst = getNextTurn(st.firstPlayerOfRound);
-            if (myPID === 1 || gameMode === 'pc') { startRound(nxtFirst); } else { st.needsNewRound = true; st.nextFirstPlayer = nxtFirst; autoSave(); }
+            if (myPID === 1 || gameMode !== 'json') { startRound(nxtFirst); } else { st.needsNewRound = true; st.nextFirstPlayer = nxtFirst; autoSave(); }
         };
 
         window.playCard = function(idx) {
@@ -1214,44 +1219,41 @@
                 if(pwr > highestPwr) { highestPwr = pwr; winners = [st.table[i].p]; } 
                 else if (pwr === highestPwr && pwr !== -1) { winners.push(st.table[i].p); }
                 
-                if (!st.table[i].hidden) {
-                    st.playedCards.push(st.table[i].c);
-                }
+                if (!st.table[i].hidden) { st.playedCards.push(st.table[i].c); }
             }
             
-            // Destaque da carta vencedora
+            st.trickWinners = winners;
+            
             var bTb = getEl('box-table').children;
             for(var i=0; i<st.table.length; i++) {
-                if(winners.includes(st.table[i].p)) {
-                    bTb[i].classList.add('winner-anim');
-                }
+                if(winners.includes(st.table[i].p)) { bTb[i].classList.add('winner-anim'); }
             }
 
             animLock = true;
+            
+            var team1Wins = winners.some(p => getTeam(p) === 1);
+            var team2Wins = winners.some(p => getTeam(p) === 2);
+            var trickWinnerTeam = 0;
+            if(team1Wins && team2Wins) trickWinnerTeam = 3; else if(team1Wins) trickWinnerTeam = 1; else if(team2Wins) trickWinnerTeam = 2; else trickWinnerTeam = 3;
+            
+            st.trickResults.push(trickWinnerTeam);
+            var nextTurn = 1;
+
+            if(trickWinnerTeam === 3) { 
+                showMsg("Canga (Empate)!", 'neu', 2200); 
+                nextTurn = st.table[0].p; 
+            } else { 
+                var myTeam = getTeam(myPID);
+                var isMyWin = (myTeam === trickWinnerTeam);
+                var msg = st.gameFormat === '1v1' ? (isMyWin ? "Você fez a mão!" : "O Rival fez a mão!") : (isMyWin ? "A mão é de vocês!" : "Os rivais fizeram a mão!");
+                showMsg(msg, isMyWin ? 'pos' : 'neg', 2200); 
+                nextTurn = winners[0]; 
+            }
+
+            autoSave(); 
+
             setTimeout(function() {
-                var team1Wins = winners.some(p => getTeam(p) === 1);
-                var team2Wins = winners.some(p => getTeam(p) === 2);
-                var trickWinnerTeam = 0;
-                if(team1Wins && team2Wins) trickWinnerTeam = 3; else if(team1Wins) trickWinnerTeam = 1; else if(team2Wins) trickWinnerTeam = 2; else trickWinnerTeam = 3;
-                
-                st.trickResults.push(trickWinnerTeam);
-                var nextTurn = 1;
-
-                if(trickWinnerTeam === 3) { 
-                    showMsg("Canga (Empate)!", 'neu'); 
-                    nextTurn = st.table[0].p; 
-                } else { 
-                    var myTeam = getTeam(myPID);
-                    var isMyWin = (myTeam === trickWinnerTeam);
-                    var msg = "";
-                    
-                    if(st.gameFormat === '1v1') { msg = isMyWin ? "Você fez a mão!" : "O Rival fez a mão!"; }
-                    else { msg = isMyWin ? "A mão é de vocês!" : "Os rivais fizeram a mão!"; }
-                    
-                    showMsg(msg, isMyWin ? 'pos' : 'neg'); 
-                    nextTurn = winners[0]; 
-                }
-
+                st.trickWinners = [];
                 st.lastTable = JSON.parse(JSON.stringify(st.table)); 
                 st.table = []; renderMesa(); updateUI();
 
@@ -1261,41 +1263,30 @@
                 var roundWinner = 0;
 
                 if (st.trickResults.length === 2) {
-                    if (t1 === 2) roundWinner = 1;
-                    else if (t2 === 2) roundWinner = 2;
-                    else if (ties === 1) {
-                        if (t1 === 1) roundWinner = 1;
-                        else if (t2 === 1) roundWinner = 2;
-                    }
+                    if (t1 === 2) roundWinner = 1; else if (t2 === 2) roundWinner = 2;
+                    else if (ties === 1) { if (t1 === 1) roundWinner = 1; else if (t2 === 1) roundWinner = 2; }
                 } else if (st.trickResults.length === 3) {
-                    if (t1 > t2) roundWinner = 1;
-                    else if (t2 > t1) roundWinner = 2;
+                    if (t1 > t2) roundWinner = 1; else if (t2 > t1) roundWinner = 2;
                     else if (ties === 3) roundWinner = 3; 
                     else if (ties === 1 && t1 === 1 && t2 === 1) roundWinner = st.trickResults[0]; 
-                    else if (ties === 2) {
-                        if (t1 === 1) roundWinner = 1;
-                        else if (t2 === 1) roundWinner = 2;
-                    }
+                    else if (ties === 2) { if (t1 === 1) roundWinner = 1; else if (t2 === 1) roundWinner = 2; }
                 }
                 
                 if(roundWinner !== 0) {
-                    if (roundWinner === 3) {
-                        showMsg("Rodada Empatada! Ninguém pontua.", 'warn', 3000);
-                    } else {
-                        st.scores[roundWinner] += st.handVal;
-                    }
+                    if (roundWinner === 3) { showMsg("Rodada Empatada! Ninguém pontua.", 'warn', 3000); } 
+                    else { st.scores[roundWinner] += st.handVal; }
                     
                     if(st.scores[1] >= 12 || st.scores[2] >= 12) {
                         var iWon = st.scores[getTeam(myPID)] >= 12; autoSave(); triggerEndGame(iWon);
                     } else {
                         var nxtFirst = getNextTurn(st.firstPlayerOfRound); 
-                        if (myPID === 1 || gameMode === 'pc') { autoSave(); setTimeout(function(){ startRound(nxtFirst); }, 2500); } 
+                        if (myPID === 1 || gameMode !== 'json') { autoSave(); setTimeout(function(){ startRound(nxtFirst); }, 2500); } 
                         else { st.needsNewRound = true; st.nextFirstPlayer = nxtFirst; autoSave(); }
                     }
                 } else { 
                     st.turn = nextTurn; animLock = false; updateUI(); autoSave(); checkAiTurn(); 
                 }
-            }, 1500); // Fica 1.5s mostrando a animação do vencedor antes de limpar
+            }, 2200); 
         }
 
         window.requestTruco = function() {
@@ -1317,7 +1308,7 @@
                 st.scores[callingTeam] += (st.handVal === 3) ? 1 : (st.handVal - 3);
                 if(st.scores[callingTeam] >= 12) { autoSave(); triggerEndGame(false); return; }
                 var nxtFirst = getNextTurn(st.firstPlayerOfRound);
-                if (myPID === 1 || gameMode === 'pc') { startRound(nxtFirst); } else { st.needsNewRound = true; st.nextFirstPlayer = nxtFirst; autoSave(); }
+                if (myPID === 1 || gameMode !== 'json') { startRound(nxtFirst); } else { st.needsNewRound = true; st.nextFirstPlayer = nxtFirst; autoSave(); }
             }
         };
 
@@ -1350,27 +1341,25 @@
             var myTeam = getTeam(pid);
             var my11 = (st.scores[myTeam] === 11);
             
-            var isOppDominatingTable = (state.maxOppTablePower > state.maxMyPower);
-
-            if (aiDifficulty === 1) { // FÁCIL
+            if (aiDifficulty === 1) { 
                 if(state.prob >= 60) accept = true; 
             } 
-            else if (aiDifficulty === 2) { // NORMAL
+            else if (aiDifficulty === 2) { 
                 if(state.prob >= 45) accept = true; 
-                if(state.prob >= 80 && st.handVal < 12 && !my11 && !isOppDominatingTable) raise = true; 
+                if(state.prob >= 80 && st.handVal < 12 && !my11) raise = true; 
             } 
-            else if (aiDifficulty === 3) { // DIFÍCIL (Antigo Insano - 40% Blefe Retruco)
-                if(state.prob >= 20 || state.isNuts) accept = true; 
-                if(accept && st.handVal < 12 && !my11 && !isOppDominatingTable) { 
-                    if(state.isNuts || state.prob >= 50) raise = true;
-                    else if (Math.random() < 0.40) raise = true;
+            else if (aiDifficulty === 3) { 
+                if(state.prob >= 30 || state.isNuts) accept = true; 
+                if(accept && st.handVal < 12 && !my11) { 
+                    if(state.isNuts || state.prob >= 70) raise = true;
+                    else if (Math.random() < 0.25) raise = true;
                 }
             }
-            else if (aiDifficulty === 4) { // INSANO (NOVO - 50% Blefe Agressivo)
-                if(state.prob >= 10 || state.isNuts) accept = true; 
-                if(accept && st.handVal < 12 && !my11 && !isOppDominatingTable) { 
-                    if(state.isNuts || state.prob >= 40) raise = true; 
-                    else if (Math.random() < 0.50) raise = true; 
+            else if (aiDifficulty === 4) { 
+                if(state.prob >= 15 || state.isNuts || Math.random() < 0.3) accept = true; 
+                if(accept && st.handVal < 12 && !my11) { 
+                    if(state.isNuts || state.prob >= 50) raise = true; 
+                    else if (Math.random() < 0.45) raise = true; 
                 }
             }
 
@@ -1406,6 +1395,8 @@
                 var canRaise = !(isPartner && st.humanAccepted); 
 
                 if (canRaise) {
+                    var isFirstTurn = st.trickResults.length === 0 && st.table.length === 0;
+
                     if (aiDifficulty === 1) { 
                         if (state.prob >= 90) askTruco = true; 
                     }
@@ -1413,12 +1404,13 @@
                         if (state.prob >= 75) askTruco = true; 
                     }
                     else if (aiDifficulty === 3) { 
-                        if (state.prob >= 50 || state.isNuts) askTruco = true; 
-                        if (state.prob <= 30 && Math.random() < 0.25) askTruco = true; // 25% blefe em qualquer momento
+                        if (state.prob >= 60 || state.isNuts) askTruco = true; 
+                        if (isFirstTurn && state.prob >= 45 && Math.random() < 0.25) askTruco = true; 
                     }
                     else if (aiDifficulty === 4) { 
-                        if (state.prob >= 40 || state.isNuts) askTruco = true; 
-                        if (Math.random() < 0.50) askTruco = true; // 50% de chance de blefar a qualquer turno! Absoluto!
+                        if (state.prob >= 45 || state.isNuts) askTruco = true; 
+                        if (isFirstTurn && Math.random() < 0.35) askTruco = true; 
+                        if (state.prob <= 30 && Math.random() < 0.35) askTruco = true; 
                     }
                 }
 
@@ -1450,8 +1442,7 @@
                     else if (winningCards.length > 0) playedIdx = winningCards[0].idx; 
                     else {
                         playedIdx = indexedCards[0].idx;
-                        // IA Dificil/Insana esconde cartas ruins se a vaza já está perdida
-                        if (canHide && Math.random() < (aiDifficulty === 4 ? 0.6 : 0.3)) hideThisCard = true;
+                        if (canHide && Math.random() < (aiDifficulty === 4 ? 0.5 : 0.3)) hideThisCard = true;
                     }
                 }
             } else { 
@@ -1483,8 +1474,8 @@
             st.table.push({c: c, p: pid, hidden: hideThisCard}); 
             renderMesa(null, pid); 
             
-            if(st.table.length === getNumPlayers()) { updateUI(); animLock = true; setTimeout(resolveTrick, 1500); } 
-            else { st.turn = getNextTurn(st.turn); updateUI(); animLock = false; checkAiTurn(); }
+            if(st.table.length === getNumPlayers()) { updateUI(); animLock = true; autoSave(); setTimeout(resolveTrick, 1500); } 
+            else { st.turn = getNextTurn(st.turn); updateUI(); animLock = false; autoSave(); checkAiTurn(); }
         }
 
         // --- MULTIPLAYER (JSON E WEBRTC) ---
@@ -1604,25 +1595,21 @@
                 if(st.needsNewRound && myPID === 1) { st.needsNewRound = false; startRound(st.nextFirstPlayer); return; }
 
                 if (oldSt.roundId !== st.roundId) { animDeal(); } 
-                else if (st.trickResults.length > oldSt.trickResults.length) {
+                else if (st.trickResults.length > oldSt.trickResults.length && st.table.length > 0) {
                     var lastWinner = st.trickResults[st.trickResults.length - 1];
-                    // FIX Mágica de Sincronia: Renderizar a última carta do oponente e fazer a animação de vitória no Guest
-                    renderMesa(st.lastTable);
-                    updateTurnGlow();
                     
+                    renderMesa();
                     var bTb = getEl('box-table').children;
-                    var winPIDs = st.lastTable.filter(t => (t.hidden ? -1 : getPower(t.c)) === Math.max(...st.lastTable.map(x => x.hidden ? -1 : getPower(x.c)))).map(t => t.p);
-                    for(var i=0; i<st.lastTable.length; i++) {
-                        if(winPIDs.includes(st.lastTable[i].p)) bTb[i].classList.add('winner-anim');
+                    for(var i=0; i<st.table.length; i++) {
+                        if(st.trickWinners && st.trickWinners.includes(st.table[i].p)) bTb[i].classList.add('winner-anim');
                     }
                     
-                    if(lastWinner === 3) { showMsg("Canga (Empate)!", 'neu'); } else { 
+                    if(lastWinner === 3) { showMsg("Canga (Empate)!", 'neu', 2200); } else { 
                         var isMyWin = (lastWinner === getTeam(myPID));
                         var msg = st.gameFormat === '1v1' ? (isMyWin ? "Você fez a mão!" : "O Rival fez a mão!") : (isMyWin ? "A mão é de vocês!" : "Os rivais fizeram a mão!");
-                        showMsg(msg, isMyWin ? 'pos' : 'neg'); 
+                        showMsg(msg, isMyWin ? 'pos' : 'neg', 2200); 
                     }
                     animLock = true;
-                    setTimeout(function(){ renderMesa(); updateUI(); animLock = false; }, 1500);
                 } 
                 else { 
                     if (st.table.length > oldSt.table.length && st.table[st.table.length - 1].p !== myPID) { renderMesa(null, st.table[st.table.length - 1].p); } else { renderMesa(); }
