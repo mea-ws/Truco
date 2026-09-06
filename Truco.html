@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Truco - v0.12.3</title>
+    <title>Truco - v0.12.5</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♣</text></svg>">
     <style>
         /* THEME VARIABLES */
@@ -111,6 +111,25 @@
         .btn-theme { background: transparent; border: 1px solid var(--glass-border); color: var(--txt); padding: 8px 16px; border-radius: 20px; font-size: 0.8rem; cursor: pointer; }
         .btn-theme:hover { background: var(--btn-s-bg); }
 
+        /* Painel de Opções: começa encaixado atrás da tela inicial (z-index
+           negativo + mesma posição, então fica invisível, "engolido" pelo
+           fundo da tela principal) e desliza pra baixo revelando-se quando
+           aberto. #scr-start precisa de position:relative + overflow visível
+           (sobrescritos abaixo) pra isso funcionar. */
+        #scr-start { position: relative; overflow: visible; }
+        #options-panel {
+            position: absolute; top: 10px; left: 0; right: 0;
+            background: var(--glass-bg);
+            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            border: 1px solid var(--glass-border); border-radius: 20px;
+            padding: 1.5rem 2rem; box-sizing: border-box;
+            z-index: -1; opacity: 0; pointer-events: none;
+            transform: translateY(0) scale(0.92);
+            transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.4s ease;
+        }
+        #options-panel.open { transform: translateY(calc(100% + 16px)) scale(1); opacity: 1; pointer-events: auto; }
+        #options-version-tag { margin-top: 14px; text-align: center; font-size: 0.65rem; color: var(--txt-d); opacity: 0.35; }
+
         .game-area { width: 100vw; height: 100dvh; display: flex; flex-direction: column; padding: 10px 10px max(10px, env(safe-area-inset-bottom)); box-sizing: border-box; position: relative; }
         .glass-panel { background: var(--glass-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-radius: 14px; border: 1px solid var(--glass-border); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15); color: var(--txt); }
 
@@ -180,7 +199,7 @@
         .table.fmt-3v3 .hand-left2 { display: flex; left: -35px; top: 24%; transform: translateY(-50%) rotate(90deg); }
         .table.fmt-3v3 .hand-right2 { display: flex; right: -35px; top: 24%; transform: translateY(-50%) rotate(-90deg); }
         
-        .hand-top.show-partner-cards { top: 34% !important; z-index: 100 !important; }
+        .hand-top.show-partner-cards { z-index: 100 !important; }
         .hand-left2.show-partner-cards { left: 8px !important; right: auto !important; top: 34% !important; width: auto !important; transform: translateY(-50%) rotate(0deg) !important; z-index: 100 !important; }
         .hand-right2.show-partner-cards { right: 8px !important; left: auto !important; top: 34% !important; width: auto !important; transform: translateY(-50%) rotate(0deg) !important; z-index: 100 !important; }
 
@@ -234,6 +253,12 @@
         .action-btn.primary:hover { background: rgba(16, 185, 129, 0.3); }
         .action-btn.danger { background: rgba(239, 68, 68, 0.15); border-color: var(--dang); color: var(--txt); }
         .action-btn.danger:hover { background: rgba(239, 68, 68, 0.3); }
+        /* Sem key-box pra ancorar o tamanho (só texto curto "SAIR"), esse
+           botão sentia mais o delta de padding/font-size que a media query
+           mobile aplica a todo .action-btn — ficava visivelmente menor no
+           desktop e maior no mobile. Uma largura mínima estabiliza o
+           tamanho nas duas telas, igual ao padrão dos outros botões. */
+        #btn-pause-exit { min-width: 96px; justify-content: center; }
 
         .btn-esc, .btn-theme-pause { position: absolute; opacity: 0.5; }
         .btn-esc { right: 15px; }
@@ -271,6 +296,8 @@
         /* ESCOLHA DE MODO (v0.10.2) */
         .choice-card { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; width: 100%; text-align: left; padding: 14px 16px; border-radius: 12px; background: var(--btn-s-bg); border: 1px solid var(--glass-border); color: var(--txt); cursor: pointer; box-sizing: border-box; }
         .choice-card:hover { background: var(--btn-s-hov); transform: translateY(-2px); }
+        .choice-card:disabled { opacity: 0.3; pointer-events: none; }
+        .choice-card:disabled:hover { transform: none; }
         .choice-card .choice-title { font-weight: 900; font-size: 1rem; text-transform: uppercase; letter-spacing: 0.5px; }
         .choice-card .choice-desc { font-size: 0.75rem; color: var(--txt-d); font-weight: normal; text-transform: none; line-height: 1.4; }
 
@@ -344,7 +371,15 @@
             <button class="btn-p" style="background: rgba(59, 130, 246, 0.6);" onclick="nav('scr-start', 'scr-multi-choice')">MULTIPLAYER</button>
         </div>
         <div class="theme-toggle-container">
-            <button class="btn-theme" onclick="toggleTheme()">☀️ MODO CLARO</button>
+            <button class="btn-theme" onclick="toggleOptionsPanel()">⚙️ OPÇÕES</button>
+        </div>
+
+        <div id="options-panel">
+            <div class="section-label" style="margin-top:0;">Opções</div>
+            <div class="theme-toggle-container" style="margin-top:0;">
+                <button class="btn-theme" onclick="toggleTheme()">☀️ MODO CLARO</button>
+            </div>
+            <div id="options-version-tag">v0.12.5</div>
         </div>
     </div>
 
@@ -355,9 +390,9 @@
                 <span class="choice-title">🌐 ONLINE</span>
                 <span class="choice-desc">Jogue com qualquer pessoa pela internet, usando uma sala com código.</span>
             </button>
-            <button class="choice-card" onclick="nav('scr-multi-choice', 'scr-local-choice')">
+            <button class="choice-card" id="btn-multi-local" onclick="nav('scr-multi-choice', 'scr-local-choice')">
                 <span class="choice-title">📡 LOCAL</span>
-                <span class="choice-desc">Jogue com alguém por perto, via arquivo compartilhado ou conexão direta.</span>
+                <span class="choice-desc" id="btn-multi-local-desc">Jogue com alguém por perto, via arquivo compartilhado ou conexão direta.</span>
             </button>
         </div>
         <button class="btn-s" style="width: 100%; margin-top: 15px;" onclick="nav('scr-multi-choice', 'scr-start')">VOLTAR</button>
@@ -403,17 +438,17 @@
         <h2>MULTIPLAYER LOCAL</h2>
 
         <div class="section-label">Seu Nickname:</div>
-        <input type="text" id="local-nick" maxlength="10" placeholder="Seu Nickname" style="padding: 8px; border-radius: 8px; border: 1px solid var(--glass-border); background: var(--btn-s-bg); color: var(--txt); width: 100%; box-sizing: border-box; text-align: center; font-weight: bold; margin-bottom: 15px;">
+        <input type="text" id="local-nick" maxlength="15" placeholder="Seu Nickname" style="padding: 8px; border-radius: 8px; border: 1px solid var(--glass-border); background: var(--btn-s-bg); color: var(--txt); width: 100%; box-sizing: border-box; text-align: center; font-weight: bold; margin-bottom: 15px;">
 
         <div class="section-label">Como deseja conectar?</div>
         <div class="btn-stack">
-            <button class="choice-card" onclick="selectLocalMethod('json')">
+            <button class="choice-card" id="btn-method-json" onclick="selectLocalMethod('json')">
                 <span class="choice-title">📁 ARQUIVO LOCAL</span>
-                <span class="choice-desc">Um cria o arquivo, o outro abre — ideal para computadores na mesma rede ou pasta compartilhada. Só no Chrome/Edge Desktop.</span>
+                <span class="choice-desc" id="btn-method-json-desc">Um cria o arquivo, o outro abre — ideal para computadores na mesma rede ou pasta compartilhada. Só no Chrome/Edge Desktop.</span>
             </button>
-            <button class="choice-card" onclick="selectLocalMethod('webrtc')">
+            <button class="choice-card" id="btn-method-webrtc" onclick="selectLocalMethod('webrtc')">
                 <span class="choice-title">📶 CONEXÃO DIRETA</span>
-                <span class="choice-desc">Conexão ponto a ponto via código — funciona na mesma rede ou pela internet, sem servidor.</span>
+                <span class="choice-desc" id="btn-method-webrtc-desc">Conexão ponto a ponto via código — funciona na mesma rede ou pela internet, sem servidor.</span>
             </button>
         </div>
 
@@ -535,7 +570,7 @@
         <h2>MULTIPLAYER ONLINE</h2>
 
         <div class="section-label">Seu Nickname:</div>
-        <input type="text" id="ws-nick" maxlength="10" placeholder="Seu Nickname" style="padding: 8px; border-radius: 8px; border: 1px solid var(--glass-border); background: var(--btn-s-bg); color: var(--txt); width: 100%; box-sizing: border-box; text-align: center; font-weight: bold; margin-bottom: 15px;">
+        <input type="text" id="ws-nick" maxlength="15" placeholder="Seu Nickname" style="padding: 8px; border-radius: 8px; border: 1px solid var(--glass-border); background: var(--btn-s-bg); color: var(--txt); width: 100%; box-sizing: border-box; text-align: center; font-weight: bold; margin-bottom: 15px;">
 
         <div class="section-label">Regras do Jogo:</div>
         <div class="diff-selector">
@@ -578,15 +613,15 @@
         <h2 id="online-room-title">SALA ONLINE</h2>
 
         <div class="section-label">ID da Sala:</div>
-        <input type="text" id="ws-room" placeholder="ID da Sala" style="padding: 8px; border-radius: 8px; border: 1px solid var(--glass-border); background: var(--btn-s-bg); color: var(--txt); width: 100%; box-sizing: border-box; text-align: center; font-size: 0.9rem; margin-bottom: 15px;">
+        <input type="text" id="ws-room" oninput="updateOnlineRoomButtons()" placeholder="ID da Sala" style="padding: 8px; border-radius: 8px; border: 1px solid var(--glass-border); background: var(--btn-s-bg); color: var(--txt); width: 100%; box-sizing: border-box; text-align: center; font-size: 0.9rem; margin-bottom: 15px;">
 
         <div id="online-room-hostguest" class="btn-stack">
             <button class="btn-p" onclick="startMultiplayer('host', 'ws')">CRIAR SALA</button>
-            <button class="btn-s" onclick="startMultiplayer('guest', 'ws')">ENTRAR NA SALA</button>
+            <button class="btn-s" id="btn-ws-join" disabled onclick="startMultiplayer('guest', 'ws')">ENTRAR NA SALA</button>
         </div>
 
         <div id="online-room-spectator" class="btn-stack hidden">
-            <button class="btn-p" onclick="startMultiplayer('spectator', 'ws')">ASSISTIR</button>
+            <button class="btn-p" id="btn-ws-watch" disabled onclick="startMultiplayer('spectator', 'ws')">ASSISTIR</button>
         </div>
 
         <button class="btn-s" style="width: 100%; margin-top: 15px;" onclick="nav('scr-online-room', 'scr-online')">VOLTAR</button>
@@ -688,9 +723,8 @@
             </div>
 
             <div id="grp-pause-menu" class="legend-group">
-                <button id="btn-theme-pause" class="action-btn btn-theme-pause" onclick="toggleTheme()"><span class="key-box">W</span> <span id="theme-pause-icon">☀️</span></button>
                 <button id="btn-invite-more" class="action-btn hidden" onclick="startInviteMoreFlow('scr-game')">➕ CONVIDAR</button>
-                <button class="action-btn danger" onclick="requestExit()">SAIR</button>
+                <button id="btn-pause-exit" class="action-btn danger" onclick="requestExit()">SAIR</button>
             </div>
 
             <div id="grp-confirm-exit" class="legend-group">
@@ -698,6 +732,15 @@
                 <button class="action-btn danger" onclick="location.reload()"><span class="key-box highlight">S</span> SIM</button>
                 <button class="action-btn" onclick="cancelExit()"><span class="key-box">N</span> NÃO</button>
             </div>
+
+            <!-- Fica FORA do grp-pause-menu de propósito: esse grupo recebe a
+                 animação slideUp (que usa transform), e um transform ativo no
+                 ancestral vira "containing block" pra filhos position:absolute
+                 — fazia esse botão nascer preso à posição do grupo animado e
+                 só "pular" pra posição certa quando a animação terminava. Como
+                 irmão direto do action-bar (igual ao botão ⋮), fica imune a
+                 isso. Visibilidade controlada por JS via syncThemeBtnVisibility(). -->
+            <button id="btn-theme-pause" class="action-btn btn-theme-pause hidden" onclick="toggleTheme()"><span class="key-box">W</span> <span id="theme-pause-icon">☀️</span></button>
 
             <button id="btn-pause-toggle" class="action-btn btn-esc" onclick="togglePauseMenu()"><span class="key-box">ESC</span> ⋮</button>
         </div>
@@ -775,7 +818,15 @@
         var pendingRules = 'paulista';
         var pendingHumanCount = 2;
 
-        window.nav = function(f, t) { document.getElementById(f).classList.add('hidden'); document.getElementById(t).classList.remove('hidden'); };
+        window.nav = function(f, t) { 
+            document.getElementById(f).classList.add('hidden'); 
+            document.getElementById(t).classList.remove('hidden'); 
+            if (f === 'scr-start') { var op = getEl('options-panel'); if (op) op.classList.remove('open'); }
+        };
+
+        window.toggleOptionsPanel = function() {
+            getEl('options-panel').classList.toggle('open');
+        };
         function getEl(id) { return document.getElementById(id); }
 
         window.toggleTheme = function() {
@@ -920,6 +971,29 @@
             return val.toString();
         }
 
+        // Quem pediu/aumentou/aceitou/correu do Truco, pra montar mensagens
+        // dinâmicas (item 6, v0.12.5). Usa o nickname se for um jogador
+        // humano com nome definido no Multiplayer; senão cai no genérico
+        // "O Rival"/"Os Rivais", já na pluralidade certa pro formato (1v1
+        // é sempre uma pessoa só; Duplas/Trios são um time, por isso plural
+        // mesmo que só um jogador específico tenha clicado o botão).
+        function trucoActor(pid) {
+            var nick = (gameMode !== 'pc' && st.nicks && st.nicks[pid]) ? String(st.nicks[pid]).trim() : '';
+            if (nick) return { name: nick, plural: false };
+            if (myPID !== 0 && getTeam(pid) === getTeam(myPID)) return { name: 'Seu Parceiro', plural: false };
+            return { name: (st.gameFormat === '1v1' ? 'O Rival' : 'Os Rivais'), plural: st.gameFormat !== '1v1' };
+        }
+
+        // Monta "Fulano pediu Truco!" / "Os Rivais pediram Doze!" / "O Rival
+        // aceitou!" etc. — verbSing/verbPlur são o verbo no singular/plural
+        // ("pediu"/"pediram"); val (opcional) é o valor do Truco em jogo.
+        function trucoActionText(pid, verbSing, verbPlur, val) {
+            var actor = trucoActor(pid);
+            var verb = actor.plural ? verbPlur : verbSing;
+            var suffix = (val !== undefined) ? (' ' + getTrucoName(val) + '!') : '!';
+            return actor.name + ' ' + verb + suffix;
+        }
+
         function getTeam(pid) { if(!pid || pid === 0) return 0; return (pid % 2 === 1) ? 1 : 2; }
         function getOppTeam(team) { return team === 1 ? 2 : 1; }
         function getNumPlayers() { return FORMAT_SEATS[st.gameFormat] || 2; }
@@ -964,6 +1038,11 @@
             getEl('grp-partner-fold').classList.remove('active');
             getEl('grp-pause-menu').classList.remove('active');
             if (id) getEl(id).classList.add('active');
+            // Botão de tema vive FORA do grp-pause-menu (ver comentário no HTML
+            // — evita o bug do "pulo" causado pelo transform da animação do
+            // grupo), então sua visibilidade é sincronizada aqui, centralizado,
+            // toda vez que o grupo ativo muda.
+            getEl('btn-theme-pause').classList.toggle('hidden', id !== 'grp-pause-menu');
         }
 
         // Estado (só de UI, não faz parte de st) do Menu de Pausa — ver
@@ -1661,7 +1740,7 @@
                 btnHide.setAttribute('disabled', 'true'); btnHide.classList.add('disabled');
                 if (getTeam(st.trucoBy) !== getTeam(myPID) && myPID !== 0) {
                     if(!isExiting && !isPaused) { setBottomGroup('grp-respond'); actionBar.classList.add('danger-zone'); }
-                    uiTurn.innerText = "⚠️ DECIDA! ⚠️"; uiTurn.style.color = "var(--warn)";
+                    uiTurn.innerText = trucoActionText(st.trucoBy, 'pediu', 'pediram', st.proposedVal).toUpperCase(); uiTurn.style.color = "var(--warn)";
                     
                     if(st.gameFormat !== '1v1') {
                         var partners = getPartnerPIDs();
@@ -1895,6 +1974,23 @@
 
         function animDeal() {
             animLock = true; 
+
+            // Se a Mão de 11 anterior deixou alguma caixa de mão "revelada"
+            // (show-partner-cards), limpa isso SEM transição antes de medir
+            // as posições logo abaixo — senão o retorno de top/left/transform
+            // (que tem transition de 0.4s nessas caixas) ainda estaria "no
+            // meio do caminho" quando o baralho começa a voar, fazendo a
+            // animação de entrega desta rodada mirar numa posição errada.
+            ['box-top', 'box-left2', 'box-right2'].forEach(function(id) {
+                var el = getEl(id);
+                if (el && el.classList.contains('show-partner-cards')) {
+                    el.style.transition = 'none';
+                    el.classList.remove('show-partner-cards');
+                    void el.offsetWidth;
+                    el.style.transition = '';
+                }
+            });
+
             renderMesa(null, null, true, false); 
 
             var allWrappers = document.querySelectorAll('.table .card-wrapper, #vira-container .card-wrapper');
@@ -2393,18 +2489,16 @@
             if(raise) {
                 st.proposedVal = getNextTrucoVal(st.proposedVal); 
                 st.trucoBy = pid; st.lastTruco = pid;
-                var tMsg = st.gameFormat === '1v1' ? "O Rival pediu " : "Os Rivais pediram ";
-                showMsg(tMsg + getTrucoName(st.proposedVal) + "!", 'neg');
+                showMsg(trucoActionText(pid, 'pediu', 'pediram', st.proposedVal), 'neg');
                 animLock = false; updateUI(); updateTurnGlow(); autoSave(); checkAiTrucoDecision(); return;
             }
             if(accept) {
                 st.handVal = st.proposedVal; st.proposedVal = 0;
                 st.aiJustAccepted = true; 
-                showMsg(st.gameFormat === '1v1' ? "O Rival ACEITOU!" : "Os Rivais ACEITARAM!", 'neg');
+                showMsg(trucoActionText(pid, 'ACEITOU', 'ACEITARAM'), 'neg');
                 st.trucoState = 'none'; animLock = false; updateUI(); autoSave(); checkAiTurn();
             } else {
-                var msg = st.gameFormat === '1v1' ? "O Rival CORREU!" : "Os Rivais CORRERAM!";
-                showMsg(msg, 'pos');
+                showMsg(trucoActionText(pid, 'CORREU', 'CORRERAM'), 'pos');
                 st.trucoState = 'none';
                 var pts = st.handVal;
                 st.scores[getOppTeam(myTeam)] += pts; animLock = false;
@@ -2471,8 +2565,7 @@
                 if(askTruco) {
                     st.proposedVal = getNextTrucoVal(st.handVal);
                     st.trucoBy = pid; st.lastTruco = pid; st.trucoState = 'pending';
-                    var tMsg = getPlayerName(pid) + " pediu ";
-                    showMsg(tMsg + getTrucoName(st.proposedVal) + "!", 'neu');
+                    showMsg(trucoActionText(pid, 'pediu', 'pediram', st.proposedVal), 'neu');
                     window.lastAdviceLevel = 0; animLock = false;
                     updateUI(); updateTurnGlow(); autoSave(); checkAiTrucoDecision(); return;
                 }
@@ -2839,7 +2932,7 @@
             try {
                 var parsed = await unpackCode(answerCodeStr);
                 var answer = parsed.sdp || parsed;
-                if (parsed.nick) { st.nicks = st.nicks || {}; st.nicks[targetPid] = parsed.nick.substring(0, 10); }
+                if (parsed.nick) { st.nicks = st.nicks || {}; st.nicks[targetPid] = parsed.nick.substring(0, 15); }
                 peer.pc.setRemoteDescription(answer);
             } catch(e) { showMsg("Código de resposta inválido.", 'neg'); }
         }
@@ -2923,7 +3016,7 @@
         window.selectLocalMethod = function(method) {
             pendingLocalMethod = method;
             var nickVal = getEl('local-nick').value.trim();
-            myLocalNick = (nickVal || 'Jogador').substring(0, 10);
+            myLocalNick = (nickVal || 'Jogador').substring(0, 15);
             try { localStorage.setItem('trucoNick', myLocalNick); } catch(e) {}
 
             if (method === 'json') {
@@ -2953,13 +3046,22 @@
         // as regras da sala já criada por outra pessoa).
         window.goToOnlineRoomScreen = function(isSpectator) {
             var nick = getEl('ws-nick').value.trim();
-            if (nick) { myLocalNick = nick.substring(0, 10); try { localStorage.setItem('trucoNick', myLocalNick); } catch(e) {} }
+            if (nick) { myLocalNick = nick.substring(0, 15); try { localStorage.setItem('trucoNick', myLocalNick); } catch(e) {} }
 
             getEl('online-room-hostguest').classList.toggle('hidden', isSpectator);
             getEl('online-room-spectator').classList.toggle('hidden', !isSpectator);
             getEl('online-room-title').innerText = isSpectator ? 'ASSISTIR PARTIDA' : 'SALA ONLINE';
             getEl('ws-room').value = '';
+            updateOnlineRoomButtons();
             nav('scr-online', 'scr-online-room');
+        };
+
+        // Sem ID de Sala digitado, ENTRAR NA SALA e ASSISTIR ficam desativados
+        // (CRIAR SALA não precisa — o servidor gera um ID sozinho se ficar em branco).
+        window.updateOnlineRoomButtons = function() {
+            var hasRoom = getEl('ws-room').value.trim().length > 0;
+            getEl('btn-ws-join').disabled = !hasRoom;
+            getEl('btn-ws-watch').disabled = !hasRoom;
         };
 
         function enterWebrtcConnectScreen(fromScreen) {
@@ -3080,7 +3182,7 @@
                 if(!ansStr) { webrtcSetStatus('Cole a resposta do outro jogador antes de confirmar.', 'error'); return; }
                 var parsed = await unpackCode(ansStr);
                 var answer = parsed.sdp || parsed;
-                window._webrtcRemoteNick = (parsed.nick || 'Guest').substring(0, 10);
+                window._webrtcRemoteNick = (parsed.nick || 'Guest').substring(0, 15);
                 webrtcSetStatus('🔄 Conectando...', 'connecting');
                 pc.setRemoteDescription(answer).catch(function() { webrtcSetStatus('❌ Código de resposta inválido.', 'error'); getEl('webrtc-btn-retry').classList.remove('hidden'); });
             } catch(e) { webrtcSetStatus('❌ Código mal formatado. Confira e cole novamente.', 'error'); getEl('webrtc-btn-retry').classList.remove('hidden'); }
@@ -3092,7 +3194,7 @@
                 if(!offStr) { webrtcSetStatus('Cole o código do Host antes de continuar.', 'error'); return; }
                 var parsed = await unpackCode(offStr);
                 var offer = parsed.sdp || parsed;
-                window._webrtcRemoteNick = (parsed.nick || 'Host').substring(0, 10);
+                window._webrtcRemoteNick = (parsed.nick || 'Host').substring(0, 15);
                 window._webrtcAssignedPid = parsed.assignedPid || 2;
                 webrtcSetStatus('🔄 Gerando resposta...', 'connecting');
                 pc.setRemoteDescription(offer).then(function() {
@@ -3259,7 +3361,7 @@
                     if (st.table.length > oldSt.table.length && st.table[st.table.length - 1].p !== myPID) { renderMesa(null, st.table[st.table.length - 1].p); } else { renderMesa(); }
                 }
 
-                if (st.trucoState === 'pending' && oldSt.trucoState !== 'pending' && getTeam(st.trucoBy) !== getTeam(myPID)) { showMsg(getPlayerName(st.trucoBy) + " pediu " + getTrucoName(st.proposedVal) + "!", 'neg'); } 
+                if (st.trucoState === 'pending' && oldSt.trucoState !== 'pending' && getTeam(st.trucoBy) !== getTeam(myPID)) { showMsg(trucoActionText(st.trucoBy, 'pediu', 'pediram', st.proposedVal), 'neg'); } 
                 else if (st.trucoState === 'none' && oldSt.trucoState === 'pending') { if (st.scores[1] === oldSt.scores[1] && st.scores[2] === oldSt.scores[2]) { showMsg("Truco Aceito!", 'warn'); } }
 
                 updateUI(); checkAiTurn(); checkAiTrucoDecision();
@@ -3303,6 +3405,29 @@
         if (navigator.share) {
             document.querySelectorAll('.btn-share-code').forEach(function(b) { b.classList.remove('hidden'); });
         }
+
+        // Detecção de suporte do navegador aos métodos de Multiplayer Local.
+        // Arquivo Local precisa da File System Access API (só Chrome/Edge
+        // Desktop); Conexão Direta precisa de WebRTC. Se nenhum dos dois for
+        // suportado, desativa o botão LOCAL inteiro (sobra só o Online).
+        (function detectLocalMultiplayerSupport() {
+            var hasJson = !!(window.showSaveFilePicker && window.showOpenFilePicker);
+            var hasWebRTC = !!window.RTCPeerConnection;
+            var UNSUPPORTED_TXT = "Opção Desativada - Navegador não suportado";
+
+            if (!hasJson) {
+                getEl('btn-method-json').setAttribute('disabled', 'true');
+                getEl('btn-method-json-desc').innerText = UNSUPPORTED_TXT;
+            }
+            if (!hasWebRTC) {
+                getEl('btn-method-webrtc').setAttribute('disabled', 'true');
+                getEl('btn-method-webrtc-desc').innerText = UNSUPPORTED_TXT;
+            }
+            if (!hasJson && !hasWebRTC) {
+                getEl('btn-multi-local').setAttribute('disabled', 'true');
+                getEl('btn-multi-local-desc').innerText = UNSUPPORTED_TXT;
+            }
+        })();
 
         checkForBackup();
 
