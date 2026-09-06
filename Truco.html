@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Truco - v0.9.2</title>
+    <title>Truco - v0.9.9</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♣</text></svg>">
     <style>
         /* THEME VARIABLES */
@@ -34,8 +34,8 @@
         body.theme-light {
             --bg: #e2e8f0; 
             --surf: #ffffff; --txt: #0f172a; --txt-d: #475569;
-            --glass-bg: rgba(255, 255, 255, 0.5); /* Glassmorphism Restaurado */
-            --notify-bg: rgba(255, 255, 255, 0.95); /* Notificações com fundo sólido/legível */
+            --glass-bg: rgba(255, 255, 255, 0.5); 
+            --notify-bg: rgba(255, 255, 255, 0.95); 
             --glass-border: rgba(0,0,0,0.15);
             --btn-s-bg: rgba(0,0,0,0.08); --btn-s-hov: rgba(0,0,0,0.15);
             --card-f: #ffffff; --card-b: #94a3b8; --card-txt: #0f172a;
@@ -56,7 +56,7 @@
             transition: background-color 0.6s ease, color 0.6s ease;
         }
 
-        /* BACKGROUND CROSSFADE PARA TRANSIÇÃO SUAVE DE GRADIENTES */
+        /* BACKGROUND CROSSFADE */
         .theme-bg { position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; z-index: -3; transition: opacity 0.6s ease; pointer-events: none; }
         .light-bg { background: radial-gradient(circle at 20% 30%, #ffffff 0%, #cbd5e1 60%); opacity: 0; }
         .dark-bg { background: radial-gradient(circle at 20% 30%, #1e293b 0%, #0a0f1a 60%); opacity: 1; }
@@ -67,7 +67,6 @@
             transition: background 0.6s ease, background-color 0.6s ease, border-color 0.6s ease, color 0.6s ease, box-shadow 0.6s ease, transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
         
-        /* DYNAMIC BACKGROUND GLOWS BASED ON DIFFICULTY */
         body::before, body::after { content: ''; position: absolute; width: 60vw; height: 60vw; z-index: -1; transition: background 0.8s ease; border-radius: 50%; filter: blur(80px); }
         body::before { top: -20%; right: -20%; }
         body::after { bottom: -20%; left: -20%; }
@@ -79,7 +78,6 @@
 
         .hidden { display: none !important; }
 
-        /* UI PANELS - GLASSMORPHISM */
         .panel { 
             width: 90%; max-width: 400px; 
             background: var(--glass-bg); 
@@ -101,7 +99,6 @@
         .diff-selector { display: flex; gap: 8px; margin-bottom: 15px; }
         .diff-btn { flex: 1; padding: 6px; border-radius: 8px; border: 1px solid var(--glass-border); background: transparent; color: var(--txt-d); font-size: 0.75rem; cursor: pointer; }
         
-        /* Glassmorphism Active Buttons */
         .diff-btn.active { background: rgba(16, 185, 129, 0.25); border-color: rgba(16, 185, 129, 0.8); box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4); color: var(--txt); font-weight: bold; transform: scale(1.05); }
         .diff-btn.facil.active { background: rgba(59, 130, 246, 0.25); border-color: rgba(59, 130, 246, 0.8); box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4); }
         .diff-btn.dificil.active { background: rgba(239, 68, 68, 0.25); border-color: rgba(239, 68, 68, 0.8); box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4); }
@@ -110,20 +107,16 @@
 
         .section-label { color: var(--txt-d); font-size: 0.8rem; margin-bottom: 8px; text-align: left; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
 
-        /* THEME TOGGLE */
         .theme-toggle-container { margin-top: 20px; display: flex; justify-content: center; }
         .btn-theme { background: transparent; border: 1px solid var(--glass-border); color: var(--txt); padding: 8px 16px; border-radius: 20px; font-size: 0.8rem; cursor: pointer; }
         .btn-theme:hover { background: var(--btn-s-bg); }
 
-        /* GAME AREA & GLASS PANELS */
         .game-area { width: 100vw; height: 100dvh; display: flex; flex-direction: column; padding: 10px 10px max(10px, env(safe-area-inset-bottom)); box-sizing: border-box; position: relative; }
         .glass-panel { background: var(--glass-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-radius: 14px; border: 1px solid var(--glass-border); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15); color: var(--txt); }
 
-        /* TOP HUD */
-        .hud-container { position: relative; overflow: hidden; margin-bottom: 10px; z-index: 30; flex-shrink: 0; min-height: 66px; height: 66px; display: flex; align-items: center; justify-content: center; box-sizing: border-box; }
+        .hud-container { position: relative; overflow: hidden; margin-bottom: 10px; z-index: 30; flex-shrink: 0; min-height: 66px; display: flex; align-items: center; justify-content: center; box-sizing: border-box; }
         .hud-content { display: flex; justify-content: space-between; align-items: center; padding: 8px 16px; width: 100%; transition: opacity 0.3s ease, transform 0.3s ease; }
         
-        /* NOTIFICATIONS - SOLID BACKGROUND */
         .stadium-display { position: absolute; top: -100%; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 1.1rem; letter-spacing: 1px; text-transform: uppercase; background: var(--notify-bg); backdrop-filter: blur(8px); transition: top 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 21; pointer-events: none; color: var(--txt); }
         
         .hud-container.show-msg .stadium-display { top: 0; }
@@ -133,10 +126,10 @@
         .hud-container.notify-neu { border-color: var(--warn); box-shadow: 0 0 20px rgba(234, 179, 8, 0.2); }
 
         .hud-side { flex: 1; display: flex; flex-direction: column; min-width: 0; }
-        .hud-center { flex: 1; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 0; }
+        .hud-center { flex: 1; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 0; padding: 0 5px; }
         .hud-right { text-align: right; align-items: flex-end; }
         
-        #ui-turn { font-size: 0.85rem; font-weight:bold; color: var(--txt-d); white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+        #ui-turn { font-size: 0.8rem; font-weight:bold; color: var(--txt-d); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; max-width: 130px; display: inline-block; }
 
         .vaza-track { display: flex; gap: 5px; margin-top: 5px; }
         .vaza-pip { width: 10px; height: 10px; border-radius: 50%; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); }
@@ -144,7 +137,6 @@
         .vaza-pip.loss { background: var(--dang); border-color: var(--dang); }
         .vaza-pip.tie { background: var(--warn); border-color: var(--warn); }
 
-        /* TABLE & CARDS */
         .table { flex: 1 1 auto; position: relative; border-radius: 16px; border: 2px dashed var(--glass-border); display: flex; flex-direction: column; justify-content: space-between; padding: 15px; overflow: hidden; z-index: 10; }
 
         .card { 
@@ -175,19 +167,19 @@
         .card-wrapper.interactive:hover { transform: translateY(-10px); z-index: 15; }
         .key-hint { position: absolute; bottom: -22px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.6); color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; border: 1px solid rgba(255,255,255,0.2); pointer-events: none; }
 
-        /* PLAYER POSITIONS */
         .hand-my { display: flex; justify-content: center; gap: 15px; height: 105px; width: 100%; margin-bottom: 5px; z-index: 15; }
-        .hand-top { position: absolute; top: -35px; left: 50%; transform: translateX(-50%); display: flex; justify-content: center; gap: 8px; z-index: 5; }
+        .hand-top { position: absolute; top: -35px; left: 50%; transform: translateX(-50%); display: flex; justify-content: center; gap: 8px; z-index: 5; transition: top 0.4s ease; }
         .hand-left { position: absolute; left: -35px; top: 50%; transform: translateY(-50%) rotate(90deg); display: flex; justify-content: center; gap: 8px; z-index: 5; }
         .hand-right { position: absolute; right: -35px; top: 50%; transform: translateY(-50%) rotate(-90deg); display: flex; justify-content: center; gap: 8px; z-index: 5; }
         
+        .hand-top.show-partner-cards { top: 10px !important; z-index: 100 !important; }
+
         .hand-top .card, .hand-left .card, .hand-right .card { width: 50px; height: 75px; }
         .hand-top .card::after, .hand-left .card::after, .hand-right .card::after { font-size: 1.8rem; }
 
         .played-area { display: flex; justify-content: center; align-items: center; width: 100%; height: 100%; position: relative; }
         #box-table { position: relative; width: 180px; height: 180px; display: flex; align-items: center; justify-content: center; }
 
-        /* DECK PILE E VIRA */
         #deck-area { position: absolute; top: 15px; right: 10px; z-index: 10; display: flex; flex-direction: row; align-items: center; gap: 8px; }
         #deck-area-label { font-size: 0.75rem; color: var(--txt-d); font-weight: bold; letter-spacing: 2px; writing-mode: vertical-rl; opacity: 0.8; margin-bottom: 4px; }
         .deck-stack-container { position: relative; width: 50px; height: 75px; }
@@ -196,7 +188,6 @@
         
         #vira-container { position: absolute; top: 15px; left: -35px; transform: rotate(-15deg); z-index: 5; }
 
-        /* GHOST MANILHA */
         #ghost-manilha { position: absolute; top: 15px; left: 10px; z-index: 10; display: flex; flex-direction: row; align-items: center; gap: 8px; }
         #ghost-manilha.hidden { display: none !important; }
         #ghost-m-label { font-size: 0.75rem; color: var(--prim); font-weight: bold; letter-spacing: 2px; writing-mode: vertical-rl; transform: rotate(180deg); opacity: 0.8; margin-bottom: 4px; }
@@ -208,7 +199,6 @@
             color: var(--txt); display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
 
-        /* BOTÃO DE ESCONDER CARTA FIXO */
         #btn-hide-card {
             position: absolute; right: 15px; bottom: 15px; z-index: 25;
             background: var(--glass-bg); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
@@ -222,11 +212,10 @@
         body.theme-dark #btn-hide-card.escondendo { border-color: white !important; box-shadow: 0 0 15px rgba(255,255,255,0.4); background: rgba(255,255,255,0.15); color: white; }
         body.theme-light #btn-hide-card.escondendo { border-color: #334155 !important; box-shadow: 0 0 15px rgba(0,0,0,0.2); background: rgba(0,0,0,0.15); color: #0f172a; }
 
-        /* BOTTOM HUD ANIMADO */
-        .legend-container { position: relative; margin-top: 10px; padding: 10px 16px; min-height: 66px; height: 66px; box-sizing: border-box; z-index: 20; overflow: hidden; flex-shrink: 0; display: flex; justify-content: center; align-items: center; }
-        
-        .legend-group { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; gap: 12px; align-items: center; justify-content: center; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); opacity: 0; transform: translateY(100%); pointer-events: none; }
-        .legend-group.active { opacity: 1; transform: translateY(0); pointer-events: auto; }
+        .legend-container { position: relative; margin-top: 10px; padding: 10px 16px; min-height: 66px; box-sizing: border-box; z-index: 20; display: flex; justify-content: center; align-items: center; }
+        .legend-group { display: none; gap: 12px; align-items: center; justify-content: center; width: 100%; flex-wrap: wrap; }
+        .legend-group.active { display: flex; animation: slideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
         
         .action-btn { background: var(--btn-s-bg); border: 1px solid var(--glass-border); padding: 6px 12px; border-radius: 8px; color: var(--txt); display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
         .action-btn:hover { background: var(--btn-s-hov); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
@@ -245,15 +234,13 @@
         .static-info { font-size: 0.8rem; color: var(--txt-d); display: flex; align-items: center; gap: 6px; pointer-events: none; user-select: none; text-transform: uppercase; }
 
         .danger-zone { animation: dangerPulse 1s infinite alternate ease-in-out; }
-        @keyframes dangerPulse { 0% { border-color: rgba(234, 179, 8, 0.4); box-shadow: 0 0 10px rgba(234, 179, 8, 0.2); background: rgba(234, 179, 8, 0.05); } 100% { border-color: rgba(234, 179, 8, 1); box-shadow: 0 0 30px rgba(234, 179, 8, 0.6); background: rgba(234, 179, 8, 0.15); } }
+        @keyframes dangerPulse { 0% { border-color: rgba(234, 179, 8, 0.4); box-shadow: 0 0 10px rgba(234, 179, 8, 0.2); } 100% { border-color: rgba(234, 179, 8, 1); box-shadow: 0 0 30px rgba(234, 179, 8, 0.6); } }
 
-        /* SYNC UI */
-        #sync-ui { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); background: var(--btn-s-bg); padding: 4px 10px; border-radius: 6px; font-size: 0.7rem; font-weight: bold; border: 1px solid var(--glass-border); display: flex; align-items: center; gap: 6px; z-index: 5; }
+        #sync-ui { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); background: var(--btn-s-bg); padding: 4px 10px; border-radius: 6px; font-size: 0.7rem; font-weight: bold; border: 1px solid var(--glass-border); display: flex; align-items: center; gap: 6px; transition: opacity 0.3s; z-index: 5; }
         .sync-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--prim); box-shadow: 0 0 6px var(--prim); animation: blink 1.5s infinite ease-in-out; }
         @keyframes blink { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.8); } 100% { opacity: 1; transform: scale(1); } }
 
-        /* END GAME OVERLAY */
-        #scr-end { position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; display: flex; align-items: center; justify-content: center; z-index: 200; flex-direction: column; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); opacity: 0; pointer-events: none; }
+        #scr-end { position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; display: flex; align-items: center; justify-content: center; z-index: 200; flex-direction: column; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); opacity: 0; pointer-events: none; transition: opacity 0.8s ease, background 0.8s ease; }
         #scr-end.show { opacity: 1; pointer-events: auto; }
         .end-win { background: rgba(16, 185, 129, 0.65); }
         .end-loss { background: rgba(239, 68, 68, 0.65); }
@@ -262,47 +249,30 @@
         .end-content h1 { font-size: 3rem; margin: 0 0 10px; text-shadow: 0 4px 10px rgba(0,0,0,0.3); }
         .end-content p { font-size: 1.1rem; margin-bottom: 30px; opacity: 0.9; }
 
-        /* MULTIPLAYER TABS */
         .mp-tabs { display: flex; gap: 5px; margin-bottom: 15px; border-bottom: 1px solid var(--glass-border); padding-bottom: 10px; }
         .mp-tab { flex: 1; padding: 8px; border-radius: 8px; background: var(--btn-s-bg); border: 1px solid transparent; color: var(--txt-d); font-size: 0.75rem; cursor: pointer; font-weight: bold; }
         .mp-tab.active { background: rgba(59, 130, 246, 0.2); border-color: rgba(59, 130, 246, 0.5); color: var(--txt); }
         #webrtc-data { width: 100%; height: 50px; font-size: 0.7rem; background: var(--btn-s-bg); color: var(--prim); border: 1px solid var(--glass-border); border-radius: 8px; padding: 8px; margin-bottom: 10px; box-sizing: border-box; resize: none; outline: none; }
 
-        /* NICK TOOLTIPS */
-        .nick-tooltip {
-            position: absolute;
-            background: rgba(0,0,0,0.75);
-            color: white;
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-size: 0.75rem;
-            font-weight: bold;
-            pointer-events: none;
-            white-space: nowrap;
-            border: 1px solid var(--glass-border);
-            z-index: 20;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            text-transform: uppercase;
-        }
+        .nick-tooltip { position: absolute; background: rgba(0,0,0,0.75); color: white; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; pointer-events: none; white-space: nowrap; border: 1px solid var(--glass-border); z-index: 20; box-shadow: 0 4px 10px rgba(0,0,0,0.3); text-transform: uppercase; }
         .hand-my .nick-tooltip { top: -25px; left: 50%; transform: translateX(-50%); }
         .hand-top .nick-tooltip { bottom: -25px; left: 50%; transform: translateX(-50%); }
         .hand-left .nick-tooltip { left: 40px; top: 50%; transform: translateY(-50%); }
         .hand-right .nick-tooltip { right: 40px; top: 50%; transform: translateY(-50%); }
 
-        /* MOBILE ADJUSTMENTS */
         @media (max-width: 768px), (pointer: coarse) {
             .key-box, .key-hint { display: none !important; }
-            .action-btn { padding: 12px 16px; font-size: 0.9rem; border-radius: 10px; }
+            .action-btn { padding: 10px 12px; font-size: 0.85rem; border-radius: 10px; }
             .card { width: 55px; height: 85px; } 
             .hand-my { height: 85px; gap: 8px; }
             .hand-my .card-wrapper { margin: 0 -3px; }
             .panel { padding: 1.5rem; width: 90%; }
             .panel h1 { font-size: 2rem; }
-            .legend-group { gap: 8px; }
+            .legend-group { gap: 6px; }
             .play-text { display: none; }
-            .btn-esc { right: 8px; opacity: 0.6; padding: 8px 12px; }
+            .btn-esc { position: relative; right: 0; opacity: 0.6; padding: 8px 12px; }
             
-            #ui-turn { font-size: clamp(0.7rem, 3vw, 0.85rem); }
+            #ui-turn { font-size: clamp(0.7rem, 3vw, 0.85rem); max-width: 100px; }
             
             #ghost-manilha { left: 5px; gap: 4px; }
             #deck-area { right: 5px; gap: 4px; }
@@ -451,9 +421,7 @@
     <div id="scr-lobby" class="panel hidden">
         <h2>LOBBY DA SALA</h2>
         <div class="section-label">Sala: <span id="lobby-room-id" style="color:var(--prim)">-</span></div>
-        <div id="lobby-logs" style="height: 150px; overflow-y: auto; background: var(--btn-s-bg); border-radius: 8px; border: 1px solid var(--glass-border); padding: 10px; font-size: 0.8rem; text-align: left; margin-bottom: 15px; color: var(--txt-d); display: flex; flex-direction: column; gap: 4px;">
-            <!-- Logs appear here -->
-        </div>
+        <div id="lobby-logs" style="height: 150px; overflow-y: auto; background: var(--btn-s-bg); border-radius: 8px; border: 1px solid var(--glass-border); padding: 10px; font-size: 0.8rem; text-align: left; margin-bottom: 15px; color: var(--txt-d); display: flex; flex-direction: column; gap: 4px;"></div>
         <button class="btn-s" style="width: 100%;" onclick="nav('scr-lobby', 'scr-start'); if(window.wsConn) window.wsConn.close();">SAIR DA SALA</button>
     </div>
 
@@ -490,7 +458,7 @@
                     <div id="vira-container"></div>
                     <div id="deck-pile" class="card back"></div>
                 </div>
-                <span id="deck-area-label" id="deck-lbl">VIRA</span>
+                <span id="deck-area-label">VIRA</span>
             </div>
 
             <div id="box-top" class="hand-top"></div>
@@ -512,35 +480,30 @@
                 <span id="sync-timer-txt" style="color: var(--txt-d);">Sincronizando...</span>
             </div>
 
-            <!-- CONTROLES NORMAIS -->
             <div id="grp-normal" class="legend-group active">
                 <div class="static-info"><span class="key-box">1</span><span class="key-box">2</span><span class="key-box">3</span> <span class="play-text">JOGAR CARTA</span></div>
                 <button id="cmd-truco" class="action-btn danger hidden" onclick="requestTruco()"><span class="key-box highlight">T</span> PEDIR TRUCO</button>
                 <button id="cmd-fold" class="action-btn hidden" onclick="requestFold()"><span class="key-box">D</span> DESCARTAR</button>
             </div>
             
-            <!-- CONTROLES DE RESPOSTA A TRUCO -->
             <div id="grp-respond" class="legend-group">
                 <button class="action-btn primary" onclick="respondTruco(true)"><span class="key-box" style="color: var(--prim); border-color: var(--prim); background: rgba(255,255,255,0.8);">A</span> ACEITAR</button>
                 <button id="cmd-raise" class="action-btn danger hidden" onclick="requestTruco()"><span class="key-box highlight">T</span> SEIS!</button>
                 <button class="action-btn" onclick="respondTruco(false)"><span class="key-box">C</span> CORRER</button>
             </div>
 
-            <!-- CONTROLES DE CONFIRMAÇÃO DE DESCARTE -->
             <div id="grp-confirm-fold" class="legend-group">
                 <span class="static-info" style="color: var(--warn); font-weight: bold;">Tem certeza?</span>
                 <button class="action-btn danger" onclick="executeFold()"><span class="key-box highlight">S</span> SIM</button>
                 <button class="action-btn" onclick="cancelFold()"><span class="key-box">N</span> NÃO</button>
             </div>
 
-            <!-- MÃO DE X (10 ou 11) -->
             <div id="grp-mao11" class="legend-group">
                 <span id="txt-mao11-title" class="static-info" style="color: var(--warn); font-weight: bold;">Mão de 11!</span>
                 <button class="action-btn primary" onclick="respondMao11(true)"><span class="key-box highlight" style="color:var(--prim); border-color:var(--prim); background:rgba(255,255,255,0.8);">A</span> ACEITAR</button>
                 <button class="action-btn" onclick="respondMao11(false)"><span class="key-box">C</span> CORRER</button>
             </div>
 
-            <!-- CONTROLES DE CONFIRMAÇÃO DE SAÍDA -->
             <div id="grp-confirm-exit" class="legend-group">
                 <span class="static-info" style="color: var(--warn); font-weight: bold;">Sair do Jogo?</span>
                 <button class="action-btn danger" onclick="location.reload()"><span class="key-box highlight">S</span> SIM</button>
@@ -683,13 +646,11 @@
 
         function getActiveVals() { return st.deckMode === 'limpo' ? VALS_LIMPO : VALS_SUJO; }
         
-        // --- NUCLEO DE REGRAS E FORÇAS ---
         function getPower(c) {
             if(!c) return -1;
             if (st.rules === 'mineiro' || st.rules === 'goiano') {
                 if (c.v === '4' && c.s === '♣') return 200;
                 if (c.v === '7' && c.s === '♥') return 199;
-                
                 if (st.rules === 'mineiro') {
                     if (c.v === 'A' && c.s === '♠') return 198;
                     if (c.v === '7' && c.s === '♦') return 197;
@@ -765,11 +726,7 @@
 
         window.toggleHide = function() {
             if(animLock || st.turn !== myPID || st.trucoState !== 'none' || st.isMaoDeX || st.maoDeFerro) return;
-            
-            if(st.trickResults.length === 0) {
-                showMsg("A 1ª carta não pode ser escondida!", 'warn', 2000);
-                return;
-            }
+            if(st.trickResults.length === 0) { showMsg("A 1ª carta não pode ser escondida!", 'warn', 2000); return; }
 
             window.isHiding = !window.isHiding;
             var btn = getEl('btn-hide-card');
@@ -804,35 +761,17 @@
         document.addEventListener('keydown', function(e) {
             if (getEl('scr-game').classList.contains('hidden') || (animLock && st.trucoState !== 'mao11')) return;
             var key = e.key.toUpperCase();
-            
-            if (key === 'ESCAPE') {
-                if (getEl('grp-confirm-exit').classList.contains('active')) cancelExit();
-                else requestExit();
-                return;
-            }
+            if (key === 'ESCAPE') { if (getEl('grp-confirm-exit').classList.contains('active')) cancelExit(); else requestExit(); return; }
+            if (getEl('grp-confirm-exit').classList.contains('active')) { if (key === 'S') location.reload(); else if (key === 'N') cancelExit(); return; }
+            if (getEl('grp-confirm-fold').classList.contains('active')) { if (key === 'S') executeFold(); else if (key === 'N') cancelFold(); return; }
 
-            if (getEl('grp-confirm-exit').classList.contains('active')) {
-                if (key === 'S') location.reload();
-                else if (key === 'N') cancelExit();
-                return;
-            }
-
-            if (getEl('grp-confirm-fold').classList.contains('active')) {
-                if (key === 'S') executeFold();
-                else if (key === 'N') cancelFold();
-                return;
-            }
-
-            if (st.trucoState === 'mao11' && st.maoDeXTeam === 1) {
-                if (key === 'A') respondMao11(true);
-                else if (key === 'C') respondMao11(false);
-                return;
+            if (st.trucoState === 'mao11' && st.maoDeXTeam === 1 && myPID !== 0) {
+                if (key === 'A') respondMao11(true); else if (key === 'C') respondMao11(false); return;
             }
 
             if (st.trucoState === 'pending') {
-                if (getTeam(st.trucoBy) !== getTeam(myPID)) {
-                    if (key === 'A') respondTruco(true);
-                    else if (key === 'C') respondTruco(false);
+                if (getTeam(st.trucoBy) !== getTeam(myPID) && myPID !== 0) {
+                    if (key === 'A') respondTruco(true); else if (key === 'C') respondTruco(false);
                     else if (key === 'T' && !getEl('cmd-raise').classList.contains('hidden')) requestTruco();
                 }
             } else if (st.turn === myPID && st.trucoState === 'none') {
@@ -840,9 +779,7 @@
                     var idx = parseInt(key) - 1;
                     if (idx < st.hands[myPID].length) playCard(idx);
                 }
-                else if (key === 'E') {
-                    if (!getEl('btn-hide-card').hasAttribute('disabled')) toggleHide();
-                }
+                else if (key === 'E') { if (!getEl('btn-hide-card').hasAttribute('disabled')) toggleHide(); }
                 else if (key === 'T' && !getEl('cmd-truco').classList.contains('hidden')) requestTruco();
                 else if (key === 'D' && !getEl('cmd-fold').classList.contains('hidden')) requestFold();
             }
@@ -867,44 +804,31 @@
             setTimeout(function() {
                 var endScr = getEl('scr-end');
                 endScr.className = 'show ' + (isWin ? 'end-win' : 'end-loss');
-                
                 var title = isWin ? "🏆 PARABÉNS!" : "💀 TENTE NOVAMENTE";
                 getEl('end-title').innerText = title;
-                
                 var msg = "";
                 if(st.gameFormat === '1v1') { msg = isWin ? "Você dominou a mesa e venceu!" : "O rival levou a melhor dessa vez."; }
                 else { msg = isWin ? "Sua equipe dominou a mesa e venceu!" : "Os rivais levaram a melhor dessa vez."; }
                 getEl('end-msg').innerText = msg;
-                
             }, 800);
         }
 
         window.playAgain = function() {
             if (gameMode === 'ws') {
                 var btn = document.querySelector('#scr-end .btn-p');
-                btn.innerText = "AGUARDANDO...";
-                btn.style.opacity = '0.5';
-                btn.style.pointerEvents = 'none';
-                if(window.wsConn && window.wsConn.readyState === WebSocket.OPEN) {
-                    window.wsConn.send(JSON.stringify({ type: 'play_again' }));
-                }
+                btn.innerText = "AGUARDANDO..."; btn.style.opacity = '0.5'; btn.style.pointerEvents = 'none';
+                if(window.wsConn && window.wsConn.readyState === WebSocket.OPEN) { window.wsConn.send(JSON.stringify({ type: 'play_again' })); }
                 return;
             }
             getEl('scr-end').className = ''; 
-            st.scores = { 1: 0, 2: 0 };
-            st.vazas = { 1: 0, 2: 0 };
-            st.firstPlayerOfRound = 1;
-            
-            if (gameMode === 'webrtc' || gameMode === 'json') {
-                autoSave(); 
-            }
+            st.scores = { 1: 0, 2: 0 }; st.vazas = { 1: 0, 2: 0 }; st.firstPlayerOfRound = 1;
+            if (gameMode === 'webrtc' || gameMode === 'json') autoSave(); 
             startRound(st.firstPlayerOfRound);
         };
 
         function createCardDOM(c, isBack, isInteractive, idx, isVira, posContext) {
             var w = document.createElement('div');
             w.className = 'card-wrapper' + (isInteractive ? ' interactive' : '');
-
             var d = document.createElement('div');
             d.className = 'card' + (isBack ? ' back' : '');
             if(!isBack && c) {
@@ -923,7 +847,6 @@
             return w;
         }
 
-        // --- CÉREBRO DA IA ---
         function aiHandStrength(pid) {
             var myCards = st.hands[pid];
             var activeVals = getActiveVals();
@@ -939,19 +862,12 @@
                 if (p > -1 && st.trickResults.length > 0) {
                     var isThisNuts = true;
                     if (st.rules === 'paulista') {
-                        for (var s=0; s<4; s++) {
-                            var mp = 100 + s;
-                            if (mp > p && !playedPowers.includes(mp)) isThisNuts = false;
-                        }
+                        for (var s=0; s<4; s++) { var mp = 100 + s; if (mp > p && !playedPowers.includes(mp)) isThisNuts = false; }
                     } else { 
-                        [200, 199, 198, 197].forEach(mp => {
-                            if (mp > p && !playedPowers.includes(mp)) isThisNuts = false;
-                        });
+                        [200, 199, 198, 197].forEach(mp => { if (mp > p && !playedPowers.includes(mp)) isThisNuts = false; });
                     }
                     if (isThisNuts && p < 100) {
-                        for (var v=0; v<activeVals.length; v++) {
-                            if (v > p && !playedPowers.includes(v)) isThisNuts = false;
-                        }
+                        for (var v=0; v<activeVals.length; v++) { if (v > p && !playedPowers.includes(v)) isThisNuts = false; }
                     }
                     if (isThisNuts) hasNuts = true;
                 }
@@ -965,7 +881,6 @@
             else if (fortes >= 1) base = 30;
 
             if (hasNuts) base += 40;
-
             return { prob: base, manilhas: manilhas, fortes: fortes, isNuts: hasNuts };
         }
 
@@ -1051,13 +966,13 @@
         }
 
         function updateUI() {
+            var refPID = myPID === 0 ? 1 : myPID;
             getEl('label-s0').innerText = st.gameFormat === '1v1' ? "EU:" : "NÓS:";
             getEl('label-s1').innerText = st.gameFormat === '1v1' ? "RIVAL:" : "RIVAIS:";
 
-            getEl('ui-s0').innerText = st.scores[getTeam(myPID)]; 
-            getEl('ui-s1').innerText = st.scores[getOppTeam(getTeam(myPID))];
+            getEl('ui-s0').innerText = st.scores[getTeam(refPID)]; 
+            getEl('ui-s1').innerText = st.scores[getOppTeam(getTeam(refPID))];
             
-            var handValPoints = st.handVal;
             if (st.isMaoDeX || st.maoDeFerro) {
                 getEl('ui-val').innerText = (st.rules === 'mineiro') ? "4" : "3";
             } else { 
@@ -1068,7 +983,7 @@
             if (st.maoDeFerro) indicatorText = "⚡ MÃO DE FERRO ⚡";
 
             var thres = st.rules === 'mineiro' ? 10 : 11;
-            var myTeamScore = st.scores[getTeam(myPID)]; var oppTeamScore = st.scores[getOppTeam(getTeam(myPID))];
+            var myTeamScore = st.scores[getTeam(refPID)]; 
             var meX = (myTeamScore === thres); 
             var isMyTurn = (st.turn === myPID);
             var uiTurn = getEl('ui-turn');
@@ -1082,7 +997,7 @@
 
             if (st.trucoState === 'mao11') {
                 btnHide.setAttribute('disabled', 'true'); btnHide.classList.add('disabled');
-                if (st.maoDeXTeam === 1) {
+                if (st.maoDeXTeam === getTeam(myPID) && myPID !== 0) {
                     if(!isExiting) { setBottomGroup('grp-mao11'); actionBar.classList.add('danger-zone'); }
                     getEl('txt-mao11-title').innerText = st.rules === 'mineiro' ? "Mão de 10!" : "Mão de 11!";
                     uiTurn.innerText = st.rules === 'mineiro' ? "MÃO DE 10: DECIDA!" : "MÃO DE 11: DECIDA!"; uiTurn.style.color = "var(--warn)";
@@ -1093,7 +1008,7 @@
             }
             else if (st.trucoState === 'pending') {
                 btnHide.setAttribute('disabled', 'true'); btnHide.classList.add('disabled');
-                if (getTeam(st.trucoBy) !== getTeam(myPID)) {
+                if (getTeam(st.trucoBy) !== getTeam(myPID) && myPID !== 0) {
                     if(!isExiting) { setBottomGroup('grp-respond'); actionBar.classList.add('danger-zone'); }
                     uiTurn.innerText = "⚠️ DECIDA! ⚠️"; uiTurn.style.color = "var(--warn)";
                     
@@ -1126,7 +1041,8 @@
                     uiTurn.innerText = "AGUARDANDO RIVAL..."; uiTurn.style.color = "var(--warn)";
                 }
             } else {
-                if (!grpConfirmFold.classList.contains('active') && !isExiting) { setBottomGroup('grp-normal'); actionBar.classList.remove('danger-zone'); }
+                if (!grpConfirmFold.classList.contains('active') && !isExiting && myPID !== 0) { setBottomGroup('grp-normal'); actionBar.classList.remove('danger-zone'); }
+                if (myPID === 0) { setBottomGroup(null); actionBar.classList.remove('danger-zone'); }
                 
                 if (st.maoDeFerro) { uiTurn.innerText = isMyTurn ? "SUA VEZ (MÃO DE FERRO)" : ("VEZ DE: " + getPlayerName(st.turn).toUpperCase()); }
                 else { uiTurn.innerText = isMyTurn ? "SUA VEZ JOGAR" : ("VEZ DE: " + getPlayerName(st.turn).toUpperCase()); }
@@ -1167,10 +1083,10 @@
             for(var i=0; i<3; i++) {
                 var res = st.trickResults[i];
                 var pipMy = document.createElement('div'); pipMy.className = 'vaza-pip';
-                if(res === getTeam(myPID)) pipMy.className += ' win'; else if(res === getOppTeam(getTeam(myPID))) pipMy.className += ' loss'; else if(res === 3) pipMy.className += ' tie';
+                if(res === getTeam(refPID)) pipMy.className += ' win'; else if(res === getOppTeam(getTeam(refPID))) pipMy.className += ' loss'; else if(res === 3) pipMy.className += ' tie';
                 myVazas.appendChild(pipMy);
                 var pipOpp = document.createElement('div'); pipOpp.className = 'vaza-pip';
-                if(res === getOppTeam(getTeam(myPID))) pipOpp.className += ' win'; else if(res === getTeam(myPID)) pipOpp.className += ' loss'; else if(res === 3) pipOpp.className += ' tie';
+                if(res === getOppTeam(getTeam(refPID))) pipOpp.className += ' win'; else if(res === getTeam(refPID)) pipOpp.className += ' loss'; else if(res === 3) pipOpp.className += ' tie';
                 oppVazas.appendChild(pipOpp);
             }
 
@@ -1202,6 +1118,13 @@
                 var hand = st.hands[p] || [];
                 var dest = getEl('box-' + pos);
                 if (!dest) continue;
+                
+                if (showPartnerMao11 && p === 3 && pos === 'top') {
+                    dest.classList.add('show-partner-cards');
+                } else if (pos === 'top') {
+                    dest.classList.remove('show-partner-cards');
+                }
+
                 for (var i = 0; i < hand.length; i++) {
                     var isMy = (p === myPID);
                     var isBack = !isMy;
@@ -1231,22 +1154,30 @@
                 dom.style.transform = posOffset[tPos];
                 dom.style.zIndex = zIndexMap[tPos] + k;
                 
-		if (st.trickWinners && st.trickWinners.includes(tblCard.p) && st.table.length === 0 && !isDealing) {
-                    dom.firstChild.classList.add('winner-anim');
+                if (st.trickWinners && st.trickWinners.includes(tblCard.p) && st.table.length === 0 && !isDealing) {
+                    var innerCard = dom.querySelector('.card');
+                    if (innerCard) innerCard.classList.add('winner-anim');
                 }
 
                 bTb.appendChild(dom);
             }
 
             var viraDest = getEl('vira-container');
-            viraDest.innerHTML = '';
             if (st.rules === 'paulista' && st.vira) {
-                var viraDOM = createCardDOM(st.vira, false, false, 0, true, 'vira');
-                viraDOM.firstChild.style.width = '50px'; viraDOM.firstChild.style.height = '75px'; viraDOM.firstChild.style.fontSize = '1.1rem';
-                if(window.innerWidth <= 768) { viraDOM.firstChild.style.width = '45px'; viraDOM.firstChild.style.height = '65px'; }
-                viraDOM.firstChild.id = 'vira-anim-target';
-                if(isDealing) viraDOM.style.opacity = '0';
-                viraDest.appendChild(viraDOM);
+                if (!getEl('vira-anim-target')) {
+                    viraDest.innerHTML = '';
+                    var viraDOM = createCardDOM(st.vira, false, false, 0, true, 'vira');
+                    viraDOM.firstChild.style.width = '50px'; viraDOM.firstChild.style.height = '75px'; viraDOM.firstChild.style.fontSize = '1.1rem';
+                    if(window.innerWidth <= 768) { viraDOM.firstChild.style.width = '45px'; viraDOM.firstChild.style.height = '65px'; }
+                    viraDOM.firstChild.id = 'vira-anim-target';
+                    if(isDealing) viraDOM.style.opacity = '0';
+                    viraDest.appendChild(viraDOM);
+                } else {
+                    var vCard = getEl('vira-anim-target');
+                    if (st.viraRevealed && vCard) vCard.classList.remove('back');
+                }
+            } else {
+                viraDest.innerHTML = '';
             }
 
             if (animOriginPID && bTb.children.length > 0) {
@@ -1277,7 +1208,7 @@
             var allWrappers = document.querySelectorAll('.table .card-wrapper, #vira-container .card-wrapper');
             var deckRect = getEl('deck-pile').getBoundingClientRect();
 
-            if (st.rules === 'mineiro') deckRect = { left: window.innerWidth + 50, top: -50 };
+            if (st.rules === 'mineiro' || st.rules === 'goiano') deckRect = { left: window.innerWidth + 50, top: -50 };
 
             var flyCards = [];
             var delay = 0;
@@ -1421,7 +1352,7 @@
         }
 
         function handleMao11() {
-            if (st.maoDeXTeam === 1) {
+            if (st.maoDeXTeam === 1 && myPID !== 0) {
                 if (st.gameFormat === '2v2') {
                     renderMesa(null, null, false, true); 
                     var probComb = aiContextProb(3);
@@ -1439,7 +1370,7 @@
                     showMsg(m, 'warn', 3000);
                 }
                 updateUI();
-            } else if (st.maoDeXTeam === 2) {
+            } else if (st.maoDeXTeam === 2 && gameMode === 'pc') {
                 animLock = true; updateUI();
                 setTimeout(aiDecideMao11, 2500);
             }
@@ -1468,6 +1399,7 @@
 
         function aiDecideMao11() {
             var prob = aiContextProb(2);
+            if (st.gameFormat === '2v2') prob = Math.max(prob, aiContextProb(4));
             var accept = (prob >= 42); 
             var txt = st.rules === 'mineiro' ? "10" : "11";
             
@@ -1526,14 +1458,12 @@
                 var pwr = st.table[i].hidden ? -1 : getPower(st.table[i].c);
                 if(pwr > highestPwr) { highestPwr = pwr; winners = [st.table[i].p]; } 
                 else if (pwr === highestPwr && pwr !== -1) { winners.push(st.table[i].p); }
-                
-                if (!st.table[i].hidden) { st.playedCards.push(st.table[i].c); }
             }
             
             st.trickWinners = winners;
             animLock = true;
             
-	    var bTb = getEl('box-table').children;
+            var bTb = getEl('box-table').children;
             for(var i=0; i<st.table.length; i++) {
                 if(winners.includes(st.table[i].p)) {
                     var innerCard = bTb[i].querySelector('.card');
@@ -1549,11 +1479,13 @@
             st.trickResults.push(trickWinnerTeam);
             var nextTurn = 1;
 
+            var refPID = myPID === 0 ? 1 : myPID;
+
             if(trickWinnerTeam === 3) { 
                 showMsg("Canga (Empate)!", 'neu', 1300); 
                 nextTurn = st.table[0].p; 
             } else { 
-                var myTeam = getTeam(myPID);
+                var myTeam = getTeam(refPID);
                 var isMyWin = (myTeam === trickWinnerTeam);
                 var msg = st.gameFormat === '1v1' ? (isMyWin ? "Você fez a mão!" : "O Rival fez a mão!") : (isMyWin ? "A mão é de vocês!" : "Os rivais fizeram a mão!");
                 showMsg(msg, isMyWin ? 'pos' : 'neg', 1300); 
@@ -1587,7 +1519,7 @@
                     else { st.scores[roundWinner] += st.handVal; }
                     
                     if(st.scores[1] >= 12 || st.scores[2] >= 12) {
-                        var iWon = st.scores[getTeam(myPID)] >= 12; autoSave(); triggerEndGame(iWon);
+                        var iWon = st.scores[getTeam(refPID)] >= 12; autoSave(); triggerEndGame(iWon);
                     } else {
                         var nxtFirst = getNextTurn(st.firstPlayerOfRound); 
                         if (myPID === 1 || gameMode !== 'json') { autoSave(); setTimeout(function(){ startRound(nxtFirst); }, 800); } 
@@ -1761,64 +1693,54 @@
 
             var hideThisCard = false;
             var canHide = (nTricks > 0) && !st.isMaoDeX && !maoDeFerro;
-            if(canHide) {
-                if(isRival && aiDifficulty === 3 && Math.random() < 0.15) hideThisCard = true;
-                if(!isRival && Math.random() < 0.10) hideThisCard = true;
+            var playedIdx = indexed[0].idx; 
+
+            var respondingToEnemy = false;
+            var highestEnemyPwr = -1;
+            var highestPartnerPwr = -1;
+
+            if (st.table.length > 0) {
+                respondingToEnemy = true;
+                for (var t = 0; t < st.table.length; t++) {
+                    var tp = st.table[t].hidden ? -1 : getPower(st.table[t].c);
+                    if (getTeam(st.table[t].p) === myTeam) {
+                        if (tp > highestPartnerPwr) highestPartnerPwr = tp;
+                    } else {
+                        if (tp > highestEnemyPwr) highestEnemyPwr = tp;
+                    }
+                }
             }
 
-            var playedIdx = indexed[indexed.length - 1].idx; 
+            var partnerIsWinning = (highestPartnerPwr > highestEnemyPwr) && (highestPartnerPwr !== -1);
 
-            var respondingToEnemy = st.table.length > 0 && st.table.some(t => getTeam(t.p) !== myTeam);
-
-            if(respondingToEnemy) {
-                var hiEnemy = Math.max.apply(null, st.table.filter(t => getTeam(t.p) !== myTeam).map(t => t.hidden ? -1 : getPower(t.c)));
-                var winning = indexed.filter(x => x.p > hiEnemy);
-
-                if(winning.length > 0) {
-                    if(aiDifficulty === 1) {
-                        playedIdx = (Math.random() < 0.28) ? winning[Math.floor(Math.random() * winning.length)].idx : winning[0].idx;
-                    } else {
-                        playedIdx = winning[0].idx;
-                    }
+            if (respondingToEnemy) {
+                if (partnerIsWinning) {
+                    playedIdx = indexed[0].idx;
+                    if (canHide && Math.random() < 0.6) hideThisCard = true;
                 } else {
-                    if(aiDifficulty === 1) {
-                        playedIdx = (Math.random() < 0.22) ? indexed[indexed.length - 1].idx : indexed[0].idx;
+                    var winningCards = indexed.filter(x => x.p > highestEnemyPwr);
+                    if (winningCards.length > 0) {
+                        playedIdx = winningCards[0].idx;
                     } else {
                         playedIdx = indexed[0].idx;
+                        if (canHide && Math.random() < 0.7) hideThisCard = true;
                     }
                 }
             } else {
-                if(aiDifficulty === 1) {
-                    playedIdx = indexed[Math.floor(Math.random() * indexed.length)].idx;
-                }
-                else if(aiDifficulty === 2) {
-                    playedIdx = indexed[indexed.length - 1].idx;
-                }
-                else if(aiDifficulty === 3) {
-                    if(nTricks === 0 && h.manilhas > 0 && indexed.length > 1) {
-                        playedIdx = indexed[indexed.length - 2].idx;
-                    } else if(nTricks === 1 && myW === 1 && opW === 0 && indexed.length > 1) {
+                if (aiDifficulty <= 2) {
+                    playedIdx = (Math.random() > 0.5) ? indexed[0].idx : indexed[indexed.length - 1].idx;
+                } else {
+                    if (nTricks === 0 && h.manilhas > 0 && indexed.length > 1) {
+                        playedIdx = indexed[indexed.length - 2].idx; 
+                    } else if (nTricks === 1 && myW === 1 && opW === 0 && indexed.length > 1) {
                         playedIdx = indexed[Math.floor(indexed.length / 2)].idx;
                     } else {
-                        playedIdx = indexed[indexed.length - 1].idx;
-                    }
-                }
-                else if(aiDifficulty === 4) {
-                    if(nTricks === 0) {
-                        playedIdx = indexed[indexed.length - 1].idx;
-                    } else if(nTricks === 1) {
-                        if(myW === 1 && opW === 0) {
-                            playedIdx = indexed.length > 1 ? indexed[Math.floor(indexed.length / 2)].idx : indexed[0].idx;
-                        } else {
-                            playedIdx = indexed[indexed.length - 1].idx;
-                        }
-                    } else {
-                        playedIdx = indexed[indexed.length - 1].idx;
+                        playedIdx = indexed[indexed.length - 1].idx; 
                     }
                 }
             }
 
-            if(st.table.length === 0 && !myX && !st.isMaoDeX && !maoDeFerro) {
+            if(st.table.length === 0 && !myX && !st.isMaoDeX && !maoDeFerro && isRival) {
                 var foldProb = 0; var foldChance = 0;
                 if(aiDifficulty === 1) { foldProb = 15; foldChance = 0.88; }      
                 else if(aiDifficulty === 2) { foldProb = 10; foldChance = 0.50; } 
@@ -1851,7 +1773,7 @@
                 var room = getEl('ws-room').value.trim();
                 var protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
                 var url = protocol + '//' + window.location.host;
-                if(window.location.protocol === 'file:') url = 'ws://localhost:3000'; // Fallback if opened locally as file
+                if(window.location.protocol === 'file:') url = 'ws://localhost:3000'; 
                 
                 if(role === 'host' && !room) room = 'SALA-' + Math.floor(Math.random()*10000);
                 if(role === 'guest' && !room) { alert("Informe o ID da Sala para entrar."); return; }
@@ -2056,9 +1978,9 @@
                     
                     renderMesa(st.lastTable);
                     
-		var bTb = getEl('box-table').children;
+                    var bTb = getEl('box-table').children;
                     for(var i=0; i<st.lastTable.length; i++) {
-                        if(st.trickWinners && 				st.trickWinners.includes(st.lastTable[i].p)) {
+                        if(st.trickWinners && st.trickWinners.includes(st.lastTable[i].p)) {
                             var innerCard = bTb[i].querySelector('.card');
                             if (innerCard) innerCard.classList.add('winner-anim');
                         }
