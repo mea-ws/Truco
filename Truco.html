@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Truco - v0.9.12b</title>
+    <title>Truco - v0.10</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♣</text></svg>">
     <style>
         /* THEME VARIABLES */
@@ -252,7 +252,19 @@
         .mp-tabs { display: flex; gap: 5px; margin-bottom: 15px; border-bottom: 1px solid var(--glass-border); padding-bottom: 10px; }
         .mp-tab { flex: 1; padding: 8px; border-radius: 8px; background: var(--btn-s-bg); border: 1px solid transparent; color: var(--txt-d); font-size: 0.75rem; cursor: pointer; font-weight: bold; }
         .mp-tab.active { background: rgba(59, 130, 246, 0.2); border-color: rgba(59, 130, 246, 0.5); color: var(--txt); }
-        #webrtc-data { width: 100%; height: 50px; font-size: 0.7rem; background: var(--btn-s-bg); color: var(--prim); border: 1px solid var(--glass-border); border-radius: 8px; padding: 8px; margin-bottom: 10px; box-sizing: border-box; resize: none; outline: none; }
+
+        /* ASSISTENTE DE CONEXÃO (v0.10) */
+        .webrtc-code-box { width: 100%; height: 55px; font-size: 0.68rem; background: var(--btn-s-bg); color: var(--prim); border: 1px solid var(--glass-border); border-radius: 8px; padding: 8px; box-sizing: border-box; resize: none; outline: none; }
+        .wizard-instructions { text-align: left; font-size: 0.78rem; color: var(--txt-d); background: var(--btn-s-bg); border: 1px solid var(--glass-border); border-radius: 10px; padding: 10px 12px; line-height: 1.5; }
+        .wizard-instructions b { color: var(--txt); }
+
+        #webrtc-status-box { display: flex; align-items: center; gap: 8px; background: var(--btn-s-bg); border: 1px solid var(--glass-border); border-radius: 8px; padding: 8px 12px; font-size: 0.8rem; font-weight: bold; text-align: left; }
+        .webrtc-status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--txt-d); flex-shrink: 0; }
+        #webrtc-status-box.status-connecting .webrtc-status-dot { background: var(--warn); box-shadow: 0 0 6px var(--warn); animation: blink 1.2s infinite ease-in-out; }
+        #webrtc-status-box.status-success .webrtc-status-dot { background: var(--prim); box-shadow: 0 0 6px var(--prim); }
+        #webrtc-status-box.status-error .webrtc-status-dot { background: var(--dang); box-shadow: 0 0 6px var(--dang); }
+
+        #resume-banner { background: var(--btn-s-bg); border: 1px solid var(--prim); border-radius: 12px; padding: 12px; margin-bottom: 15px; font-size: 0.8rem; text-align: left; }
 
         .nick-tooltip { position: absolute; background: rgba(0,0,0,0.75); color: white; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; pointer-events: none; white-space: nowrap; border: 1px solid var(--glass-border); z-index: 20; box-shadow: 0 4px 10px rgba(0,0,0,0.3); text-transform: uppercase; }
         .hand-my .nick-tooltip { top: -25px; left: 50%; transform: translateX(-50%); }
@@ -292,6 +304,13 @@
 
     <div id="scr-start" class="panel">
         <h1>TRUCO<span style="color:var(--prim)">.</span></h1>
+        <div id="resume-banner" class="hidden">
+            <div style="margin-bottom:8px;">🔄 Partida em andamento encontrada (Placar <b id="resume-score">0 x 0</b>)</div>
+            <div style="display:flex; gap:8px;">
+                <button class="btn-p" style="flex:1; padding:8px;" onclick="resumeSession()">CONTINUAR</button>
+                <button class="btn-s" style="flex:1; padding:8px;" onclick="dismissResumeBanner()">DESCARTAR</button>
+            </div>
+        </div>
         <div class="btn-stack">
             <button class="btn-p" onclick="nav('scr-start', 'scr-mode')">SINGLE PLAYER</button>
             <button class="btn-p" style="background: rgba(147, 51, 234, 0.6);" onclick="nav('scr-start', 'scr-online')">MULTIPLAYER ONLINE</button>
@@ -342,7 +361,7 @@
         
         <div class="mp-tabs">
             <button class="mp-tab active" id="tab-json" onclick="switchMpTab('json')">ARQUIVO JSON</button>
-            <button class="mp-tab" id="tab-webrtc" onclick="switchMpTab('webrtc')">WEBRTC (WIFI)</button>
+            <button class="mp-tab" id="tab-webrtc" onclick="switchMpTab('webrtc')">CONEXÃO DIRETA</button>
         </div>
 
         <div id="mp-config-area">
@@ -367,19 +386,66 @@
         </div>
 
         <div id="mp-json-area" class="btn-stack">
+            <div class="wizard-instructions">
+                <b>Sincronização por Arquivo:</b> um jogador cria o arquivo (Host) e o outro abre o mesmo arquivo (Guest) — ideal para computadores na mesma rede local ou pasta compartilhada (Google Drive, Dropbox, etc). Funciona apenas no Chrome/Edge no Desktop.
+            </div>
             <button class="btn-p" onclick="startMultiplayer('host', 'json')">CRIAR MESA (HOST)</button>
             <hr style="border-color: var(--glass-border); margin: 5px 0;">
             <button class="btn-s" onclick="startMultiplayer('guest', 'json')">ENTRAR NA MESA (GUEST)</button>
         </div>
 
-        <div id="mp-webrtc-area" class="btn-stack hidden">
-            <textarea id="webrtc-data" placeholder="O código de conexão aparecerá ou deverá ser colado aqui..." onclick="this.select()"></textarea>
-            <button class="btn-p" onclick="startMultiplayer('host', 'webrtc')" style="background: rgba(59, 130, 246, 0.8);">1. GERAR CONVITE (HOST)</button>
-            <button class="btn-s" onclick="startMultiplayer('guest', 'webrtc')">2. ENTRAR C/ CÓDIGO (GUEST)</button>
-            <button class="btn-p" onclick="webrtcConfirmAnswer()" style="background: rgba(16, 185, 129, 0.8);">3. CONFIRMAR RESPOSTA (HOST)</button>
+        <div id="mp-webrtc-area" class="hidden">
+            <div class="wizard-instructions" style="margin-bottom: 12px;">
+                <b>Conexão Direta (P2P):</b> funciona na mesma rede WiFi ou pela internet, sem precisar de servidor. Um dos dois cria a sala (Host), o outro entra com o código (Guest).
+            </div>
+
+            <div id="webrtc-status-box" class="hidden" style="margin-bottom: 12px;">
+                <div class="webrtc-status-dot"></div>
+                <span id="webrtc-status-text">Aguardando...</span>
+            </div>
+
+            <div id="webrtc-step-choose" class="btn-stack">
+                <button class="btn-p" style="background: rgba(59, 130, 246, 0.8);" onclick="webrtcChooseRole('host')">🏠 CRIAR SALA (SOU O HOST)</button>
+                <button class="btn-s" onclick="webrtcChooseRole('guest')">🔑 ENTRAR COM CÓDIGO (GUEST)</button>
+            </div>
+
+            <div id="webrtc-step-host" class="hidden btn-stack">
+                <div class="wizard-instructions">
+                    <b>PASSO 1:</b> Aguarde seu código ficar pronto abaixo.<br>
+                    <b>PASSO 2:</b> Copie e envie pro outro jogador (WhatsApp, etc).<br>
+                    <b>PASSO 3:</b> Cole a resposta dele aqui embaixo e confirme.
+                </div>
+                <div class="section-label" style="text-align:left;">Seu código (envie pro outro jogador):</div>
+                <textarea id="webrtc-data-host" class="webrtc-code-box" readonly onclick="this.select()"></textarea>
+                <button class="action-btn primary" style="width:100%; justify-content:center;" onclick="copyWebrtcCode('webrtc-data-host', this)">📋 COPIAR CÓDIGO</button>
+
+                <div class="section-label" style="text-align:left; margin-top:6px;">Cole aqui a resposta do outro jogador:</div>
+                <textarea id="webrtc-answer-input" class="webrtc-code-box" placeholder="Aguardando você colar a resposta..."></textarea>
+                <button class="btn-p" style="background: rgba(16, 185, 129, 0.8);" onclick="webrtcHostConnect()">✅ CONFIRMAR E CONECTAR</button>
+            </div>
+
+            <div id="webrtc-step-guest" class="hidden btn-stack">
+                <div class="wizard-instructions">
+                    <b>PASSO 1:</b> Peça o código de convite pro Host.<br>
+                    <b>PASSO 2:</b> Cole abaixo e toque em Gerar Resposta.<br>
+                    <b>PASSO 3:</b> Copie a resposta gerada e envie de volta pro Host.
+                </div>
+                <div class="section-label" style="text-align:left;">Cole aqui o código do Host:</div>
+                <textarea id="webrtc-data-guest-input" class="webrtc-code-box" placeholder="Cole o código do host aqui..."></textarea>
+                <button class="btn-p" onclick="webrtcGuestGenerateAnswer()">GERAR RESPOSTA</button>
+
+                <div id="webrtc-guest-response-area" class="hidden btn-stack">
+                    <div class="section-label" style="text-align:left;">Sua resposta (envie pro Host):</div>
+                    <textarea id="webrtc-data-guest-output" class="webrtc-code-box" readonly onclick="this.select()"></textarea>
+                    <button class="action-btn primary" style="width:100%; justify-content:center;" onclick="copyWebrtcCode('webrtc-data-guest-output', this)">📋 COPIAR RESPOSTA</button>
+                </div>
+            </div>
+
+            <button id="webrtc-btn-retry" class="btn-s hidden" style="width:100%; margin-top:10px;" onclick="webrtcRetry()">🔄 TENTAR NOVAMENTE</button>
+            <button id="webrtc-btn-back" class="btn-s hidden" style="width:100%; margin-top:8px;" onclick="webrtcBack()">↩ ESCOLHER OUTRO PAPEL</button>
         </div>
 
-        <button class="btn-s" style="width: 100%; margin-top: 15px;" onclick="nav('scr-multi', 'scr-start')">VOLTAR</button>
+        <button class="btn-s" style="width: 100%; margin-top: 15px;" onclick="webrtcAbortIfActive(); nav('scr-multi', 'scr-start')">VOLTAR</button>
     </div>
 
     <div id="scr-online" class="panel hidden">
@@ -838,6 +904,7 @@
         }
 
         function triggerEndGame(isWin) {
+            clearSessionBackup();
             setTimeout(function() {
                 var endScr = getEl('scr-end');
                 endScr.className = 'show ' + (isWin ? 'end-win' : 'end-loss');
@@ -1954,15 +2021,6 @@
                     }
                     getEl('sync-ui').classList.remove('hidden'); startSyncTimer();
                 } catch (e) {}
-            } else if (method === 'webrtc') {
-                isHostWebRTC = (role === 'host');
-                setupWebRTC();
-                if (isHostWebRTC) {
-                    getEl('webrtc-data').value = "Gerando convite...";
-                } else {
-                    getEl('webrtc-data').value = "";
-                    getEl('webrtc-data').placeholder = "Cole o convite do Host aqui e clique em ENTRAR...";
-                }
             }
         };
 
@@ -2039,64 +2097,236 @@
             }
         }
 
-        // --- WEBRTC CORE ---
+        // --- ASSISTENTE DE CONEXÃO: WEBRTC (CONEXÃO DIRETA / LOCAL) v0.10 ---
+        var ICE_SERVERS = [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
+            { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
+            { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' }
+        ];
+        var webrtcResuming = false;
+        var webrtcGatherTimer = null;
+
+        window.webrtcChooseRole = function(role) {
+            isHostWebRTC = (role === 'host');
+            mpMethod = 'webrtc';
+
+            getEl('webrtc-step-choose').classList.add('hidden');
+            getEl('webrtc-step-host').classList.add('hidden');
+            getEl('webrtc-step-guest').classList.add('hidden');
+            getEl('webrtc-btn-retry').classList.add('hidden');
+            getEl('webrtc-guest-response-area').classList.add('hidden');
+            getEl('webrtc-btn-back').classList.remove('hidden');
+
+            if (isHostWebRTC) {
+                getEl('webrtc-step-host').classList.remove('hidden');
+                getEl('webrtc-data-host').value = '';
+                getEl('webrtc-data-host').placeholder = 'Gerando código, aguarde...';
+                getEl('webrtc-answer-input').value = '';
+                webrtcSetStatus('🔄 Coletando informações de rede...', 'connecting');
+            } else {
+                getEl('webrtc-step-guest').classList.remove('hidden');
+                getEl('webrtc-data-guest-input').value = '';
+                getEl('webrtc-data-guest-output').value = '';
+                webrtcSetStatus('Aguardando você colar o código do Host...', 'idle');
+            }
+
+            setupWebRTC();
+        };
+
         function setupWebRTC() {
-            pc = new RTCPeerConnection({iceServers: [{urls: 'stun:stun.l.google.com:19302'}]});
-            
+            if (pc) { try { pc.close(); } catch(e) {} }
+            pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+            var gatheringDone = false;
+
             if (isHostWebRTC) {
                 dc = pc.createDataChannel('truco');
                 setupDataChannel();
                 pc.createOffer().then(offer => pc.setLocalDescription(offer));
             } else {
-                pc.ondatachannel = event => {
-                    dc = event.channel;
-                    setupDataChannel();
-                };
+                pc.ondatachannel = event => { dc = event.channel; setupDataChannel(); };
             }
 
-            pc.onicecandidate = event => {
-                if (!event.candidate) {
-                    var codeStr = btoa(JSON.stringify(pc.localDescription));
-                    if(isHostWebRTC && pc.localDescription.type === 'offer') {
-                        getEl('webrtc-data').value = codeStr;
-                        showMsg("Convite Gerado! Envie para o Guest.", 'pos');
-                    } else if (!isHostWebRTC && pc.localDescription.type === 'answer') {
-                        getEl('webrtc-data').value = codeStr;
-                        showMsg("Resposta Gerada! Envie de volta ao Host.", 'pos');
-                    }
+            pc.onicecandidate = function(event) {
+                if (!event.candidate && !gatheringDone) { gatheringDone = true; finalizeLocalCode(); }
+            };
+
+            // Timeout de segurança: em redes que travam a coleta de ICE, libera o código mesmo assim
+            clearTimeout(webrtcGatherTimer);
+            webrtcGatherTimer = setTimeout(function() {
+                if (!gatheringDone && pc && pc.localDescription) { gatheringDone = true; finalizeLocalCode(); }
+            }, 4000);
+
+            pc.oniceconnectionstatechange = function() {
+                if (!pc) return;
+                var state = pc.iceConnectionState;
+                if (state === 'failed') {
+                    if (dc && dc.readyState === 'open') { handleWebrtcDisconnect(); }
+                    else { webrtcSetStatus('❌ Falha na conexão. Toque em Tentar Novamente.', 'error'); getEl('webrtc-btn-retry').classList.remove('hidden'); }
+                } else if (state === 'disconnected') {
+                    if (dc && dc.readyState === 'open') { handleWebrtcDisconnect(); }
                 }
             };
         }
 
-        function setupDataChannel() {
-            dc.onopen = () => {
-                showMsg("Conectado via P2P (WebRTC)!", 'pos');
-                getEl('sync-ui').classList.add('hidden');
-                if (isHostWebRTC) startGame('webrtc', 1);
-                else { startGame('webrtc', 2); getEl('scr-game').classList.remove('hidden'); getEl('scr-multi').classList.add('hidden'); }
-            };
-            dc.onmessage = event => {
-                var loadedState = JSON.parse(event.data);
-                processLoadedState(loadedState);
-            };
+        function finalizeLocalCode() {
+            var codeStr = btoa(JSON.stringify(pc.localDescription));
+            if (isHostWebRTC && pc.localDescription.type === 'offer') {
+                getEl('webrtc-data-host').value = codeStr;
+                webrtcSetStatus('✅ Código pronto! Copie e envie pro outro jogador.', 'success');
+            } else if (!isHostWebRTC && pc.localDescription.type === 'answer') {
+                getEl('webrtc-data-guest-output').value = codeStr;
+                getEl('webrtc-guest-response-area').classList.remove('hidden');
+                webrtcSetStatus('✅ Resposta pronta! Copie e envie de volta pro Host.', 'success');
+            }
         }
 
-        window.webrtcConfirmAnswer = function() {
-            if(isHostWebRTC) {
-                try {
-                    var ansStr = getEl('webrtc-data').value.trim();
-                    var answer = JSON.parse(atob(ansStr));
-                    pc.setRemoteDescription(answer).catch(e => alert("Código inválido!"));
-                } catch(e) { alert("Código mal formatado."); }
-            } else {
-                try {
-                    var offStr = getEl('webrtc-data').value.trim();
-                    var offer = JSON.parse(atob(offStr));
-                    pc.setRemoteDescription(offer).then(() => {
-                        pc.createAnswer().then(answer => pc.setLocalDescription(answer));
-                    });
-                } catch(e) { alert("Convite mal formatado."); }
+        function setupDataChannel() {
+            dc.onopen = () => {
+                webrtcSetStatus('🟢 Conectado!', 'success');
+                showMsg("Conectado via P2P (WebRTC)!", 'pos');
+                clearTimeout(webrtcGatherTimer);
+                getEl('sync-ui').classList.add('hidden');
+
+                if (webrtcResuming) {
+                    webrtcResuming = false;
+                    gameMode = 'webrtc';
+                    nav('scr-multi', 'scr-game');
+                    renderMesa(); updateUI(); updateTurnGlow();
+                    if (isHostWebRTC) { st.version++; autoSave(); }
+                    saveSessionBackup();
+                } else if (isHostWebRTC) {
+                    startGame('webrtc', 1);
+                } else {
+                    startGame('webrtc', 2);
+                    getEl('scr-game').classList.remove('hidden');
+                    getEl('scr-multi').classList.add('hidden');
+                }
+            };
+            dc.onmessage = event => { processLoadedState(JSON.parse(event.data)); };
+            dc.onclose = () => { handleWebrtcDisconnect(); };
+        }
+
+        function handleWebrtcDisconnect() {
+            if (gameMode !== 'webrtc' || webrtcResuming) return;
+            webrtcResuming = true;
+            saveSessionBackup();
+            showMsg("Conexão perdida! Reconectando...", 'neg', 3000);
+            getEl('scr-game').classList.add('hidden');
+            getEl('scr-multi').classList.remove('hidden');
+            switchMpTab('webrtc');
+            webrtcChooseRole(isHostWebRTC ? 'host' : 'guest');
+            webrtcSetStatus('🔌 Conexão perdida. Gere um novo código para reconectar.', 'error');
+        }
+
+        window.webrtcHostConnect = function() {
+            try {
+                var ansStr = getEl('webrtc-answer-input').value.trim();
+                if(!ansStr) { webrtcSetStatus('Cole a resposta do outro jogador antes de confirmar.', 'error'); return; }
+                var answer = JSON.parse(atob(ansStr));
+                webrtcSetStatus('🔄 Conectando...', 'connecting');
+                pc.setRemoteDescription(answer).catch(function() { webrtcSetStatus('❌ Código de resposta inválido.', 'error'); getEl('webrtc-btn-retry').classList.remove('hidden'); });
+            } catch(e) { webrtcSetStatus('❌ Código mal formatado. Confira e cole novamente.', 'error'); getEl('webrtc-btn-retry').classList.remove('hidden'); }
+        };
+
+        window.webrtcGuestGenerateAnswer = function() {
+            try {
+                var offStr = getEl('webrtc-data-guest-input').value.trim();
+                if(!offStr) { webrtcSetStatus('Cole o código do Host antes de continuar.', 'error'); return; }
+                var offer = JSON.parse(atob(offStr));
+                webrtcSetStatus('🔄 Gerando resposta...', 'connecting');
+                pc.setRemoteDescription(offer).then(function() {
+                    pc.createAnswer().then(function(answer) { pc.setLocalDescription(answer); });
+                }).catch(function() { webrtcSetStatus('❌ Código do Host inválido.', 'error'); getEl('webrtc-btn-retry').classList.remove('hidden'); });
+            } catch(e) { webrtcSetStatus('❌ Código mal formatado. Confira e cole novamente.', 'error'); getEl('webrtc-btn-retry').classList.remove('hidden'); }
+        };
+
+        window.copyWebrtcCode = function(id, btn) {
+            var el = getEl(id);
+            el.select(); el.setSelectionRange(0, 999999);
+            var originalHTML = btn.innerHTML;
+            function feedback(ok) {
+                btn.innerHTML = ok ? '✅ COPIADO!' : '⚠️ TOQUE E SEGURE PRA COPIAR';
+                setTimeout(function(){ btn.innerHTML = originalHTML; }, 1800);
             }
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(el.value).then(function(){ feedback(true); }).catch(function(){
+                    try { document.execCommand('copy'); feedback(true); } catch(e) { feedback(false); }
+                });
+            } else {
+                try { document.execCommand('copy'); feedback(true); } catch(e) { feedback(false); }
+            }
+        };
+
+        window.webrtcRetry = function() {
+            getEl('webrtc-btn-retry').classList.add('hidden');
+            webrtcChooseRole(isHostWebRTC ? 'host' : 'guest');
+        };
+
+        window.webrtcAbortIfActive = function() {
+            if (mpMethod === 'webrtc' && pc && gameMode !== 'webrtc') {
+                try { pc.close(); } catch(e) {}
+                pc = null; dc = null;
+                clearTimeout(webrtcGatherTimer);
+            }
+        };
+
+        window.webrtcBack = function() {
+            if (pc) { try { pc.close(); } catch(e) {} pc = null; dc = null; }
+            clearTimeout(webrtcGatherTimer);
+            getEl('webrtc-step-choose').classList.remove('hidden');
+            getEl('webrtc-step-host').classList.add('hidden');
+            getEl('webrtc-step-guest').classList.add('hidden');
+            getEl('webrtc-btn-retry').classList.add('hidden');
+            getEl('webrtc-btn-back').classList.add('hidden');
+            getEl('webrtc-status-box').classList.add('hidden');
+        };
+
+        function webrtcSetStatus(text, state) {
+            var box = getEl('webrtc-status-box');
+            box.classList.remove('hidden', 'status-connecting', 'status-success', 'status-error', 'status-idle');
+            box.classList.add('status-' + state);
+            getEl('webrtc-status-text').innerText = text;
+        }
+
+        // --- SALVAMENTO LOCAL DE SEGURANÇA (RECUPERAÇÃO DE SESSÃO) ---
+        function saveSessionBackup() {
+            if (gameMode !== 'webrtc') return;
+            try {
+                localStorage.setItem('trucoBackupV1', JSON.stringify({ st: st, gameMode: gameMode, myPID: myPID, ts: Date.now() }));
+            } catch(e) {}
+        }
+        function clearSessionBackup() {
+            try { localStorage.removeItem('trucoBackupV1'); } catch(e) {}
+        }
+        function checkForBackup() {
+            try {
+                var raw = localStorage.getItem('trucoBackupV1');
+                if (!raw) return;
+                var data = JSON.parse(raw);
+                if (!data || !data.st || !data.ts) return;
+                if (Date.now() - data.ts > 45 * 60 * 1000) { clearSessionBackup(); return; }
+                if (data.st.scores && (data.st.scores[1] >= 12 || data.st.scores[2] >= 12)) { clearSessionBackup(); return; }
+
+                getEl('resume-score').innerText = (data.st.scores ? data.st.scores[1] : 0) + ' x ' + (data.st.scores ? data.st.scores[2] : 0);
+                getEl('resume-banner').classList.remove('hidden');
+                window._pendingResume = data;
+            } catch(e) {}
+        }
+        window.resumeSession = function() {
+            var data = window._pendingResume;
+            if (!data) return;
+            st = data.st; gameMode = data.gameMode; myPID = data.myPID;
+            webrtcResuming = true;
+            getEl('resume-banner').classList.add('hidden');
+            nav('scr-start', 'scr-multi');
+            switchMpTab('webrtc');
+            webrtcChooseRole(myPID === 1 ? 'host' : 'guest');
+            webrtcSetStatus('Gere um novo código para reconectar à partida em andamento.', 'connecting');
+        };
+        window.dismissResumeBanner = function() {
+            getEl('resume-banner').classList.add('hidden');
+            clearSessionBackup();
         };
 
         // --- SISTEMA DE SYNC E PROCESSAMENTO DE ESTADO (COMUM PARA JSON E WEBRTC E WS) ---
@@ -2111,6 +2341,7 @@
             } else if (gameMode === 'ws' && window.wsConn && window.wsConn.readyState === WebSocket.OPEN) {
                 window.wsConn.send(JSON.stringify({ type: 'state_update', st: st }));
             }
+            saveSessionBackup();
             isSaving = false;
         }
 
@@ -2179,6 +2410,8 @@
                 if(syncCountdown <= 0) { syncCountdown = 3; uiText.innerText = "Sincronizando..."; autoLoad(); }
             }, 1000);
         }
+
+        checkForBackup();
 
     })();
     </script>
