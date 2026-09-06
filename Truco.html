@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Truco - v0.9.0</title>
+    <title>Truco - v0.9.1</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♣</text></svg>">
     <style>
         /* THEME VARIABLES */
@@ -11,7 +11,6 @@
             --prim: #10b981; --prim-h: #059669;
             --dang: #ef4444; --warn: #eab308;
             --facil: #3b82f6; --insano: #9333ea;
-            --trans: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
         /* DARK THEME (Default) */
@@ -23,36 +22,53 @@
             --btn-s-bg: rgba(255,255,255,0.05); --btn-s-hov: rgba(255,255,255,0.1);
             --card-f: #1e293b; --card-b: #334155; --card-txt: #f8fafc;
             --suit-black: #f8fafc;
+            
+            --glow-facil: rgba(59,130,246,0.15);
+            --glow-normal: rgba(16,185,129,0.15);
+            --glow-dificil: rgba(239,68,68,0.15);
+            --glow-insano: rgba(147,51,234,0.15);
         }
 
         /* LIGHT THEME */
         body.theme-light {
-            --bg: #e2e8f0; --bg-grad: #f8fafc;
+            --bg: #cbd5e1; --bg-grad: #f1f5f9;
             --surf: #ffffff; --txt: #0f172a; --txt-d: #475569;
-            --glass-bg: rgba(255, 255, 255, 0.65);
-            --glass-border: rgba(0,0,0,0.1);
-            --btn-s-bg: rgba(0,0,0,0.05); --btn-s-hov: rgba(0,0,0,0.1);
+            --glass-bg: rgba(255, 255, 255, 0.85); /* Mais opaco para contraste */
+            --glass-border: rgba(0,0,0,0.15);
+            --btn-s-bg: rgba(0,0,0,0.08); --btn-s-hov: rgba(0,0,0,0.15);
             --card-f: #ffffff; --card-b: #94a3b8; --card-txt: #0f172a;
             --suit-black: #0f172a;
+            
+            /* Brilhos mais fortes para o fundo claro */
+            --glow-facil: rgba(59,130,246,0.35);
+            --glow-normal: rgba(16,185,129,0.35);
+            --glow-dificil: rgba(239,68,68,0.35);
+            --glow-insano: rgba(147,51,234,0.35);
         }
         
+        /* TRANSIÇÕES GLOBAIS DE TEMA E COR */
         body, html { 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
             background: radial-gradient(circle at 20% 30%, var(--surf) 0%, var(--bg-grad) 60%); 
             color: var(--txt); margin: 0; padding: 0; overflow: hidden; height: 100dvh; width: 100vw;
             display: flex; align-items: center; justify-content: center;
-            touch-action: none; overscroll-behavior: none; transition: background 0.5s ease, color 0.5s ease;
+            touch-action: none; overscroll-behavior: none; 
+            transition: background 0.6s ease, color 0.6s ease;
+        }
+
+        .panel, .glass-panel, .btn-s, .btn-p, .action-btn, #ui-val, .stadium-display, .key-box, .card, .card-wrapper {
+            transition: background 0.6s ease, background-color 0.6s ease, border-color 0.6s ease, color 0.6s ease, box-shadow 0.6s ease, transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
         
         /* DYNAMIC BACKGROUND GLOWS BASED ON DIFFICULTY */
-        body::before, body::after { content: ''; position: absolute; width: 60vw; height: 60vw; z-index: -1; transition: all 0.8s ease; border-radius: 50%; filter: blur(80px); }
+        body::before, body::after { content: ''; position: absolute; width: 60vw; height: 60vw; z-index: -1; transition: background 0.8s ease; border-radius: 50%; filter: blur(80px); }
         body::before { top: -20%; right: -20%; }
         body::after { bottom: -20%; left: -20%; }
 
-        body.diff-1::before, body.diff-1::after { background: rgba(59,130,246,0.15); } /* Fácil = Azul */
-        body.diff-2::before, body.diff-2::after { background: rgba(16,185,129,0.15); } /* Normal = Verde */
-        body.diff-3::before, body.diff-3::after { background: rgba(239,68,68,0.15); }   /* Difícil = Vermelho */
-        body.diff-4::before, body.diff-4::after { background: rgba(147,51,234,0.15); }  /* Insano = Roxo */
+        body.diff-1::before, body.diff-1::after { background: var(--glow-facil); } 
+        body.diff-2::before, body.diff-2::after { background: var(--glow-normal); } 
+        body.diff-3::before, body.diff-3::after { background: var(--glow-dificil); } 
+        body.diff-4::before, body.diff-4::after { background: var(--glow-insano); } 
 
         .hidden { display: none !important; }
 
@@ -69,14 +85,14 @@
         .panel h1 { font-size: 2.5rem; margin: 0 0 1.5rem; font-weight: 900; letter-spacing: -2px; color: var(--txt); }
         .btn-stack { display: flex; flex-direction: column; gap: 10px; }
         
-        button { padding: 12px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; transition: var(--trans); font-size: 0.95rem; text-transform: uppercase; }
+        button { padding: 12px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; font-size: 0.95rem; text-transform: uppercase; }
         .btn-p { background: var(--prim); color: white; }
         .btn-p:hover { background: var(--prim-h); transform: translateY(-2px); }
         .btn-s { background: var(--btn-s-bg); border: 1px solid var(--glass-border); color: var(--txt); }
         .btn-s:hover { background: var(--btn-s-hov); transform: translateY(-2px); }
         
         .diff-selector { display: flex; gap: 8px; margin-bottom: 15px; }
-        .diff-btn { flex: 1; padding: 6px; border-radius: 8px; border: 1px solid var(--glass-border); background: transparent; color: var(--txt-d); font-size: 0.75rem; cursor: pointer; transition: var(--trans); }
+        .diff-btn { flex: 1; padding: 6px; border-radius: 8px; border: 1px solid var(--glass-border); background: transparent; color: var(--txt-d); font-size: 0.75rem; cursor: pointer; }
         
         /* Glassmorphism Active Buttons */
         .diff-btn.active { background: rgba(16, 185, 129, 0.25); border-color: rgba(16, 185, 129, 0.8); box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4); color: var(--txt); font-weight: bold; transform: scale(1.05); }
@@ -92,13 +108,13 @@
 
         /* THEME TOGGLE */
         .theme-toggle-container { margin-top: 20px; display: flex; justify-content: center; }
-        .btn-theme { background: transparent; border: 1px solid var(--glass-border); color: var(--txt); padding: 8px 16px; border-radius: 20px; font-size: 0.8rem; cursor: pointer; transition: var(--trans); }
+        .btn-theme { background: transparent; border: 1px solid var(--glass-border); color: var(--txt); padding: 8px 16px; border-radius: 20px; font-size: 0.8rem; cursor: pointer; }
         .btn-theme:hover { background: var(--btn-s-bg); }
 
         /* GAME AREA & GLASS PANELS */
         .game-area { width: 100vw; height: 100dvh; display: flex; flex-direction: column; padding: 10px 10px max(10px, env(safe-area-inset-bottom)); box-sizing: border-box; position: relative; }
         
-        .glass-panel { background: var(--glass-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-radius: 14px; border: 1px solid var(--glass-border); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15); transition: var(--trans); color: var(--txt); }
+        .glass-panel { background: var(--glass-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-radius: 14px; border: 1px solid var(--glass-border); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15); color: var(--txt); }
 
         /* TOP HUD */
         .hud-container { position: relative; overflow: hidden; margin-bottom: 10px; z-index: 30; flex-shrink: 0; min-height: 66px; height: 66px; display: flex; align-items: center; justify-content: center; box-sizing: border-box; }
@@ -129,8 +145,7 @@
         .card { 
             width: 70px; height: 105px; background: var(--card-f); border-radius: 8px; box-shadow: 0 6px 15px rgba(0,0,0,0.3);
             display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 900; font-size: 1.4rem; color: var(--card-txt);
-            position: relative; user-select: none; transform-style: preserve-3d;
-            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease, border-color 0.3s ease; box-sizing: border-box;
+            position: relative; user-select: none; transform-style: preserve-3d; box-sizing: border-box;
             border: 1px solid var(--glass-border);
         }
         .card.red { color: var(--dang); }
@@ -152,7 +167,7 @@
         }
         .card.winner-anim { animation: winnerPulse 1.3s forwards !important; z-index: 50 !important; }
 
-        .card-wrapper { position: relative; cursor: pointer; transition: var(--trans); }
+        .card-wrapper { position: relative; cursor: pointer; }
         .card-wrapper.interactive:hover { transform: translateY(-10px); z-index: 15; }
         .key-hint { position: absolute; bottom: -22px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.6); color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; border: 1px solid rgba(255,255,255,0.2); pointer-events: none; }
 
@@ -180,7 +195,7 @@
         /* GHOST MANILHA */
         #ghost-manilha { position: absolute; top: 15px; left: 10px; z-index: 10; display: flex; flex-direction: row; align-items: center; gap: 8px; transition: opacity 0.5s ease; }
         #ghost-manilha.hidden { display: none !important; }
-        #ghost-m-label { font-size: 0.75rem; color: var(--prim); font-weight: bold; letter-spacing: 2px; writing-mode: vertical-rl; transform: rotate(180deg); opacity: 0.8; margin-bottom: 4px; }
+        #ghost-m-label { font-size: 0.75rem; color: var(--prim); font-weight: bold; letter-spacing: 2px; writing-mode: vertical-rl; transform: rotate(180deg); text-shadow: 0 0 8px rgba(16,185,129,0.4); opacity: 0.8; margin-bottom: 4px; }
         
         #ghost-m-card { 
             width: 50px; height: 75px; background: var(--btn-s-bg); 
@@ -195,7 +210,7 @@
             background: var(--glass-bg); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
             padding: 8px 14px; border-radius: 8px; border: 1px solid var(--glass-border);
             color: var(--txt); font-size: 0.75rem; font-weight: bold; cursor: pointer;
-            display: flex; align-items: center; gap: 8px; transition: var(--trans);
+            display: flex; align-items: center; gap: 8px;
         }
         #btn-hide-card:hover:not(:disabled) { background: var(--btn-s-hov); transform: translateY(-2px); }
         #btn-hide-card:disabled { opacity: 0.3; pointer-events: none; filter: grayscale(1); cursor: not-allowed; }
@@ -203,7 +218,7 @@
         /* Tema Escuro Hide Active */
         body.theme-dark #btn-hide-card.escondendo { border-color: white !important; box-shadow: 0 0 15px rgba(255,255,255,0.4); background: rgba(255,255,255,0.15); color: white; }
         /* Tema Claro Hide Active */
-        body.theme-light #btn-hide-card.escondendo { border-color: #334155 !important; box-shadow: 0 0 15px rgba(0,0,0,0.2); background: rgba(0,0,0,0.15); color: #0f172a; }
+        body.theme-light #btn-hide-card.escondendo { border-color: #334155 !important; box-shadow: 0 0 15px rgba(0,0,0,0.3); background: rgba(0,0,0,0.3); color: #0f172a; }
 
         /* BOTTOM HUD ANIMADO */
         .legend-container { position: relative; margin-top: 10px; padding: 10px 16px; min-height: 66px; height: 66px; box-sizing: border-box; z-index: 20; overflow: hidden; flex-shrink: 0; display: flex; justify-content: center; align-items: center; }
@@ -211,7 +226,7 @@
         .legend-group { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; gap: 12px; align-items: center; justify-content: center; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); opacity: 0; transform: translateY(100%); pointer-events: none; }
         .legend-group.active { opacity: 1; transform: translateY(0); pointer-events: auto; }
         
-        .action-btn { background: var(--btn-s-bg); border: 1px solid var(--glass-border); padding: 6px 12px; border-radius: 8px; color: var(--txt); display: flex; align-items: center; gap: 8px; cursor: pointer; transition: var(--trans); font-size: 0.8rem; font-weight: bold; }
+        .action-btn { background: var(--btn-s-bg); border: 1px solid var(--glass-border); padding: 6px 12px; border-radius: 8px; color: var(--txt); display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
         .action-btn:hover { background: var(--btn-s-hov); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
         .action-btn:active { transform: translateY(0); }
         .action-btn.primary { background: rgba(16, 185, 129, 0.15); border-color: var(--prim); color: var(--txt); }
@@ -379,7 +394,7 @@
                 <div class="hud-center">
                     <span id="ui-turn">Preparando...</span>
                     <div style="margin-top: 2px;">
-                        <span style="font-size: 0.75rem;">VALE:</span> <b id="ui-val" style="color: white; font-size: 0.9rem;">1</b>
+                        <span style="font-size: 0.75rem;">VALE:</span> <b id="ui-val" style="color: var(--txt); font-size: 0.9rem;">1</b>
                     </div>
                     <div id="ui-deck-indicator" style="font-size: 0.65rem; color: var(--prim); margin-top: 2px; text-transform: uppercase;">BARALHO SUJO</div>
                 </div>
@@ -465,7 +480,7 @@
     <div id="scr-end">
         <div class="end-content">
             <h1 id="end-title">🏆 PARABÉNS!</h1>
-            <p id="end-msg">Sua equipe venceu a partida!</p>
+            <p id="end-msg">Você venceu a partida!</p>
             <div class="btn-stack" style="max-width: 250px; margin: 0 auto;">
                 <button class="btn-p" style="background: var(--prim); color: white;" onclick="playAgain()">JOGAR NOVAMENTE</button>
                 <button class="btn-s" onclick="location.reload()">MENU PRINCIPAL</button>
@@ -584,7 +599,6 @@
 
         function getActiveVals() { return st.deckMode === 'limpo' ? VALS_LIMPO : VALS_SUJO; }
         
-        // --- NUCLEO DE REGRAS E FORÇAS ---
         function getPower(c) {
             if(!c) return -1;
             if (st.rules === 'mineiro') {
@@ -680,7 +694,7 @@
         }
 
         window.requestExit = function() {
-            if(animLock && st.trucoState !== 'mao11') return; // Usa a tela principal, permite sair durante mão de 11 se não travado em anim
+            if(animLock && st.trucoState !== 'mao11') return; 
             setBottomGroup('grp-confirm-exit');
             getEl('action-bar').classList.add('danger-zone');
         };
@@ -691,7 +705,6 @@
             updateUI(); 
         };
 
-        // --- CONTROLES DE TECLADO ---
         document.addEventListener('keydown', function(e) {
             if (getEl('scr-game').classList.contains('hidden') || (animLock && st.trucoState !== 'mao11')) return;
             var key = e.key.toUpperCase();
@@ -804,7 +817,6 @@
             return w;
         }
 
-        // --- CÉREBRO DA IA: MOTOR AGRESSIVO v0.7.1 ADAPTADO ---
         function aiHandStrength(pid) {
             var myCards = st.hands[pid];
             var activeVals = getActiveVals();
@@ -817,7 +829,6 @@
                 if (p > 99) manilhas++;
                 else if (p >= activeVals.length - 2) fortes++;
 
-                // Lógica de "The Nuts" adaptada para Paulista e Mineiro
                 if (p > -1 && st.trickResults.length > 0) {
                     var isThisNuts = true;
                     if (st.rules === 'paulista') {
@@ -825,7 +836,7 @@
                             var mp = 100 + s;
                             if (mp > p && !playedPowers.includes(mp)) isThisNuts = false;
                         }
-                    } else { // Mineiro
+                    } else { 
                         [200, 199, 198, 197].forEach(mp => {
                             if (mp > p && !playedPowers.includes(mp)) isThisNuts = false;
                         });
@@ -898,6 +909,34 @@
             return st.turn === myPID;
         }
 
+        function updateGhostManilha() {
+            var gmContainer = getEl('ghost-manilha');
+            var mCard = getEl('ghost-m-card');
+
+            if (st.rules === 'mineiro') {
+                gmContainer.classList.remove('hidden');
+                mCard.innerHTML = '<div style="display:flex; flex-direction:column; gap:2px; font-size:0.9rem; font-weight:900; line-height:1;">' +
+                                  '<span style="color:var(--suit-black)">4 ♣</span>' +
+                                  '<span style="color:var(--dang)">7 ♥</span>' +
+                                  '<span style="color:var(--suit-black)">A ♠</span>' +
+                                  '<span style="color:var(--dang)">7 ♦</span>' +
+                                  '</div>';
+            } else {
+                if (st.viraRevealed && st.manilha) {
+                    gmContainer.classList.remove('hidden');
+                    mCard.innerHTML = '<span style="font-size: 1.3rem; font-weight: 900; line-height: 1;">'+st.manilha+'</span>' +
+                                      '<div style="display:flex; gap:3px; font-size:0.6rem; margin-top:4px; white-space:nowrap;">' +
+                                      '<span style="color:var(--suit-black)">♣</span>' +
+                                      '<span style="color:var(--dang)">♥</span>' +
+                                      '<span style="color:var(--suit-black)">♠</span>' +
+                                      '<span style="color:var(--dang)">♦</span>' +
+                                      '</div>';
+                } else {
+                    gmContainer.classList.add('hidden');
+                }
+            }
+        }
+
         function updateUI() {
             getEl('label-s0').innerText = st.gameFormat === '1v1' ? "EU:" : "NÓS:";
             getEl('label-s1').innerText = st.gameFormat === '1v1' ? "RIVAL:" : "RIVAIS:";
@@ -905,15 +944,13 @@
             getEl('ui-s0').innerText = st.scores[getTeam(myPID)]; 
             getEl('ui-s1').innerText = st.scores[getOppTeam(getTeam(myPID))];
             
-            var handValPoints = st.handVal;
-            // Se for Mão de X no Mineiro, o valor da mão é sempre 4. Se for Mão de 11 Paulista, é 3.
             if (st.isMaoDeX || st.maoDeFerro) {
                 getEl('ui-val').innerText = (st.rules === 'mineiro') ? "4" : "3";
             } else { 
                 getEl('ui-val').innerText = getTrucoName(st.handVal) + (st.handVal > 2 ? " ("+st.handVal+")" : ""); 
             }
             
-            var indicatorText = (st.rules === 'mineiro') ? "MANILHAS FIXAS" : (st.deckMode === 'limpo' ? "BARALHO LIMPO" : "BARALHO SUJO");
+            var indicatorText = (st.rules === 'mineiro') ? "TRUCO MINEIRO" : (st.deckMode === 'limpo' ? "BARALHO LIMPO" : "BARALHO SUJO");
             if (st.maoDeFerro) indicatorText = "⚡ MÃO DE FERRO ⚡";
 
             var thres = st.rules === 'mineiro' ? 10 : 11;
@@ -1023,28 +1060,7 @@
                 oppVazas.appendChild(pipOpp);
             }
 
-            var gmContainer = getEl('ghost-manilha');
-            var deckContainer = getEl('deck-area');
-            if (st.rules === 'mineiro') {
-                gmContainer.classList.add('hidden');
-                deckContainer.classList.add('hidden');
-            } else {
-                deckContainer.classList.remove('hidden');
-                if (st.viraRevealed && st.manilha) {
-                    gmContainer.classList.remove('hidden');
-                    var mCard = getEl('ghost-m-card');
-                    mCard.innerHTML = '<span style="font-size: 1.3rem; font-weight: 900; line-height: 1;">'+st.manilha+'</span>' +
-                                      '<div style="display:flex; gap:3px; font-size:0.6rem; margin-top:4px; white-space:nowrap;">' +
-                                      '<span style="color:var(--suit-black)">♣</span>' +
-                                      '<span style="color:var(--dang)">♥</span>' +
-                                      '<span style="color:var(--suit-black)">♠</span>' +
-                                      '<span style="color:var(--dang)">♦</span>' +
-                                      '</div>';
-                } else {
-                    gmContainer.classList.add('hidden');
-                }
-            }
-
+            updateGhostManilha();
             updateTurnGlow(); 
         }
 
@@ -1089,23 +1105,21 @@
                 dom.style.zIndex = zIndexMap[tPos] + k;
                 
                 if (st.trickWinners && st.trickWinners.includes(tblCard.p) && st.table.length === 0 && !isDealing) {
-                    dom.firstChild.classList.add('winner-anim');
+                    dom.classList.add('winner-anim');
                 }
 
                 bTb.appendChild(dom);
             }
 
-            if (st.rules === 'paulista') {
-                var viraDest = getEl('vira-container');
-                viraDest.innerHTML = '';
-                if(st.vira) {
-                    var viraDOM = createCardDOM(st.vira, false, false, 0, true, 'vira');
-                    viraDOM.firstChild.style.width = '50px'; viraDOM.firstChild.style.height = '75px'; viraDOM.firstChild.style.fontSize = '1.1rem';
-                    if(window.innerWidth <= 768) { viraDOM.firstChild.style.width = '45px'; viraDOM.firstChild.style.height = '65px'; }
-                    viraDOM.firstChild.id = 'vira-anim-target';
-                    if(isDealing) viraDOM.style.opacity = '0';
-                    viraDest.appendChild(viraDOM);
-                }
+            var viraDest = getEl('vira-container');
+            viraDest.innerHTML = '';
+            if (st.rules === 'paulista' && st.vira) {
+                var viraDOM = createCardDOM(st.vira, false, false, 0, true, 'vira');
+                viraDOM.firstChild.style.width = '50px'; viraDOM.firstChild.style.height = '75px'; viraDOM.firstChild.style.fontSize = '1.1rem';
+                if(window.innerWidth <= 768) { viraDOM.firstChild.style.width = '45px'; viraDOM.firstChild.style.height = '65px'; }
+                viraDOM.firstChild.id = 'vira-anim-target';
+                if(isDealing) viraDOM.style.opacity = '0';
+                viraDest.appendChild(viraDOM);
             }
 
             if (animOriginPID && bTb.children.length > 0) {
@@ -1125,6 +1139,7 @@
                 lastCard.style.transform = finalTrans; lastCard.style.opacity = '1';
             }
 
+            updateGhostManilha();
             updateTurnGlow();
         }
 
@@ -1134,9 +1149,6 @@
 
             var allWrappers = document.querySelectorAll('.table .card-wrapper, #vira-container .card-wrapper');
             var deckRect = getEl('deck-pile').getBoundingClientRect();
-
-            // Fallback se Mineiro (sem deck pile na tela)
-            if (st.rules === 'mineiro') deckRect = { left: window.innerWidth + 50, top: -50 };
 
             var flyCards = [];
             var delay = 0;
@@ -1240,7 +1252,7 @@
                 st.vira = deck.pop(); 
                 st.manilha = activeVals[(activeVals.indexOf(st.vira.v) + 1) % activeVals.length];
             } else {
-                st.vira = null; st.manilha = ''; // Mineiro tem manilhas fixas
+                st.vira = null; st.manilha = '';
             }
             st.viraRevealed = false;
             
@@ -1369,7 +1381,7 @@
             } else { 
                 st.turn = getNextTurn(st.turn); updateUI(); autoSave(); checkAiTurn();
             }
-        };
+        }
 
         function resolveTrick() {
             var highestPwr = -1; var winners = [];
@@ -1377,8 +1389,6 @@
                 var pwr = st.table[i].hidden ? -1 : getPower(st.table[i].c);
                 if(pwr > highestPwr) { highestPwr = pwr; winners = [st.table[i].p]; } 
                 else if (pwr === highestPwr && pwr !== -1) { winners.push(st.table[i].p); }
-                
-                if (!st.table[i].hidden) { st.playedCards.push(st.table[i].c); }
             }
             
             st.trickWinners = winners;
@@ -1387,8 +1397,7 @@
             var bTb = getEl('box-table').children;
             for(var i=0; i<st.table.length; i++) {
                 if(winners.includes(st.table[i].p)) {
-                    var innerCard = bTb[i].querySelector('.card');
-                    if(innerCard) innerCard.classList.add('winner-anim'); 
+                    bTb[i].classList.add('winner-anim'); 
                 }
             }
 
@@ -1468,7 +1477,6 @@
             } else {
                 showMsg("Você Correu!", 'neg'); st.trucoState = 'none'; 
                 var callingTeam = getTeam(st.trucoBy);
-                // No Mineiro as perdas de fuga variam: foge do 4 perde 2. Foge do 6 perde 4. Foge do 10 perde 6.
                 var pts = st.handVal; 
                 st.scores[callingTeam] += pts;
                 if(st.scores[callingTeam] >= 12) { autoSave(); triggerEndGame(false); return; }
@@ -1500,7 +1508,6 @@
             if (aiNeedsToAnswer) { animLock = true; setTimeout(() => aiDecideTruco(aiPid), 1800); }
         }
 
-        // --- CÉREBRO DA IA ---
         function aiDecideTruco(pid) {
             var myTeam = getTeam(pid);
             var thres = st.rules === 'mineiro' ? 10 : 11;
@@ -1577,7 +1584,9 @@
                 var isFirstPlay = (nTricks === 0 && st.table.length === 0);
 
                 if(canRaise) {
-                    if(aiDifficulty === 1) { if(prob >= 85) askTruco = true; }
+                    if(aiDifficulty === 1) {
+                        if(prob >= 85) askTruco = true;
+                    }
                     else if(aiDifficulty === 2) {
                         if(prob >= 72) askTruco = true;
                         if(!askTruco && Math.random() < 0.05) askTruco = true; 
@@ -1820,8 +1829,7 @@
                     var bTb = getEl('box-table').children;
                     for(var i=0; i<st.lastTable.length; i++) {
                         if(st.trickWinners && st.trickWinners.includes(st.lastTable[i].p)) {
-                            var innerCard = bTb[i].querySelector('.card');
-                            if(innerCard) innerCard.classList.add('winner-anim');
+                            bTb[i].classList.add('winner-anim');
                         }
                     }
                     
