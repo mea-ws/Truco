@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Truco - v0.9.12</title>
+    <title>Truco - v0.9.12b</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♣</text></svg>">
     <style>
         /* THEME VARIABLES */
@@ -1118,7 +1118,8 @@
                     uiTurn.innerText = "⚠️ DECIDA! ⚠️"; uiTurn.style.color = "var(--warn)";
                     
                     if(st.gameFormat === '2v2') {
-                        var partnerProb = aiContextProb(3);
+						var myPartnerPID = (myPID === 1) ? 3 : (myPID === 2) ? 4 : (myPID === 3) ? 1 : 2;
+						var partnerProb = aiContextProb(myPartnerPID);
                         var advice = "";
                         if (partnerProb < 35) advice = "Parceiro: Sugiro correr";
                         else if (partnerProb < 65) advice = "Parceiro: Sugiro aceitar";
@@ -1224,16 +1225,16 @@
                 var dest = getEl('box-' + pos);
                 if (!dest) continue;
                 
-                if (showPartnerMao11 && p === 3 && pos === 'top') {
-                    dest.classList.add('show-partner-cards');
-                } else if (pos === 'top') {
-                    dest.classList.remove('show-partner-cards');
-                }
+			if (showPartnerMao11 && pos === 'top') {
+                dest.classList.add('show-partner-cards');
+            } else if (pos === 'top') {
+                dest.classList.remove('show-partner-cards');
+            }
 
-                for (var i = 0; i < hand.length; i++) {
-                    var isMy = (p === myPID);
-                    var isBack = !isMy;
-                    if (showPartnerMao11 && p === 3) isBack = false; 
+            for (var i = 0; i < hand.length; i++) {
+                var isMy = (p === myPID);
+                var isBack = !isMy;
+                if (showPartnerMao11 && pos === 'top') isBack = false; 
                     
                     var dom = createCardDOM(hand[i], isBack, isMy, i, false, pos);
                     if(isDealing) dom.style.opacity = '0'; 
