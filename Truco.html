@@ -3,84 +3,113 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Truco - v0.8.27</title>
+    <title>Truco - v0.9.0</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♣</text></svg>">
     <style>
-        /* BASE & THEME */
+        /* THEME VARIABLES */
         :root {
-            --bg: #0f172a; --surf: #1e293b; --prim: #10b981; --prim-h: #059669;
-            --dang: #ef4444; --txt: #f8fafc; --txt-d: #94a3b8; --warn: #eab308;
-            --card-f: #ffffff; --card-b: #334155; --trans: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            --prim: #10b981; --prim-h: #059669;
+            --dang: #ef4444; --warn: #eab308;
+            --facil: #3b82f6; --insano: #9333ea;
+            --trans: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        /* DARK THEME (Default) */
+        body.theme-dark {
+            --bg: #0f172a; --bg-grad: #0a0f1a;
+            --surf: #1e293b; --txt: #f8fafc; --txt-d: #94a3b8;
+            --glass-bg: rgba(15, 23, 42, 0.45);
+            --glass-border: rgba(255,255,255,0.1);
+            --btn-s-bg: rgba(255,255,255,0.05); --btn-s-hov: rgba(255,255,255,0.1);
+            --card-f: #1e293b; --card-b: #334155; --card-txt: #f8fafc;
+            --suit-black: #f8fafc;
+        }
+
+        /* LIGHT THEME */
+        body.theme-light {
+            --bg: #e2e8f0; --bg-grad: #f8fafc;
+            --surf: #ffffff; --txt: #0f172a; --txt-d: #475569;
+            --glass-bg: rgba(255, 255, 255, 0.65);
+            --glass-border: rgba(0,0,0,0.1);
+            --btn-s-bg: rgba(0,0,0,0.05); --btn-s-hov: rgba(0,0,0,0.1);
+            --card-f: #ffffff; --card-b: #94a3b8; --card-txt: #0f172a;
+            --suit-black: #0f172a;
         }
         
         body, html { 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background: radial-gradient(circle at 20% 30%, #1e293b 0%, #0a0f1a 60%); 
+            background: radial-gradient(circle at 20% 30%, var(--surf) 0%, var(--bg-grad) 60%); 
             color: var(--txt); margin: 0; padding: 0; overflow: hidden; height: 100dvh; width: 100vw;
             display: flex; align-items: center; justify-content: center;
-            touch-action: none; overscroll-behavior: none;
+            touch-action: none; overscroll-behavior: none; transition: background 0.5s ease, color 0.5s ease;
         }
         
-        body::before { content: ''; position: absolute; top: -10%; right: -10%; width: 50vw; height: 50vw; background: radial-gradient(circle, rgba(16,185,129,0.08) 0%, transparent 60%); z-index: -1; }
-        body::after { content: ''; position: absolute; bottom: -10%; left: -10%; width: 50vw; height: 50vw; background: radial-gradient(circle, rgba(239,68,68,0.08) 0%, transparent 60%); z-index: -1; }
+        /* DYNAMIC BACKGROUND GLOWS BASED ON DIFFICULTY */
+        body::before, body::after { content: ''; position: absolute; width: 60vw; height: 60vw; z-index: -1; transition: all 0.8s ease; border-radius: 50%; filter: blur(80px); }
+        body::before { top: -20%; right: -20%; }
+        body::after { bottom: -20%; left: -20%; }
+
+        body.diff-1::before, body.diff-1::after { background: rgba(59,130,246,0.15); } /* Fácil = Azul */
+        body.diff-2::before, body.diff-2::after { background: rgba(16,185,129,0.15); } /* Normal = Verde */
+        body.diff-3::before, body.diff-3::after { background: rgba(239,68,68,0.15); }   /* Difícil = Vermelho */
+        body.diff-4::before, body.diff-4::after { background: rgba(147,51,234,0.15); }  /* Insano = Roxo */
 
         .hidden { display: none !important; }
 
         /* UI PANELS - GLASSMORPHISM */
         .panel { 
             width: 90%; max-width: 400px; 
-            background: rgba(15, 23, 42, 0.45); 
+            background: var(--glass-bg); 
             backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); 
             padding: 2rem; border-radius: 20px; 
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); 
-            text-align: center; border: 1px solid rgba(255,255,255,0.1); 
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2); 
+            text-align: center; border: 1px solid var(--glass-border); 
             z-index: 50; max-height: 90vh; overflow-y: auto; 
         }
-        .panel h1 { font-size: 2.5rem; margin: 0 0 1.5rem; font-weight: 900; letter-spacing: -2px; }
+        .panel h1 { font-size: 2.5rem; margin: 0 0 1.5rem; font-weight: 900; letter-spacing: -2px; color: var(--txt); }
         .btn-stack { display: flex; flex-direction: column; gap: 10px; }
         
         button { padding: 12px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; transition: var(--trans); font-size: 0.95rem; text-transform: uppercase; }
         .btn-p { background: var(--prim); color: white; }
         .btn-p:hover { background: var(--prim-h); transform: translateY(-2px); }
-        .btn-s { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: var(--txt); }
-        .btn-s:hover { background: rgba(255,255,255,0.1); transform: translateY(-2px); }
+        .btn-s { background: var(--btn-s-bg); border: 1px solid var(--glass-border); color: var(--txt); }
+        .btn-s:hover { background: var(--btn-s-hov); transform: translateY(-2px); }
         
         .diff-selector { display: flex; gap: 8px; margin-bottom: 15px; }
-        .diff-btn { flex: 1; padding: 6px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: transparent; color: var(--txt-d); font-size: 0.75rem; cursor: pointer; transition: var(--trans); }
+        .diff-btn { flex: 1; padding: 6px; border-radius: 8px; border: 1px solid var(--glass-border); background: transparent; color: var(--txt-d); font-size: 0.75rem; cursor: pointer; transition: var(--trans); }
         
-        .diff-btn.active { 
-            background: rgba(16, 185, 129, 0.25); border-color: rgba(16, 185, 129, 0.8); 
-            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4); color: white; font-weight: bold; 
-            transform: scale(1.05); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); 
-        }
-        .diff-btn.dificil.active { 
-            background: rgba(239, 68, 68, 0.25); border-color: rgba(239, 68, 68, 0.8); 
-            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4); color: white; font-weight: bold; 
-            transform: scale(1.05); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-        }
-        .diff-btn.insano.active { 
-            background: rgba(147, 51, 234, 0.25); border-color: rgba(147, 51, 234, 0.8); 
-            box-shadow: 0 4px 15px rgba(147, 51, 234, 0.4); color: white; font-weight: bold; 
-            transform: scale(1.05); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-        }
+        /* Glassmorphism Active Buttons */
+        .diff-btn.active { background: rgba(16, 185, 129, 0.25); border-color: rgba(16, 185, 129, 0.8); box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4); color: var(--txt); font-weight: bold; transform: scale(1.05); }
+        
+        /* Specific Colors */
+        .diff-btn.facil.active { background: rgba(59, 130, 246, 0.25); border-color: rgba(59, 130, 246, 0.8); box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4); }
+        .diff-btn.dificil.active { background: rgba(239, 68, 68, 0.25); border-color: rgba(239, 68, 68, 0.8); box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4); }
+        .diff-btn.insano.active { background: rgba(147, 51, 234, 0.25); border-color: rgba(147, 51, 234, 0.8); box-shadow: 0 4px 15px rgba(147, 51, 234, 0.4); }
+
+        .diff-btn:disabled { opacity: 0.3; pointer-events: none; }
 
         .section-label { color: var(--txt-d); font-size: 0.8rem; margin-bottom: 8px; text-align: left; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
+
+        /* THEME TOGGLE */
+        .theme-toggle-container { margin-top: 20px; display: flex; justify-content: center; }
+        .btn-theme { background: transparent; border: 1px solid var(--glass-border); color: var(--txt); padding: 8px 16px; border-radius: 20px; font-size: 0.8rem; cursor: pointer; transition: var(--trans); }
+        .btn-theme:hover { background: var(--btn-s-bg); }
 
         /* GAME AREA & GLASS PANELS */
         .game-area { width: 100vw; height: 100dvh; display: flex; flex-direction: column; padding: 10px 10px max(10px, env(safe-area-inset-bottom)); box-sizing: border-box; position: relative; }
         
-        .glass-panel { background: rgba(15, 23, 42, 0.45); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-radius: 14px; border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); transition: var(--trans); }
+        .glass-panel { background: var(--glass-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-radius: 14px; border: 1px solid var(--glass-border); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15); transition: var(--trans); color: var(--txt); }
 
         /* TOP HUD */
         .hud-container { position: relative; overflow: hidden; margin-bottom: 10px; z-index: 30; flex-shrink: 0; min-height: 66px; height: 66px; display: flex; align-items: center; justify-content: center; box-sizing: border-box; }
         .hud-content { display: flex; justify-content: space-between; align-items: center; padding: 8px 16px; width: 100%; transition: opacity 0.3s ease, transform 0.3s ease; }
         
-        .stadium-display { position: absolute; top: -100%; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 1.1rem; letter-spacing: 1px; text-transform: uppercase; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(8px); transition: top 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 21; pointer-events: none; }
+        .stadium-display { position: absolute; top: -100%; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 1.1rem; letter-spacing: 1px; text-transform: uppercase; background: var(--glass-bg); backdrop-filter: blur(8px); transition: top 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 21; pointer-events: none; color: var(--txt); }
         .hud-container.show-msg .stadium-display { top: 0; }
         .hud-container.show-msg .hud-content { opacity: 0.1; transform: scale(0.98); }
-        .hud-container.notify-pos { border-color: var(--prim); box-shadow: 0 0 25px rgba(16, 185, 129, 0.25); }
-        .hud-container.notify-neg { border-color: var(--dang); box-shadow: 0 0 25px rgba(239, 68, 68, 0.25); }
-        .hud-container.notify-neu { border-color: var(--warn); box-shadow: 0 0 25px rgba(234, 179, 8, 0.25); }
+        .hud-container.notify-pos { border-color: var(--prim); box-shadow: 0 0 20px rgba(16, 185, 129, 0.2); }
+        .hud-container.notify-neg { border-color: var(--dang); box-shadow: 0 0 20px rgba(239, 68, 68, 0.2); }
+        .hud-container.notify-neu { border-color: var(--warn); box-shadow: 0 0 20px rgba(234, 179, 8, 0.2); }
 
         .hud-side { flex: 1; display: flex; flex-direction: column; min-width: 0; }
         .hud-center { flex: 1; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 0; }
@@ -89,32 +118,35 @@
         #ui-turn { font-size: 0.85rem; font-weight:bold; color: var(--txt-d); transition: var(--trans); white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
 
         .vaza-track { display: flex; gap: 5px; margin-top: 5px; }
-        .vaza-pip { width: 10px; height: 10px; border-radius: 50%; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); }
+        .vaza-pip { width: 10px; height: 10px; border-radius: 50%; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); }
         .vaza-pip.win { background: var(--prim); border-color: var(--prim); box-shadow: 0 0 8px var(--prim); }
         .vaza-pip.loss { background: var(--dang); border-color: var(--dang); }
         .vaza-pip.tie { background: var(--warn); border-color: var(--warn); }
 
         /* TABLE & CARDS */
-        .table { flex: 1 1 auto; position: relative; border-radius: 16px; border: 2px dashed rgba(255,255,255,0.05); display: flex; flex-direction: column; justify-content: space-between; padding: 15px; overflow: hidden; z-index: 10; }
+        .table { flex: 1 1 auto; position: relative; border-radius: 16px; border: 2px dashed var(--glass-border); display: flex; flex-direction: column; justify-content: space-between; padding: 15px; overflow: hidden; z-index: 10; }
 
         .card { 
-            width: 70px; height: 105px; background: var(--card-f); border-radius: 8px; box-shadow: 0 6px 15px rgba(0,0,0,0.5);
-            display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 900; font-size: 1.4rem; color: #1e293b;
+            width: 70px; height: 105px; background: var(--card-f); border-radius: 8px; box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+            display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 900; font-size: 1.4rem; color: var(--card-txt);
             position: relative; user-select: none; transform-style: preserve-3d;
             transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease, border-color 0.3s ease; box-sizing: border-box;
+            border: 1px solid var(--glass-border);
         }
         .card.red { color: var(--dang); }
-        .card.back { background: var(--card-b); border: 3px solid #475569; color: transparent !important; cursor: default; }
-        .card.back::after { content: '♣'; color: rgba(255,255,255,0.05); font-size: 2.5rem; position: absolute; }
+        .card small { color: var(--suit-black); }
+        .card.red small { color: var(--dang); }
+        
+        .card.back { background: var(--card-b); border: 3px solid rgba(0,0,0,0.2); color: transparent !important; cursor: default; }
+        .card.back::after { content: '♣'; color: rgba(255,255,255,0.1); font-size: 2.5rem; position: absolute; }
         
         .card.active-turn { 
             outline: 2px solid rgba(59, 130, 246, 0.8); outline-offset: 1px;
-            box-shadow: 0 0 10px rgba(59, 130, 246, 0.5), inset 0 0 5px rgba(59, 130, 246, 0.2), 0 6px 15px rgba(0,0,0,0.5); 
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.5), inset 0 0 5px rgba(59, 130, 246, 0.2), 0 6px 15px rgba(0,0,0,0.3); 
         }
 
-        /* ANIMAÇÃO DA CARTA VENCEDORA - Ágil (1.3s) e Elegante */
         @keyframes winnerPulse {
-            0% { transform: scale(1) translateY(0); box-shadow: 0 6px 15px rgba(0,0,0,0.5); }
+            0% { transform: scale(1) translateY(0); box-shadow: 0 6px 15px rgba(0,0,0,0.3); border: 1px solid var(--glass-border); }
             15% { transform: scale(1.1) translateY(-10px); box-shadow: 0 0 20px var(--warn); border: 3px solid var(--warn); }
             100% { transform: scale(1.1) translateY(-10px); box-shadow: 0 0 20px var(--warn); border: 3px solid var(--warn); }
         }
@@ -140,37 +172,38 @@
         #deck-area { position: absolute; top: 15px; right: 10px; z-index: 10; display: flex; flex-direction: row; align-items: center; gap: 8px; }
         #deck-area-label { font-size: 0.75rem; color: var(--txt-d); font-weight: bold; letter-spacing: 2px; writing-mode: vertical-rl; opacity: 0.8; margin-bottom: 4px; }
         .deck-stack-container { position: relative; width: 50px; height: 75px; }
-        #deck-pile { width: 50px; height: 75px; position: absolute; top: 0; left: 0; box-shadow: -2px 2px 10px rgba(0,0,0,0.5); }
+        #deck-pile { width: 50px; height: 75px; position: absolute; top: 0; left: 0; box-shadow: -2px 2px 10px rgba(0,0,0,0.3); }
         #deck-pile::after { font-size: 1.8rem; }
         
         #vira-container { position: absolute; top: 15px; left: -35px; transform: rotate(-15deg); z-index: 5; }
 
         /* GHOST MANILHA */
         #ghost-manilha { position: absolute; top: 15px; left: 10px; z-index: 10; display: flex; flex-direction: row; align-items: center; gap: 8px; transition: opacity 0.5s ease; }
-        #ghost-manilha.hidden { opacity: 0; pointer-events: none; }
-        #ghost-m-label { font-size: 0.75rem; color: var(--prim); font-weight: bold; letter-spacing: 2px; writing-mode: vertical-rl; transform: rotate(180deg); text-shadow: 0 0 8px rgba(16,185,129,0.4); opacity: 0.8; margin-bottom: 4px; }
+        #ghost-manilha.hidden { display: none !important; }
+        #ghost-m-label { font-size: 0.75rem; color: var(--prim); font-weight: bold; letter-spacing: 2px; writing-mode: vertical-rl; transform: rotate(180deg); opacity: 0.8; margin-bottom: 4px; }
         
         #ghost-m-card { 
-            width: 50px; height: 75px; background: rgba(255, 255, 255, 0.05); 
+            width: 50px; height: 75px; background: var(--btn-s-bg); 
             backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); 
-            border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 8px 32px rgba(0,0,0,0.3); 
-            color: white; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            border: 1px solid var(--glass-border); box-shadow: 0 8px 32px rgba(0,0,0,0.2); 
+            color: var(--txt); display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
 
         /* BOTÃO DE ESCONDER CARTA FIXO */
         #btn-hide-card {
             position: absolute; right: 15px; bottom: 15px; z-index: 25;
-            background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-            padding: 8px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2);
+            background: var(--glass-bg); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            padding: 8px 14px; border-radius: 8px; border: 1px solid var(--glass-border);
             color: var(--txt); font-size: 0.75rem; font-weight: bold; cursor: pointer;
             display: flex; align-items: center; gap: 8px; transition: var(--trans);
         }
-        #btn-hide-card:hover:not(:disabled) { background: rgba(255,255,255,0.1); transform: translateY(-2px); }
+        #btn-hide-card:hover:not(:disabled) { background: var(--btn-s-hov); transform: translateY(-2px); }
         #btn-hide-card:disabled { opacity: 0.3; pointer-events: none; filter: grayscale(1); cursor: not-allowed; }
-        #btn-hide-card.escondendo { 
-            border-color: white !important; box-shadow: 0 0 15px rgba(255,255,255,0.4); 
-            background: rgba(255,255,255,0.15); color: white;
-        }
+        
+        /* Tema Escuro Hide Active */
+        body.theme-dark #btn-hide-card.escondendo { border-color: white !important; box-shadow: 0 0 15px rgba(255,255,255,0.4); background: rgba(255,255,255,0.15); color: white; }
+        /* Tema Claro Hide Active */
+        body.theme-light #btn-hide-card.escondendo { border-color: #334155 !important; box-shadow: 0 0 15px rgba(0,0,0,0.2); background: rgba(0,0,0,0.15); color: #0f172a; }
 
         /* BOTTOM HUD ANIMADO */
         .legend-container { position: relative; margin-top: 10px; padding: 10px 16px; min-height: 66px; height: 66px; box-sizing: border-box; z-index: 20; overflow: hidden; flex-shrink: 0; display: flex; justify-content: center; align-items: center; }
@@ -178,19 +211,19 @@
         .legend-group { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; gap: 12px; align-items: center; justify-content: center; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); opacity: 0; transform: translateY(100%); pointer-events: none; }
         .legend-group.active { opacity: 1; transform: translateY(0); pointer-events: auto; }
         
-        .action-btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 8px; color: var(--txt); display: flex; align-items: center; gap: 8px; cursor: pointer; transition: var(--trans); font-size: 0.8rem; font-weight: bold; }
-        .action-btn:hover { background: rgba(255,255,255,0.15); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        .action-btn { background: var(--btn-s-bg); border: 1px solid var(--glass-border); padding: 6px 12px; border-radius: 8px; color: var(--txt); display: flex; align-items: center; gap: 8px; cursor: pointer; transition: var(--trans); font-size: 0.8rem; font-weight: bold; }
+        .action-btn:hover { background: var(--btn-s-hov); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
         .action-btn:active { transform: translateY(0); }
-        .action-btn.primary { background: rgba(16, 185, 129, 0.15); border-color: var(--prim); color: white; }
+        .action-btn.primary { background: rgba(16, 185, 129, 0.15); border-color: var(--prim); color: var(--txt); }
         .action-btn.primary:hover { background: rgba(16, 185, 129, 0.3); }
-        .action-btn.danger { background: rgba(239, 68, 68, 0.15); border-color: var(--dang); color: white; }
+        .action-btn.danger { background: rgba(239, 68, 68, 0.15); border-color: var(--dang); color: var(--txt); }
         .action-btn.danger:hover { background: rgba(239, 68, 68, 0.3); }
 
-        .btn-esc { position: absolute; right: 15px; opacity: 0.4; }
+        .btn-esc { position: absolute; right: 15px; opacity: 0.5; }
         .btn-esc:hover { opacity: 1; }
 
-        .key-box { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.3); padding: 3px 8px; border-radius: 4px; font-weight: bold; color: white; box-shadow: 0 2px 0 rgba(255,255,255,0.1); display: inline-block; }
-        .key-box.highlight { background: rgba(239, 68, 68, 0.4); border-color: #fca5a5; color: #fff; }
+        .key-box { background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); padding: 3px 8px; border-radius: 4px; font-weight: bold; color: var(--txt); display: inline-block; }
+        .key-box.highlight { background: rgba(239, 68, 68, 0.2); border-color: var(--dang); color: var(--dang); }
         
         .static-info { font-size: 0.8rem; color: var(--txt-d); display: flex; align-items: center; gap: 6px; pointer-events: none; user-select: none; text-transform: uppercase; }
 
@@ -198,25 +231,25 @@
         @keyframes dangerPulse { 0% { border-color: rgba(234, 179, 8, 0.4); box-shadow: 0 0 10px rgba(234, 179, 8, 0.2); background: rgba(234, 179, 8, 0.05); } 100% { border-color: rgba(234, 179, 8, 1); box-shadow: 0 0 30px rgba(234, 179, 8, 0.6); background: rgba(234, 179, 8, 0.15); } }
 
         /* SYNC UI */
-        #sync-ui { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); background: rgba(0, 0, 0, 0.25); padding: 4px 10px; border-radius: 6px; font-size: 0.7rem; font-weight: bold; border: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; gap: 6px; transition: opacity 0.3s; z-index: 5; }
+        #sync-ui { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); background: var(--btn-s-bg); padding: 4px 10px; border-radius: 6px; font-size: 0.7rem; font-weight: bold; border: 1px solid var(--glass-border); display: flex; align-items: center; gap: 6px; transition: opacity 0.3s; z-index: 5; }
         .sync-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--prim); box-shadow: 0 0 6px var(--prim); animation: blink 1.5s infinite ease-in-out; }
         @keyframes blink { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.8); } 100% { opacity: 1; transform: scale(1); } }
 
-        /* END GAME OVERLAY - GLASSMORPHISM */
+        /* END GAME OVERLAY */
         #scr-end { position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; display: flex; align-items: center; justify-content: center; z-index: 200; flex-direction: column; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); opacity: 0; pointer-events: none; transition: opacity 0.8s ease, background 0.8s ease; }
         #scr-end.show { opacity: 1; pointer-events: auto; }
-        .end-win { background: rgba(16, 185, 129, 0.85); }
-        .end-loss { background: rgba(239, 68, 68, 0.85); }
-        .end-content { text-align: center; padding: 40px; background: rgba(15, 23, 42, 0.45); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 25px 50px rgba(0,0,0,0.5); transform: translateY(20px); transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .end-win { background: rgba(16, 185, 129, 0.65); }
+        .end-loss { background: rgba(239, 68, 68, 0.65); }
+        .end-content { text-align: center; padding: 40px; background: var(--glass-bg); border-radius: 20px; border: 1px solid var(--glass-border); box-shadow: 0 25px 50px rgba(0,0,0,0.3); transform: translateY(20px); transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         #scr-end.show .end-content { transform: translateY(0); }
         .end-content h1 { font-size: 3rem; margin: 0 0 10px; text-shadow: 0 4px 10px rgba(0,0,0,0.3); }
         .end-content p { font-size: 1.1rem; margin-bottom: 30px; opacity: 0.9; }
 
         /* MULTIPLAYER TABS */
-        .mp-tabs { display: flex; gap: 5px; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; }
-        .mp-tab { flex: 1; padding: 8px; border-radius: 8px; background: rgba(0,0,0,0.3); border: 1px solid transparent; color: var(--txt-d); font-size: 0.75rem; cursor: pointer; font-weight: bold; }
-        .mp-tab.active { background: rgba(59, 130, 246, 0.2); border-color: rgba(59, 130, 246, 0.5); color: white; }
-        #webrtc-data { width: 100%; height: 50px; font-size: 0.7rem; background: rgba(0,0,0,0.5); color: var(--prim); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; padding: 8px; margin-bottom: 10px; box-sizing: border-box; resize: none; outline: none; }
+        .mp-tabs { display: flex; gap: 5px; margin-bottom: 15px; border-bottom: 1px solid var(--glass-border); padding-bottom: 10px; }
+        .mp-tab { flex: 1; padding: 8px; border-radius: 8px; background: var(--btn-s-bg); border: 1px solid transparent; color: var(--txt-d); font-size: 0.75rem; cursor: pointer; font-weight: bold; }
+        .mp-tab.active { background: rgba(59, 130, 246, 0.2); border-color: rgba(59, 130, 246, 0.5); color: var(--txt); }
+        #webrtc-data { width: 100%; height: 50px; font-size: 0.7rem; background: var(--btn-s-bg); color: var(--prim); border: 1px solid var(--glass-border); border-radius: 8px; padding: 8px; margin-bottom: 10px; box-sizing: border-box; resize: none; outline: none; }
 
         /* MOBILE ADJUSTMENTS */
         @media (max-width: 768px), (pointer: coarse) {
@@ -244,7 +277,7 @@
         }
     </style>
 </head>
-<body>
+<body class="theme-dark diff-2">
 
     <div id="scr-start" class="panel">
         <h1>TRUCO<span style="color:var(--prim)">.</span></h1>
@@ -252,11 +285,21 @@
             <button class="btn-p" onclick="nav('scr-start', 'scr-mode')">SINGLE PLAYER</button>
             <button class="btn-p" style="background: rgba(59, 130, 246, 0.6);" onclick="nav('scr-start', 'scr-multi')">MULTIPLAYER LOCAL</button>
         </div>
+        <div class="theme-toggle-container">
+            <button class="btn-theme" onclick="toggleTheme()">☀️ MODO CLARO</button>
+        </div>
     </div>
 
     <div id="scr-mode" class="panel hidden">
         <h2>SINGLE PLAYER</h2>
-        <div class="section-label">Formato de Jogo:</div>
+        
+        <div class="section-label">Regras do Jogo:</div>
+        <div class="diff-selector">
+            <button class="diff-btn active" id="btn-rules-paulista-sp" onclick="setRules('paulista', 'sp')">PAULISTA</button>
+            <button class="diff-btn" id="btn-rules-mineiro-sp" onclick="setRules('mineiro', 'sp')">MINEIRO</button>
+        </div>
+
+        <div class="section-label">Formato de Mesa:</div>
         <div class="diff-selector">
             <button class="diff-btn active" id="btn-fmt-1v1-sp" onclick="setPendingFormat('1v1', 'sp')">1 X 1</button>
             <button class="diff-btn" id="btn-fmt-2v2-sp" onclick="setPendingFormat('2v2', 'sp')">DUPLAS (2 X 2)</button>
@@ -270,9 +313,9 @@
 
         <div class="section-label">Dificuldade da IA:</div>
         <div class="diff-selector" style="flex-wrap: wrap;">
-            <button class="diff-btn" id="btn-diff-1" onclick="setDiff(1)">FÁCIL</button>
-            <button class="diff-btn" id="btn-diff-2" onclick="setDiff(2)">NORMAL</button>
-            <button class="diff-btn dificil active" id="btn-diff-3" onclick="setDiff(3)">DIFÍCIL</button>
+            <button class="diff-btn facil" id="btn-diff-1" onclick="setDiff(1)">FÁCIL</button>
+            <button class="diff-btn active" id="btn-diff-2" onclick="setDiff(2)">NORMAL</button>
+            <button class="diff-btn dificil" id="btn-diff-3" onclick="setDiff(3)">DIFÍCIL</button>
             <button class="diff-btn insano" id="btn-diff-4" onclick="setDiff(4)">INSANO</button>
         </div>
         <div class="btn-stack">
@@ -290,7 +333,13 @@
         </div>
 
         <div id="mp-config-area">
-            <div class="section-label">Formato de Jogo:</div>
+            <div class="section-label">Regras do Jogo:</div>
+            <div class="diff-selector">
+                <button class="diff-btn active" id="btn-rules-paulista-mp" onclick="setRules('paulista', 'mp')">PAULISTA</button>
+                <button class="diff-btn" id="btn-rules-mineiro-mp" onclick="setRules('mineiro', 'mp')">MINEIRO</button>
+            </div>
+
+            <div class="section-label">Formato de Mesa:</div>
             <div class="diff-selector">
                 <button class="diff-btn active" id="btn-fmt-1v1-mp" onclick="setPendingFormat('1v1', 'mp')">1 X 1</button>
                 <button class="diff-btn" id="btn-fmt-2v2-mp" onclick="setPendingFormat('2v2', 'mp')">DUPLAS (2 X 2)</button>
@@ -303,14 +352,12 @@
             </div>
         </div>
 
-        <!-- MODO JSON -->
         <div id="mp-json-area" class="btn-stack">
             <button class="btn-p" onclick="startMultiplayer('host', 'json')">CRIAR MESA (HOST)</button>
-            <hr style="border-color: rgba(255,255,255,0.1); margin: 5px 0;">
+            <hr style="border-color: var(--glass-border); margin: 5px 0;">
             <button class="btn-s" onclick="startMultiplayer('guest', 'json')">ENTRAR NA MESA (GUEST)</button>
         </div>
 
-        <!-- MODO WEBRTC -->
         <div id="mp-webrtc-area" class="btn-stack hidden">
             <textarea id="webrtc-data" placeholder="O código de conexão aparecerá ou deverá ser colado aqui..." onclick="this.select()"></textarea>
             <button class="btn-p" onclick="startMultiplayer('host', 'webrtc')" style="background: rgba(59, 130, 246, 0.8);">1. GERAR CONVITE (HOST)</button>
@@ -354,7 +401,7 @@
                     <div id="vira-container"></div>
                     <div id="deck-pile" class="card back"></div>
                 </div>
-                <span id="deck-area-label">VIRA</span>
+                <span id="deck-area-label" id="deck-lbl">VIRA</span>
             </div>
 
             <div id="box-top" class="hand-top"></div>
@@ -397,9 +444,9 @@
                 <button class="action-btn" onclick="cancelFold()"><span class="key-box">N</span> NÃO</button>
             </div>
 
-            <!-- MÃO DE 11 -->
+            <!-- MÃO DE X (10 ou 11) -->
             <div id="grp-mao11" class="legend-group">
-                <span class="static-info" style="color: var(--warn); font-weight: bold;">Mão de 11!</span>
+                <span id="txt-mao11-title" class="static-info" style="color: var(--warn); font-weight: bold;">Mão de 11!</span>
                 <button class="action-btn primary" onclick="respondMao11(true)"><span class="key-box highlight" style="color:var(--prim); border-color:var(--prim); background:rgba(255,255,255,0.8);">A</span> ACEITAR</button>
                 <button class="action-btn" onclick="respondMao11(false)"><span class="key-box">C</span> CORRER</button>
             </div>
@@ -420,7 +467,7 @@
             <h1 id="end-title">🏆 PARABÉNS!</h1>
             <p id="end-msg">Sua equipe venceu a partida!</p>
             <div class="btn-stack" style="max-width: 250px; margin: 0 auto;">
-                <button class="btn-p" style="background: white; color: black;" onclick="playAgain()">JOGAR NOVAMENTE</button>
+                <button class="btn-p" style="background: var(--prim); color: white;" onclick="playAgain()">JOGAR NOVAMENTE</button>
                 <button class="btn-s" onclick="location.reload()">MENU PRINCIPAL</button>
             </div>
         </div>
@@ -433,14 +480,13 @@
         var SUITS = ['♦', '♠', '♥', '♣']; 
         var VALS_SUJO = ['4', '5', '6', '7', 'Q', 'J', 'K', 'A', '2', '3'];
         var VALS_LIMPO = ['Q', 'J', 'K', 'A', '2', '3'];
-        var TRUCO_NAMES = {1: '1', 3: 'TRUCO', 6: 'SEIS', 9: 'NOVE', 12: 'DOZE'};
 
         var st = {
-            version: 0, roundId: 0, turn: 1, handVal: 1, 
+            version: 0, roundId: 0, turn: 1, handVal: 1, proposedVal: 0,
             trucoBy: 0, trucoState: 'none', lastTruco: 0,
             firstPlayerOfRound: 1, humanAccepted: false,
-            isMaoDe11: false, maoDe11Team: 0, maoDeFerro: false,
-            gameFormat: '1v1',
+            isMaoDeX: false, maoDeXTeam: 0, maoDeFerro: false,
+            gameFormat: '1v1', rules: 'paulista',
             scores: { 1: 0, 2: 0 }, trickResults: [], trickWinners: [],
             hands: { 1: [], 2: [], 3: [], 4: [] }, table: [], lastTable: [],
             playedCards: [], 
@@ -450,17 +496,41 @@
         var myPID = 1; 
         var gameMode = 'pc'; var mpMethod = 'json';
         var animLock = false; window.isHiding = false;
+        var currentTheme = 'dark';
         
         var fileHandle = null; var syncCountdown = 3; var syncInterval = null; var activeTurnCheckTimer = 5;
         var pc = null; var dc = null; var isHostWebRTC = false;
         
         var msgTimeout = null; var isSaving = false;
-        var aiDifficulty = 3; 
+        var aiDifficulty = 2; 
         var pendingDeckMode = 'sujo';
         var pendingFormat = '1v1';
+        var pendingRules = 'paulista';
 
         window.nav = function(f, t) { document.getElementById(f).classList.add('hidden'); document.getElementById(t).classList.remove('hidden'); };
         function getEl(id) { return document.getElementById(id); }
+
+        window.toggleTheme = function() {
+            var body = document.body;
+            var btn = document.querySelector('.btn-theme');
+            if (currentTheme === 'dark') {
+                currentTheme = 'light';
+                body.classList.remove('theme-dark');
+                body.classList.add('theme-light');
+                btn.innerText = "🌙 MODO ESCURO";
+            } else {
+                currentTheme = 'dark';
+                body.classList.remove('theme-light');
+                body.classList.add('theme-dark');
+                btn.innerText = "☀️ MODO CLARO";
+            }
+        };
+
+        function updateBodyDiffClass() {
+            var body = document.body;
+            body.classList.remove('diff-1', 'diff-2', 'diff-3', 'diff-4');
+            body.classList.add('diff-' + aiDifficulty);
+        }
 
         window.switchMpTab = function(method) {
             mpMethod = method;
@@ -475,26 +545,85 @@
 
         window.setDiff = function(level) {
             aiDifficulty = level;
-            document.querySelectorAll('#scr-mode .diff-btn:not([id^="btn-deck"]):not([id^="btn-fmt"])').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('#scr-mode .diff-btn:not([id^="btn-deck"]):not([id^="btn-fmt"]):not([id^="btn-rules"])').forEach(b => b.classList.remove('active'));
             getEl('btn-diff-' + level).classList.add('active');
+            updateBodyDiffClass();
+        };
+
+        window.setRules = function(rules, screen) {
+            pendingRules = rules;
+            var prefix = screen === 'sp' ? 'sp' : 'mp';
+            getEl('btn-rules-paulista-' + prefix).classList.remove('active');
+            getEl('btn-rules-mineiro-' + prefix).classList.remove('active');
+            getEl('btn-rules-' + rules + '-' + prefix).classList.add('active');
+
+            if (rules === 'mineiro') {
+                setPendingDeck('sujo', screen);
+                getEl('btn-deck-limpo-' + prefix).setAttribute('disabled', 'true');
+            } else {
+                getEl('btn-deck-limpo-' + prefix).removeAttribute('disabled');
+            }
         };
 
         window.setPendingDeck = function(mode, screen) {
+            if (pendingRules === 'mineiro' && mode === 'limpo') return; 
             pendingDeckMode = mode;
-            getEl('btn-deck-sujo-' + screen).classList.remove('active');
-            getEl('btn-deck-limpo-' + screen).classList.remove('active');
-            getEl('btn-deck-' + mode + '-' + screen).classList.add('active');
+            var prefix = screen === 'sp' ? 'sp' : 'mp';
+            getEl('btn-deck-sujo-' + prefix).classList.remove('active');
+            getEl('btn-deck-limpo-' + prefix).classList.remove('active');
+            getEl('btn-deck-' + mode + '-' + prefix).classList.add('active');
         };
 
         window.setPendingFormat = function(fmt, screen) {
             pendingFormat = fmt;
-            getEl('btn-fmt-1v1-' + screen).classList.remove('active');
-            getEl('btn-fmt-2v2-' + screen).classList.remove('active');
-            getEl('btn-fmt-' + fmt + '-' + screen).classList.add('active');
+            var prefix = screen === 'sp' ? 'sp' : 'mp';
+            getEl('btn-fmt-1v1-' + prefix).classList.remove('active');
+            getEl('btn-fmt-2v2-' + prefix).classList.remove('active');
+            getEl('btn-fmt-' + fmt + '-' + prefix).classList.add('active');
         };
 
         function getActiveVals() { return st.deckMode === 'limpo' ? VALS_LIMPO : VALS_SUJO; }
-        function getTeam(pid) { return (pid === 1 || pid === 3) ? 1 : 2; }
+        
+        // --- NUCLEO DE REGRAS E FORÇAS ---
+        function getPower(c) {
+            if(!c) return -1;
+            if (st.rules === 'mineiro') {
+                if (c.v === '4' && c.s === '♣') return 200;
+                if (c.v === '7' && c.s === '♥') return 199;
+                if (c.v === 'A' && c.s === '♠') return 198;
+                if (c.v === '7' && c.s === '♦') return 197;
+            } else {
+                if (c.v === st.manilha) return 100 + SUITS.indexOf(c.s);
+            }
+            return getActiveVals().indexOf(c.v);
+        }
+
+        function getNextTrucoVal(current) {
+            if (st.rules === 'paulista') {
+                if (current === 1) return 3;
+                if (current === 3) return 6;
+                if (current === 6) return 9;
+                if (current === 9) return 12;
+            } else {
+                if (current === 2) return 4;
+                if (current === 4) return 6;
+                if (current === 6) return 10;
+                if (current === 10) return 12;
+            }
+            return 12;
+        }
+
+        function getTrucoName(val) {
+            if (val === 1 || val === 2) return val.toString();
+            if (val === 3 || val === 4) return "TRUCO";
+            if (val === 6) return "SEIS";
+            if (val === 9) return "NOVE";
+            if (val === 10) return "DEZ";
+            if (val === 12) return "DOZE";
+            return val.toString();
+        }
+
+        function getTeam(pid) { if(!pid || pid === 0) return 0; return (pid === 1 || pid === 3) ? 1 : 2; }
         function getOppTeam(team) { return team === 1 ? 2 : 1; }
         function getNextTurn(curr) { return st.gameFormat === '2v2' ? (curr % 4) + 1 : (curr === 1 ? 2 : 1); }
         function getNumPlayers() { return st.gameFormat === '2v2' ? 4 : 2; }
@@ -525,9 +654,8 @@
         }
 
         window.toggleHide = function() {
-            if(animLock || st.turn !== myPID || st.trucoState !== 'none' || st.isMaoDe11 || st.maoDeFerro) return;
+            if(animLock || st.turn !== myPID || st.trucoState !== 'none' || st.isMaoDeX || st.maoDeFerro) return;
             
-            // Regra: Primeira carta da primeira mão da rodada não pode ser escondida
             if(st.trickResults.length === 0) {
                 showMsg("A 1ª carta não pode ser escondida!", 'warn', 2000);
                 return;
@@ -552,7 +680,7 @@
         }
 
         window.requestExit = function() {
-            if(animLock && st.trucoState !== 'mao11') return;
+            if(animLock && st.trucoState !== 'mao11') return; // Usa a tela principal, permite sair durante mão de 11 se não travado em anim
             setBottomGroup('grp-confirm-exit');
             getEl('action-bar').classList.add('danger-zone');
         };
@@ -586,7 +714,7 @@
                 return;
             }
 
-            if (st.trucoState === 'mao11' && st.maoDe11Team === 1) {
+            if (st.trucoState === 'mao11' && st.maoDeXTeam === 1) {
                 if (key === 'A') respondMao11(true);
                 else if (key === 'C') respondMao11(false);
                 return;
@@ -611,7 +739,6 @@
             }
         });
 
-        // 1.3s Notification default
         function showMsg(m, type, durOverride) {
             var hud = getEl('main-hud'); var display = getEl('stadium-text');
             clearTimeout(msgTimeout);
@@ -655,13 +782,6 @@
             startRound(st.firstPlayerOfRound);
         };
 
-        function getPower(c) {
-            if(!c) return -1;
-            var activeVals = getActiveVals();
-            if(c.v === st.manilha) return 100 + SUITS.indexOf(c.s);
-            return activeVals.indexOf(c.v);
-        }
-
         function createCardDOM(c, isBack, isInteractive, idx, isVira, posContext) {
             var w = document.createElement('div');
             w.className = 'card-wrapper' + (isInteractive ? ' interactive' : '');
@@ -669,8 +789,9 @@
             var d = document.createElement('div');
             d.className = 'card' + (isBack ? ' back' : '');
             if(!isBack && c) {
-                if(c.s === '♥' || c.s === '♦') d.className += ' red';
-                d.innerHTML = '<span>'+c.v+'</span><small>'+c.s+'</small>';
+                var isRed = (c.s === '♥' || c.s === '♦');
+                if(isRed) d.className += ' red';
+                d.innerHTML = '<span>'+c.v+'</span><small class="'+(isRed?'':'black-suit')+'">'+c.s+'</small>';
                 if(isInteractive) {
                     w.onclick = function() { playCard(idx); };
                     var hint = document.createElement('div');
@@ -683,13 +804,76 @@
             return w;
         }
 
+        // --- CÉREBRO DA IA: MOTOR AGRESSIVO v0.7.1 ADAPTADO ---
+        function aiHandStrength(pid) {
+            var myCards = st.hands[pid];
+            var activeVals = getActiveVals();
+            var manilhas = 0; var fortes = 0;
+            var playedPowers = st.playedCards ? st.playedCards.map(c => getPower(c)) : [];
+            var hasNuts = false;
+
+            for(var i=0; i<myCards.length; i++) {
+                var p = getPower(myCards[i]);
+                if (p > 99) manilhas++;
+                else if (p >= activeVals.length - 2) fortes++;
+
+                // Lógica de "The Nuts" adaptada para Paulista e Mineiro
+                if (p > -1 && st.trickResults.length > 0) {
+                    var isThisNuts = true;
+                    if (st.rules === 'paulista') {
+                        for (var s=0; s<4; s++) {
+                            var mp = 100 + s;
+                            if (mp > p && !playedPowers.includes(mp)) isThisNuts = false;
+                        }
+                    } else { // Mineiro
+                        [200, 199, 198, 197].forEach(mp => {
+                            if (mp > p && !playedPowers.includes(mp)) isThisNuts = false;
+                        });
+                    }
+                    if (isThisNuts && p < 100) {
+                        for (var v=0; v<activeVals.length; v++) {
+                            if (v > p && !playedPowers.includes(v)) isThisNuts = false;
+                        }
+                    }
+                    if (isThisNuts) hasNuts = true;
+                }
+            }
+
+            var base = 10;
+            if (manilhas >= 2) base = 95;
+            else if (manilhas >= 1 && fortes >= 1) base = 85;
+            else if (manilhas >= 1) base = 65;
+            else if (fortes >= 2) base = 50;
+            else if (fortes >= 1) base = 30;
+
+            if (hasNuts) base += 40;
+
+            return { prob: base, manilhas: manilhas, fortes: fortes, isNuts: hasNuts };
+        }
+
+        function aiContextProb(pid) {
+            var h = aiHandStrength(pid);
+            var prob = h.prob;
+            var myTeam = getTeam(pid);
+            var oppTeam = getOppTeam(myTeam);
+            
+            var myW = st.trickResults.filter(r => r === myTeam).length;
+            var opW = st.trickResults.filter(r => r === oppTeam).length;
+
+            if(myW === 1 && opW === 0) prob += 30;
+            if(opW === 1 && myW === 0) prob -= 30;
+            if(st.deckMode === 'limpo' && prob > 40 && prob < 90) prob += 10;
+
+            return Math.max(0, Math.min(100, prob));
+        }
+
         function updateTurnGlow() {
             document.querySelectorAll('.card').forEach(c => c.classList.remove('active-turn'));
             if (animLock && st.trucoState !== 'mao11') return;
 
             if (st.trucoState === 'mao11') {
                 for(var p = 1; p <= getNumPlayers(); p++) {
-                    if(getTeam(p) === st.maoDe11Team) {
+                    if(getTeam(p) === st.maoDeXTeam) {
                         var tHand = getEl('box-' + getUIPos(p));
                         if(tHand) tHand.querySelectorAll('.card').forEach(c => c.classList.add('active-turn'));
                     }
@@ -710,7 +894,7 @@
 
         function isAwaitingMyAction() {
             if (st.trucoState === 'pending') return getTeam(st.trucoBy) !== getTeam(myPID);
-            if (st.trucoState === 'mao11') return st.maoDe11Team === 1;
+            if (st.trucoState === 'mao11') return st.maoDeXTeam === 1;
             return st.turn === myPID;
         }
 
@@ -721,15 +905,20 @@
             getEl('ui-s0').innerText = st.scores[getTeam(myPID)]; 
             getEl('ui-s1').innerText = st.scores[getOppTeam(getTeam(myPID))];
             
-            if (st.isMaoDe11 || st.maoDeFerro) { getEl('ui-val').innerText = "3"; }
-            else { getEl('ui-val').innerText = TRUCO_NAMES[st.handVal] + (st.handVal > 1 ? " ("+st.handVal+")" : ""); }
+            var handValPoints = st.handVal;
+            // Se for Mão de X no Mineiro, o valor da mão é sempre 4. Se for Mão de 11 Paulista, é 3.
+            if (st.isMaoDeX || st.maoDeFerro) {
+                getEl('ui-val').innerText = (st.rules === 'mineiro') ? "4" : "3";
+            } else { 
+                getEl('ui-val').innerText = getTrucoName(st.handVal) + (st.handVal > 2 ? " ("+st.handVal+")" : ""); 
+            }
             
-            var baseDeckText = st.deckMode === 'limpo' ? "BARALHO LIMPO" : "BARALHO SUJO";
-            var indicatorText = baseDeckText;
+            var indicatorText = (st.rules === 'mineiro') ? "MANILHAS FIXAS" : (st.deckMode === 'limpo' ? "BARALHO LIMPO" : "BARALHO SUJO");
             if (st.maoDeFerro) indicatorText = "⚡ MÃO DE FERRO ⚡";
 
+            var thres = st.rules === 'mineiro' ? 10 : 11;
             var myTeamScore = st.scores[getTeam(myPID)]; var oppTeamScore = st.scores[getOppTeam(getTeam(myPID))];
-            var me11 = (myTeamScore === 11); var opp11 = (oppTeamScore === 11);
+            var meX = (myTeamScore === thres); 
             var isMyTurn = (st.turn === myPID);
             var uiTurn = getEl('ui-turn');
             var grpConfirmFold = getEl('grp-confirm-fold');
@@ -742,12 +931,13 @@
 
             if (st.trucoState === 'mao11') {
                 btnHide.setAttribute('disabled', 'true'); btnHide.classList.add('disabled');
-                if (st.maoDe11Team === 1) {
+                if (st.maoDeXTeam === 1) {
                     if(!isExiting) { setBottomGroup('grp-mao11'); actionBar.classList.add('danger-zone'); }
-                    uiTurn.innerText = "MÃO DE 11: DECIDA!"; uiTurn.style.color = "var(--warn)";
+                    getEl('txt-mao11-title').innerText = st.rules === 'mineiro' ? "Mão de 10!" : "Mão de 11!";
+                    uiTurn.innerText = st.rules === 'mineiro' ? "MÃO DE 10: DECIDA!" : "MÃO DE 11: DECIDA!"; uiTurn.style.color = "var(--warn)";
                 } else {
                     if(!isExiting) { setBottomGroup(null); actionBar.classList.remove('danger-zone'); }
-                    uiTurn.innerText = "RIVAIS PENSANDO (MÃO DE 11)..."; uiTurn.style.color = "var(--warn)";
+                    uiTurn.innerText = st.rules === 'mineiro' ? "RIVAIS PENSANDO (MÃO DE 10)..." : "RIVAIS PENSANDO (MÃO DE 11)..."; uiTurn.style.color = "var(--warn)";
                 }
             }
             else if (st.trucoState === 'pending') {
@@ -757,18 +947,10 @@
                     uiTurn.innerText = "⚠️ DECIDA! ⚠️"; uiTurn.style.color = "var(--warn)";
                     
                     if(st.gameFormat === '2v2') {
-                        // IA parceira dá a dica baseada SÓ na mão dela!
-                        var pCards = st.hands[3];
-                        var pProb = 0; var manilhas = 0; var fortes = 0;
-                        for(var i=0; i<pCards.length; i++) {
-                            var pw = getPower(pCards[i]);
-                            if(pw > 99) manilhas++; else if(pw >= getActiveVals().length - 2) fortes++;
-                        }
-                        if(manilhas >= 2) pProb = 95; else if(manilhas == 1) pProb = 75; else if(fortes >= 2) pProb = 50; else if(fortes == 1) pProb = 30; else pProb = 10;
-                        
+                        var partnerProb = aiContextProb(3);
                         var advice = "";
-                        if (pProb < 35) advice = "Parceiro: Sugiro correr";
-                        else if (pProb < 65) advice = "Parceiro: Sugiro aceitar";
+                        if (partnerProb < 35) advice = "Parceiro: Sugiro correr";
+                        else if (partnerProb < 65) advice = "Parceiro: Sugiro aceitar";
                         else {
                             if (st.handVal < 12) advice = "Parceiro: Sugiro aumentar!";
                             else advice = "Parceiro: Bora!";
@@ -783,9 +965,10 @@
                         }
                     }
 
-                    if(st.handVal < 12 && !me11 && getTeam(st.lastTruco) !== getTeam(myPID)) { 
+                    if(st.handVal < 12 && !meX && getTeam(st.lastTruco) !== getTeam(myPID)) { 
+                        var nextVal = getNextTrucoVal(st.handVal);
                         btnRaise.classList.remove('hidden'); 
-                        btnRaise.innerHTML = '<span class="key-box highlight">T</span> PEDIR ' + TRUCO_NAMES[st.handVal + 3] + '!'; 
+                        btnRaise.innerHTML = '<span class="key-box highlight">T</span> PEDIR ' + getTrucoName(nextVal) + '!'; 
                     } else { btnRaise.classList.add('hidden'); }
                 } else {
                     if(!isExiting) { setBottomGroup(null); actionBar.classList.remove('danger-zone'); }
@@ -799,14 +982,15 @@
                 
                 uiTurn.style.color = isMyTurn ? "var(--prim)" : "var(--txt-d)";
                 
-                if(isMyTurn && st.handVal < 12 && !me11 && !st.maoDeFerro && !st.isMaoDe11 && st.table.length < getNumPlayers() && getTeam(st.lastTruco) !== getTeam(myPID)) {
+                if(isMyTurn && st.handVal < 12 && !meX && !st.maoDeFerro && !st.isMaoDeX && st.table.length < getNumPlayers() && getTeam(st.lastTruco) !== getTeam(myPID)) {
+                    var nextVal = getNextTrucoVal(st.handVal);
                     btnTruco.classList.remove('hidden'); 
-                    btnTruco.innerHTML = '<span class="key-box highlight">T</span> PEDIR ' + TRUCO_NAMES[(st.handVal === 1) ? 3 : st.handVal + 3];
+                    btnTruco.innerHTML = '<span class="key-box highlight">T</span> PEDIR ' + getTrucoName(nextVal);
                 } else { btnTruco.classList.add('hidden'); }
                 
                 if(isMyTurn && !st.maoDeFerro) btnFold.classList.remove('hidden'); else btnFold.classList.add('hidden');
 
-                if (isMyTurn && !st.maoDeFerro && !st.isMaoDe11) {
+                if (isMyTurn && !st.maoDeFerro && !st.isMaoDeX) {
                     var canHide = (st.trickResults.length > 0); 
                     if (canHide) {
                         btnHide.removeAttribute('disabled');
@@ -823,7 +1007,7 @@
                 }
             }
             
-            if (!(st.trucoState === 'mao11' && st.maoDe11Team === 1 && st.gameFormat === '2v2')) {
+            if (!(st.trucoState === 'mao11' && st.maoDeXTeam === 1 && st.gameFormat === '2v2')) {
                 getEl('ui-deck-indicator').innerText = indicatorText;
             }
 
@@ -840,18 +1024,25 @@
             }
 
             var gmContainer = getEl('ghost-manilha');
-            if (st.viraRevealed && st.manilha) {
-                gmContainer.classList.remove('hidden');
-                var mCard = getEl('ghost-m-card');
-                mCard.innerHTML = '<span style="font-size: 1.3rem; font-weight: 900; line-height: 1;">'+st.manilha+'</span>' +
-                                  '<div style="display:flex; gap:3px; font-size:0.6rem; margin-top:4px; white-space:nowrap;">' +
-                                  '<span style="color:#f8fafc">♣</span>' +
-                                  '<span style="color:#ef4444">♥</span>' +
-                                  '<span style="color:#f8fafc">♠</span>' +
-                                  '<span style="color:#ef4444">♦</span>' +
-                                  '</div>';
-            } else {
+            var deckContainer = getEl('deck-area');
+            if (st.rules === 'mineiro') {
                 gmContainer.classList.add('hidden');
+                deckContainer.classList.add('hidden');
+            } else {
+                deckContainer.classList.remove('hidden');
+                if (st.viraRevealed && st.manilha) {
+                    gmContainer.classList.remove('hidden');
+                    var mCard = getEl('ghost-m-card');
+                    mCard.innerHTML = '<span style="font-size: 1.3rem; font-weight: 900; line-height: 1;">'+st.manilha+'</span>' +
+                                      '<div style="display:flex; gap:3px; font-size:0.6rem; margin-top:4px; white-space:nowrap;">' +
+                                      '<span style="color:var(--suit-black)">♣</span>' +
+                                      '<span style="color:var(--dang)">♥</span>' +
+                                      '<span style="color:var(--suit-black)">♠</span>' +
+                                      '<span style="color:var(--dang)">♦</span>' +
+                                      '</div>';
+                } else {
+                    gmContainer.classList.add('hidden');
+                }
             }
 
             updateTurnGlow(); 
@@ -904,15 +1095,17 @@
                 bTb.appendChild(dom);
             }
 
-            var viraDest = getEl('vira-container');
-            viraDest.innerHTML = '';
-            if(st.vira) {
-                var viraDOM = createCardDOM(st.vira, false, false, 0, true, 'vira');
-                viraDOM.firstChild.style.width = '50px'; viraDOM.firstChild.style.height = '75px'; viraDOM.firstChild.style.fontSize = '1.1rem';
-                if(window.innerWidth <= 768) { viraDOM.firstChild.style.width = '45px'; viraDOM.firstChild.style.height = '65px'; }
-                viraDOM.firstChild.id = 'vira-anim-target';
-                if(isDealing) viraDOM.style.opacity = '0';
-                viraDest.appendChild(viraDOM);
+            if (st.rules === 'paulista') {
+                var viraDest = getEl('vira-container');
+                viraDest.innerHTML = '';
+                if(st.vira) {
+                    var viraDOM = createCardDOM(st.vira, false, false, 0, true, 'vira');
+                    viraDOM.firstChild.style.width = '50px'; viraDOM.firstChild.style.height = '75px'; viraDOM.firstChild.style.fontSize = '1.1rem';
+                    if(window.innerWidth <= 768) { viraDOM.firstChild.style.width = '45px'; viraDOM.firstChild.style.height = '65px'; }
+                    viraDOM.firstChild.id = 'vira-anim-target';
+                    if(isDealing) viraDOM.style.opacity = '0';
+                    viraDest.appendChild(viraDOM);
+                }
             }
 
             if (animOriginPID && bTb.children.length > 0) {
@@ -941,6 +1134,9 @@
 
             var allWrappers = document.querySelectorAll('.table .card-wrapper, #vira-container .card-wrapper');
             var deckRect = getEl('deck-pile').getBoundingClientRect();
+
+            // Fallback se Mineiro (sem deck pile na tela)
+            if (st.rules === 'mineiro') deckRect = { left: window.innerWidth + 50, top: -50 };
 
             var flyCards = [];
             var delay = 0;
@@ -1010,8 +1206,9 @@
         window.startGame = function(modeStr, playerID) {
             gameMode = modeStr; myPID = playerID; 
             st.gameFormat = pendingFormat;
+            st.rules = pendingRules;
             st.scores = {1:0, 2:0}; window.lastAdviceLevel = 0; st.humanAccepted = false;
-            if (modeStr !== 'pc') aiDifficulty = 3;
+            
             if (myPID === 1) st.deckMode = pendingDeckMode;
             
             nav((modeStr === 'pc' ? 'scr-mode' : 'scr-multi'), 'scr-game');
@@ -1038,26 +1235,36 @@
                 st.hands[1].push(deck.pop()); st.hands[2].push(deck.pop());
                 if(numP === 4) { st.hands[3].push(deck.pop()); st.hands[4].push(deck.pop()); }
             }
-            st.vira = deck.pop(); st.viraRevealed = false;
-            st.manilha = activeVals[(activeVals.indexOf(st.vira.v) + 1) % activeVals.length];
+            
+            if (st.rules === 'paulista') {
+                st.vira = deck.pop(); 
+                st.manilha = activeVals[(activeVals.indexOf(st.vira.v) + 1) % activeVals.length];
+            } else {
+                st.vira = null; st.manilha = ''; // Mineiro tem manilhas fixas
+            }
+            st.viraRevealed = false;
             
             st.table = []; st.lastTable = []; st.trickResults = []; st.trickWinners = [];
             st.playedCards = []; 
             
-            st.handVal = 1; st.trucoBy = 0; st.trucoState = 'none'; 
+            st.handVal = st.rules === 'mineiro' ? 2 : 1; 
+            st.proposedVal = 0;
+            st.trucoBy = 0; st.trucoState = 'none'; 
             
             st.firstPlayerOfRound = firstPlayer;
             st.turn = firstPlayer;
             
             st.lastTruco = 0; st.needsNewRound = false;
-            st.isMaoDe11 = false; st.maoDe11Team = 0; st.maoDeFerro = false;
+            st.isMaoDeX = false; st.maoDeXTeam = 0; st.maoDeFerro = false;
             
-            if (st.scores[1] === 11 && st.scores[2] === 11) {
-                st.maoDeFerro = true; st.handVal = 3;
-            } else if (st.scores[1] === 11) {
-                st.isMaoDe11 = true; st.maoDe11Team = 1; st.handVal = 3; st.trucoState = 'mao11';
-            } else if (st.scores[2] === 11) {
-                st.isMaoDe11 = true; st.maoDe11Team = 2; st.handVal = 3; st.trucoState = 'mao11';
+            var thres = st.rules === 'mineiro' ? 10 : 11;
+
+            if (st.scores[1] === thres && st.scores[2] === thres) {
+                st.maoDeFerro = true; st.handVal = st.rules === 'mineiro' ? 4 : 3;
+            } else if (st.scores[1] === thres) {
+                st.isMaoDeX = true; st.maoDeXTeam = 1; st.handVal = st.rules === 'mineiro' ? 4 : 3; st.trucoState = 'mao11';
+            } else if (st.scores[2] === thres) {
+                st.isMaoDeX = true; st.maoDeXTeam = 2; st.handVal = st.rules === 'mineiro' ? 4 : 3; st.trucoState = 'mao11';
             }
             
             getEl('box-table').innerHTML = '';
@@ -1065,31 +1272,25 @@
         }
 
         function handleMao11() {
-            if (st.maoDe11Team === 1) {
+            if (st.maoDeXTeam === 1) {
                 if (st.gameFormat === '2v2') {
                     renderMesa(null, null, false, true); 
-                    
-                    var pCards = st.hands[3];
-                    var pProb = 0; var manilhas = 0; var fortes = 0;
-                    for(var i=0; i<pCards.length; i++) {
-                        var pw = getPower(pCards[i]);
-                        if(pw > 99) manilhas++; else if(pw >= getActiveVals().length - 2) fortes++;
-                    }
-                    if(manilhas >= 2) pProb = 95; else if(manilhas == 1) pProb = 75; else if(fortes >= 2) pProb = 50; else if(fortes == 1) pProb = 30; else pProb = 10;
-                    
+                    var probComb = aiContextProb(3);
                     var advice = "";
-                    if (pProb < 35) advice = "Parceiro: Melhor correr";
-                    else if (pProb < 65) advice = "Parceiro: Não tô confiante...";
-                    else if (pProb < 80) advice = "Parceiro: Acho que dá pra ganhar";
+                    if (probComb < 35) advice = "Parceiro: Melhor correr";
+                    else if (probComb < 65) advice = "Parceiro: Não tô confiante...";
+                    else if (probComb < 80) advice = "Parceiro: Acho que dá pra ganhar";
                     else advice = "Parceiro: Bora!";
                     
                     getEl('ui-deck-indicator').innerText = advice.toUpperCase();
-                    showMsg("Mão de 11! Analise as cartas.", 'warn', 3000);
+                    var m = st.rules === 'mineiro' ? "Mão de 10! Analise as cartas." : "Mão de 11! Analise as cartas.";
+                    showMsg(m, 'warn', 3000);
                 } else {
-                    showMsg("Sua Mão de 11! Deseja jogar?", 'warn', 3000);
+                    var m = st.rules === 'mineiro' ? "Sua Mão de 10! Deseja jogar?" : "Sua Mão de 11! Deseja jogar?";
+                    showMsg(m, 'warn', 3000);
                 }
                 updateUI();
-            } else if (st.maoDe11Team === 2) {
+            } else if (st.maoDeXTeam === 2) {
                 animLock = true; updateUI();
                 setTimeout(aiDecideMao11, 2500);
             }
@@ -1097,18 +1298,19 @@
 
         window.respondMao11 = function(accept) {
             if(animLock || st.trucoState !== 'mao11') return;
+            var txt = st.rules === 'mineiro' ? "10" : "11";
             if(accept) {
-                var msgAcc = st.gameFormat === '1v1' ? "Você Aceitou a Mão de 11!" : "Vocês Aceitaram a Mão de 11!";
+                var msgAcc = st.gameFormat === '1v1' ? "Você Aceitou a Mão de "+txt+"!" : "Vocês Aceitaram a Mão de "+txt+"!";
                 showMsg(msgAcc, 'pos'); 
                 st.trucoState = 'none'; 
                 renderMesa(); 
                 updateUI(); autoSave();
                 animLock = false; checkAiTurn();
             } else {
-                var msgRej = st.gameFormat === '1v1' ? "Você Correu da Mão de 11!" : "Vocês Correram da Mão de 11!";
+                var msgRej = st.gameFormat === '1v1' ? "Você Correu da Mão de "+txt+"!" : "Vocês Correram da Mão de "+txt+"!";
                 showMsg(msgRej, 'neg'); 
                 st.trucoState = 'none'; 
-                st.scores[2] += 1; 
+                st.scores[2] += st.rules === 'mineiro' ? 2 : 1; 
                 if(st.scores[2] >= 12) { autoSave(); triggerEndGame(false); return; }
                 var nxtFirst = getNextTurn(st.firstPlayerOfRound); 
                 if (myPID === 1 || gameMode !== 'json') { startRound(nxtFirst); } else { st.needsNewRound = true; st.nextFirstPlayer = nxtFirst; autoSave(); }
@@ -1116,24 +1318,19 @@
         };
 
         function aiDecideMao11() {
-            var prob = 0; var manilhas = 0; var fortes = 0;
-            for(var i=0; i<st.hands[2].length; i++) {
-                var p = getPower(st.hands[2][i]);
-                if(p > 99) manilhas++; else if(p >= getActiveVals().length - 2) fortes++;
-            }
-            if(manilhas >= 2) prob = 95; else if(manilhas == 1) prob = 75; else if(fortes >= 2) prob = 50; else if(fortes == 1) prob = 30; else prob = 10;
-            
-            var accept = (prob >= 40); 
+            var prob = aiContextProb(2);
+            var accept = (prob >= 42); 
+            var txt = st.rules === 'mineiro' ? "10" : "11";
             
             if (accept) {
-                var msg = st.gameFormat === '1v1' ? "O Rival aceitou a Mão de 11!" : "Os Rivais aceitaram a Mão de 11!";
+                var msg = st.gameFormat === '1v1' ? "O Rival aceitou a Mão de "+txt+"!" : "Os Rivais aceitaram a Mão de "+txt+"!";
                 showMsg(msg, 'neg');
                 st.trucoState = 'none';
                 animLock = false; updateUI(); checkAiTurn();
             } else {
-                var msg = st.gameFormat === '1v1' ? "O Rival correu da Mão de 11!" : "Os Rivais correram da Mão de 11!";
+                var msg = st.gameFormat === '1v1' ? "O Rival correu da Mão de "+txt+"!" : "Os Rivais correram da Mão de "+txt+"!";
                 showMsg(msg, 'pos');
-                st.scores[1] += 1;
+                st.scores[1] += st.rules === 'mineiro' ? 2 : 1;
                 if(st.scores[1] >= 12) { triggerEndGame(true); return; }
                 setTimeout(function(){ startRound(getNextTurn(st.firstPlayerOfRound)); }, 2000);
             }
@@ -1180,6 +1377,8 @@
                 var pwr = st.table[i].hidden ? -1 : getPower(st.table[i].c);
                 if(pwr > highestPwr) { highestPwr = pwr; winners = [st.table[i].p]; } 
                 else if (pwr === highestPwr && pwr !== -1) { winners.push(st.table[i].p); }
+                
+                if (!st.table[i].hidden) { st.playedCards.push(st.table[i].c); }
             }
             
             st.trickWinners = winners;
@@ -1189,7 +1388,7 @@
             for(var i=0; i<st.table.length; i++) {
                 if(winners.includes(st.table[i].p)) {
                     var innerCard = bTb[i].querySelector('.card');
-                    if(innerCard) innerCard.classList.add('winner-anim'); // Roda 1.3s
+                    if(innerCard) innerCard.classList.add('winner-anim'); 
                 }
             }
 
@@ -1213,9 +1412,8 @@
             }
 
             st.lastTable = JSON.parse(JSON.stringify(st.table)); 
-            autoSave(); // Manda pacote full pro Guest animar no mesmo timer
+            autoSave(); 
 
-            // Fecha a rodada logo após a animação de 1.3s acabar
             setTimeout(function() {
                 st.trickWinners = [];
                 st.table = []; renderMesa(); updateUI();
@@ -1254,8 +1452,9 @@
 
         window.requestTruco = function() {
             if(animLock) return;
-            st.handVal = (st.handVal === 1) ? 3 : st.handVal + 3; st.trucoBy = myPID; st.lastTruco = myPID; st.trucoState = 'pending';
-            showMsg("Você pediu " + TRUCO_NAMES[st.handVal] + "!", 'neu'); window.lastAdviceLevel = 0; 
+            st.proposedVal = getNextTrucoVal(st.handVal);
+            st.trucoBy = myPID; st.lastTruco = myPID; st.trucoState = 'pending';
+            showMsg("Você pediu " + getTrucoName(st.proposedVal) + "!", 'neu'); window.lastAdviceLevel = 0; 
             updateUI(); updateTurnGlow(); autoSave(); checkAiTrucoDecision();
         };
 
@@ -1263,12 +1462,15 @@
             if(animLock) return;
             if(accept) {
                 st.humanAccepted = true; 
+                st.handVal = st.proposedVal; st.proposedVal = 0;
                 showMsg("Você Aceitou!", 'pos'); st.trucoState = 'none'; updateUI(); autoSave();
                 animLock = false; updateTurnGlow(); checkAiTurn();
             } else {
                 showMsg("Você Correu!", 'neg'); st.trucoState = 'none'; 
                 var callingTeam = getTeam(st.trucoBy);
-                st.scores[callingTeam] += (st.handVal === 3) ? 1 : (st.handVal - 3);
+                // No Mineiro as perdas de fuga variam: foge do 4 perde 2. Foge do 6 perde 4. Foge do 10 perde 6.
+                var pts = st.handVal; 
+                st.scores[callingTeam] += pts;
                 if(st.scores[callingTeam] >= 12) { autoSave(); triggerEndGame(false); return; }
                 var nxtFirst = getNextTurn(st.firstPlayerOfRound);
                 if (myPID === 1 || gameMode !== 'json') { startRound(nxtFirst); } else { st.needsNewRound = true; st.nextFirstPlayer = nxtFirst; autoSave(); }
@@ -1298,109 +1500,68 @@
             if (aiNeedsToAnswer) { animLock = true; setTimeout(() => aiDecideTruco(aiPid), 1800); }
         }
 
-        // ═══════════════════════════════════════════════════════════════
-        // MOTOR DE IA v0.8.28 — Quatro Personalidades Distintas
-        //
-        //  1. FÁCIL   → Ingênua. Joga por impulso, erra, cede fácil.
-        //  2. NORMAL  → Matemática. Previsível, correta, quase sem erro.
-        //  3. DIFÍCIL → Estratégica. Blefa com propósito, deixa incomodado.
-        //  4. INSANO  → Predatória. Terror constante, nunca para, nunca erra.
-        // ═══════════════════════════════════════════════════════════════
-
-        // Calcula a força base da mão (cartas) de um jogador
-        function aiHandStrength(pid) {
-            var manilhas = 0, fortes = 0;
-            var len = getActiveVals().length;
-            for(var i = 0; i < st.hands[pid].length; i++) {
-                var p = getPower(st.hands[pid][i]);
-                if(p > 99) manilhas++;
-                else if(p >= len - 2) fortes++;
-            }
-            var base = 10;
-            if(manilhas >= 2) base = 95;
-            else if(manilhas >= 1 && fortes >= 1) base = 85;
-            else if(manilhas >= 1) base = 65;
-            else if(fortes >= 2) base = 50;
-            else if(fortes >= 1) base = 30;
-            return { prob: base, manilhas: manilhas, fortes: fortes };
-        }
-
-        // Probabilidade contextual: leva em conta o placar de vazas
-        function aiContextProb(pid) {
-            var h = aiHandStrength(pid);
-            var prob = h.prob;
-            var myTeam = getTeam(pid);
-            var myW = st.trickResults.filter(r => r === myTeam).length;
-            var opW = st.trickResults.filter(r => r === getOppTeam(myTeam)).length;
-            if(myW > opW)  prob = Math.min(100, prob + 25);
-            if(opW > myW)  prob = Math.max(0,   prob - 20);
-            return prob;
-        }
-
-        // ── Resposta ao Truco pedido pelo adversário ──────────────────
+        // --- CÉREBRO DA IA ---
         function aiDecideTruco(pid) {
             var myTeam = getTeam(pid);
-            var my11   = (st.scores[myTeam] === 11);
+            var thres = st.rules === 'mineiro' ? 10 : 11;
+            var myX   = (st.scores[myTeam] === thres);
             var prob   = aiContextProb(pid);
             var accept = false, raise = false;
 
             if(aiDifficulty === 1) {
-                // FÁCIL: só aceita com mão muito boa; nunca retrucar
                 accept = (prob >= 72);
             }
             else if(aiDifficulty === 2) {
-                // NORMAL: matemático — aceita com vantagem, retrucar só se excelente
                 accept = (prob >= 52);
-                if(accept && prob >= 82 && st.handVal < 12 && !my11) raise = true;
+                if(accept && prob >= 82 && st.handVal < 12 && !myX) raise = true;
             }
             else if(aiDifficulty === 3) {
-                // DIFÍCIL: aceita mesmo sem certeza; retrucar com blefe moderado
                 accept = (prob >= 32) || (Math.random() < 0.10);
-                if(accept && st.handVal < 12 && !my11) {
+                if(accept && st.handVal < 12 && !myX) {
                     if(prob >= 60) raise = true;
-                    else if(Math.random() < 0.22) raise = true; // blefe de retrucar
+                    else if(Math.random() < 0.22) raise = true; 
                 }
             }
             else if(aiDifficulty === 4) {
-                // INSANO: quase nunca corre; retrucar é regra, não exceção
                 accept = (prob >= 12) || (Math.random() < 0.58);
-                if(accept && st.handVal < 12 && !my11) {
+                if(accept && st.handVal < 12 && !myX) {
                     if(prob >= 35) raise = true;
-                    else if(Math.random() < 0.65) raise = true; // 65%: retrucar na cara dura
+                    else if(Math.random() < 0.65) raise = true; 
                 }
             }
 
             if(raise) {
-                st.handVal += 3; st.trucoBy = pid; st.lastTruco = pid;
-                var tMsg = (st.gameFormat === '2v2' && myTeam === getTeam(myPID))
-                    ? "Parceiro pediu " : (getPlayerName(pid) + " pediu ");
-                showMsg(tMsg + TRUCO_NAMES[st.handVal] + "!", 'neg');
+                st.proposedVal = getNextTrucoVal(st.proposedVal); 
+                st.trucoBy = pid; st.lastTruco = pid;
+                var tMsg = (st.gameFormat === '2v2' && myTeam === getTeam(myPID)) ? "Parceiro pediu " : (getPlayerName(pid) + " pediu ");
+                showMsg(tMsg + getTrucoName(st.proposedVal) + "!", 'neg');
                 animLock = false; updateUI(); updateTurnGlow(); checkAiTrucoDecision(); return;
             }
             if(accept) {
+                st.handVal = st.proposedVal; st.proposedVal = 0;
                 showMsg(getPlayerName(pid) + " ACEITOU!", 'neg');
                 st.trucoState = 'none'; animLock = false; updateUI(); checkAiTurn();
             } else {
                 var msg = st.gameFormat === '1v1' ? "O Rival CORREU!" : (getPlayerName(pid) + " CORREU!");
                 showMsg(msg, 'pos');
                 st.trucoState = 'none';
-                var pts = (st.handVal === 3) ? 1 : (st.handVal - 3);
+                var pts = st.handVal;
                 st.scores[getOppTeam(myTeam)] += pts; animLock = false;
                 if(st.scores[getOppTeam(myTeam)] >= 12) { triggerEndGame(getTeam(myPID) === getOppTeam(myTeam)); return; }
                 setTimeout(function(){ startRound(getNextTurn(st.firstPlayerOfRound)); }, 2000);
             }
         }
 
-        // ── Turno de jogar da IA ──────────────────────────────────────
         function aiPlay(pid) {
             if(st.turn !== pid || (st.trucoState !== 'none' && st.trucoState !== 'mao11')) { animLock = false; return; }
             if(st.trucoState === 'mao11') { animLock = false; return; }
 
             var myTeam  = getTeam(pid);
             var oppTeam = getOppTeam(myTeam);
-            var my11    = (st.scores[myTeam] === 11);
-            var opp11   = (st.scores[oppTeam] === 11);
-            var maoDeFerro = (my11 && opp11);
+            var thres   = st.rules === 'mineiro' ? 10 : 11;
+            var myX     = (st.scores[myTeam] === thres);
+            var oppX    = (st.scores[oppTeam] === thres);
+            var maoDeFerro = (myX && oppX);
             var isRival = (myTeam !== getTeam(myPID));
 
             var h       = aiHandStrength(pid);
@@ -1409,47 +1570,38 @@
             var myW     = st.trickResults.filter(r => r === myTeam).length;
             var opW     = st.trickResults.filter(r => r === oppTeam).length;
 
-            // ── DECISÃO DE PEDIR TRUCO ──────────────────────────────
-            if(!my11 && !maoDeFerro && !st.isMaoDe11 && st.handVal < 12
-               && (st.lastTruco === 0 || getTeam(st.lastTruco) !== myTeam)) {
+            if(!myX && !maoDeFerro && !st.isMaoDeX && st.handVal < 12 && (st.lastTruco === 0 || getTeam(st.lastTruco) !== myTeam)) {
 
                 var askTruco = false;
                 var canRaise = isRival ? true : !st.humanAccepted;
                 var isFirstPlay = (nTricks === 0 && st.table.length === 0);
 
                 if(canRaise) {
-                    if(aiDifficulty === 1) {
-                        // FÁCIL: só pede com mão excelente e no momento certo
-                        if(prob >= 85) askTruco = true;
-                    }
+                    if(aiDifficulty === 1) { if(prob >= 85) askTruco = true; }
                     else if(aiDifficulty === 2) {
-                        // NORMAL: pede com mão boa; blefe mínimo e raro
                         if(prob >= 72) askTruco = true;
-                        if(!askTruco && Math.random() < 0.05) askTruco = true; // 5% blefe ocasional
+                        if(!askTruco && Math.random() < 0.05) askTruco = true; 
                     }
                     else if(aiDifficulty === 3) {
-                        // DIFÍCIL: estratégico, blefa com contexto
                         if(prob >= 52) askTruco = true;
-                        if(isFirstPlay && Math.random() < 0.18) askTruco = true;      // blefe de abertura
-                        if(myW === 1 && opW === 0 && Math.random() < 0.38) askTruco = true; // pressão após 1ª vaza
-                        if(!askTruco && Math.random() < 0.10) askTruco = true;        // blefe aleatório baixo
+                        if(isFirstPlay && Math.random() < 0.18) askTruco = true;      
+                        if(myW === 1 && opW === 0 && Math.random() < 0.38) askTruco = true; 
+                        if(!askTruco && Math.random() < 0.10) askTruco = true;        
                     }
                     else if(aiDifficulty === 4) {
-                        // INSANO: terrorismo psicológico constante
                         if(prob >= 30) askTruco = true;
-                        if(isFirstPlay && Math.random() < 0.65) askTruco = true;       // 65%: blefe imediato
-                        if(myW === 1 && Math.random() < 0.72) askTruco = true;         // venceu 1ª: pressão brutal
-                        if(opW === 1 && myW === 0 && Math.random() < 0.40) askTruco = true; // perdeu 1ª: blefe desesperado
-                        if(Math.random() < 0.45) askTruco = true;                      // ruído puro — caos total
+                        if(isFirstPlay && Math.random() < 0.65) askTruco = true;       
+                        if(myW === 1 && Math.random() < 0.72) askTruco = true;         
+                        if(opW === 1 && myW === 0 && Math.random() < 0.40) askTruco = true; 
+                        if(Math.random() < 0.45) askTruco = true;                      
                     }
                 }
 
                 if(askTruco) {
-                    st.handVal = (st.handVal === 1) ? 3 : st.handVal + 3;
+                    st.proposedVal = getNextTrucoVal(st.handVal);
                     st.trucoBy = pid; st.lastTruco = pid; st.trucoState = 'pending';
-                    var tMsg = (st.gameFormat === '2v2' && myTeam === getTeam(myPID))
-                        ? "Parceiro pediu " : (getPlayerName(pid) + " pediu ");
-                    showMsg(tMsg + TRUCO_NAMES[st.handVal] + "!", 'neu');
+                    var tMsg = (st.gameFormat === '2v2' && myTeam === getTeam(myPID)) ? "Parceiro pediu " : (getPlayerName(pid) + " pediu ");
+                    showMsg(tMsg + getTrucoName(st.proposedVal) + "!", 'neu');
                     window.lastAdviceLevel = 0; animLock = false;
                     updateUI(); updateTurnGlow(); checkAiTrucoDecision(); return;
                 }
@@ -1459,104 +1611,72 @@
             if(!cards || cards.length === 0) { animLock = false; return; }
             var indexed = cards.map((c, i) => ({c: c, idx: i, p: getPower(c)})).sort((a,b) => a.p - b.p);
 
-            // ── ESCONDER CARTA ─────────────────────────────────────
             var hideThisCard = false;
-            var canHide = (nTricks > 0) && !st.isMaoDe11 && !maoDeFerro;
+            var canHide = (nTricks > 0) && !st.isMaoDeX && !maoDeFerro;
             if(canHide) {
-                // DIFÍCIL: esconde raramente para criar incerteza
                 if(isRival && aiDifficulty === 3 && Math.random() < 0.15) hideThisCard = true;
-                // INSANO: nunca esconde — força total, sem mistério
-                // Parceiro: pode esconder ocasionalmente
                 if(!isRival && Math.random() < 0.10) hideThisCard = true;
             }
 
-            // ── SELEÇÃO DA CARTA A JOGAR ────────────────────────────
-            var playedIdx = indexed[indexed.length - 1].idx; // padrão: maior
+            var playedIdx = indexed[indexed.length - 1].idx; 
 
             var respondingToEnemy = st.table.length > 0 && st.table.some(t => getTeam(t.p) !== myTeam);
 
             if(respondingToEnemy) {
-                // ─ Respondendo à carta do adversário ─
-                var hiEnemy = Math.max.apply(null,
-                    st.table.filter(t => getTeam(t.p) !== myTeam)
-                            .map(t => t.hidden ? -1 : getPower(t.c)));
+                var hiEnemy = Math.max.apply(null, st.table.filter(t => getTeam(t.p) !== myTeam).map(t => t.hidden ? -1 : getPower(t.c)));
                 var winning = indexed.filter(x => x.p > hiEnemy);
 
                 if(winning.length > 0) {
                     if(aiDifficulty === 1) {
-                        // FÁCIL: 28% de chance de jogar carta errada (erro bobo)
-                        playedIdx = (Math.random() < 0.28)
-                            ? winning[Math.floor(Math.random() * winning.length)].idx
-                            : winning[0].idx;
+                        playedIdx = (Math.random() < 0.28) ? winning[Math.floor(Math.random() * winning.length)].idx : winning[0].idx;
                     } else {
-                        // NORMAL / DIFÍCIL / INSANO: sempre a menor que vence (eficiência)
                         playedIdx = winning[0].idx;
                     }
                 } else {
-                    // Não tem como vencer: descarta a mais fraca
                     if(aiDifficulty === 1) {
-                        // FÁCIL: às vezes joga a forte por engano
-                        playedIdx = (Math.random() < 0.22)
-                            ? indexed[indexed.length - 1].idx
-                            : indexed[0].idx;
+                        playedIdx = (Math.random() < 0.22) ? indexed[indexed.length - 1].idx : indexed[0].idx;
                     } else {
                         playedIdx = indexed[0].idx;
                     }
                 }
             } else {
-                // ─ Abrindo a rodada ─
                 if(aiDifficulty === 1) {
-                    // FÁCIL: aleatório, sem raciocínio
                     playedIdx = indexed[Math.floor(Math.random() * indexed.length)].idx;
                 }
                 else if(aiDifficulty === 2) {
-                    // NORMAL: sempre joga a maior (direto ao ponto, previsível)
                     playedIdx = indexed[indexed.length - 1].idx;
                 }
                 else if(aiDifficulty === 3) {
-                    // DIFÍCIL: guarda a manilha para o momento certo
                     if(nTricks === 0 && h.manilhas > 0 && indexed.length > 1) {
-                        // 1ª mão: guarda manilha, joga a 2ª mais forte
                         playedIdx = indexed[indexed.length - 2].idx;
                     } else if(nTricks === 1 && myW === 1 && opW === 0 && indexed.length > 1) {
-                        // Venceu a 1ª: jogar a do meio economiza para a 3ª
                         playedIdx = indexed[Math.floor(indexed.length / 2)].idx;
                     } else {
                         playedIdx = indexed[indexed.length - 1].idx;
                     }
                 }
                 else if(aiDifficulty === 4) {
-                    // INSANO: análise fria de cada cenário, sem margem de erro
                     if(nTricks === 0) {
-                        // 1ª mão: pressão máxima desde o início, maior carta
                         playedIdx = indexed[indexed.length - 1].idx;
                     } else if(nTricks === 1) {
                         if(myW === 1 && opW === 0) {
-                            // Venceu a 1ª: jogar carta do meio, guarda o matador para a 3ª
-                            playedIdx = indexed.length > 1
-                                ? indexed[Math.floor(indexed.length / 2)].idx
-                                : indexed[0].idx;
+                            playedIdx = indexed.length > 1 ? indexed[Math.floor(indexed.length / 2)].idx : indexed[0].idx;
                         } else {
-                            // Perdeu ou empatou: sem tempo pra economizar, vai com tudo
                             playedIdx = indexed[indexed.length - 1].idx;
                         }
                     } else {
-                        // 3ª mão: tudo ou nada
                         playedIdx = indexed[indexed.length - 1].idx;
                     }
                 }
             }
 
-            // ── IR AO BARALHO (DESISTIR) ────────────────────────────
-            // Apenas FÁCIL e NORMAL desistem; DIFÍCIL e INSANO nunca desistem
-            if(st.table.length === 0 && !my11 && !st.isMaoDe11 && !maoDeFerro) {
+            if(st.table.length === 0 && !myX && !st.isMaoDeX && !maoDeFerro) {
                 var foldProb = 0; var foldChance = 0;
-                if(aiDifficulty === 1) { foldProb = 15; foldChance = 0.88; }      // FÁCIL: desiste fácil
-                else if(aiDifficulty === 2) { foldProb = 10; foldChance = 0.50; } // NORMAL: raramente
+                if(aiDifficulty === 1) { foldProb = 15; foldChance = 0.88; }      
+                else if(aiDifficulty === 2) { foldProb = 10; foldChance = 0.50; } 
 
                 if(foldProb > 0 && prob <= foldProb && Math.random() < foldChance) {
-                    var fMsg = st.gameFormat === '1v1'
-                        ? "O Rival foi ao baralho!" : (getPlayerName(pid) + " foi ao baralho!");
+                    var fMsg = st.gameFormat === '1v1' ? "O Rival foi ao baralho!" : (getPlayerName(pid) + " foi ao baralho!");
                     showMsg(fMsg, 'pos');
                     st.scores[oppTeam] += st.handVal;
                     if(st.scores[oppTeam] >= 12) { animLock = false; triggerEndGame(getTeam(myPID) === oppTeam); return; }
@@ -1564,7 +1684,6 @@
                 }
             }
 
-            // ── JOGAR ───────────────────────────────────────────────
             var c = st.hands[pid].splice(playedIdx, 1)[0];
             st.table.push({c: c, p: pid, hidden: hideThisCard});
             renderMesa(null, pid);
@@ -1721,7 +1840,7 @@
                     if (st.table.length > oldSt.table.length && st.table[st.table.length - 1].p !== myPID) { renderMesa(null, st.table[st.table.length - 1].p); } else { renderMesa(); }
                 }
 
-                if (st.trucoState === 'pending' && oldSt.trucoState !== 'pending' && getTeam(st.trucoBy) !== getTeam(myPID)) { showMsg("Rivais pediram " + TRUCO_NAMES[st.handVal] + "!", 'neg'); } 
+                if (st.trucoState === 'pending' && oldSt.trucoState !== 'pending' && getTeam(st.trucoBy) !== getTeam(myPID)) { showMsg("Rivais pediram " + getTrucoName(st.proposedVal) + "!", 'neg'); } 
                 else if (st.trucoState === 'none' && oldSt.trucoState === 'pending') { if (st.scores[1] === oldSt.scores[1] && st.scores[2] === oldSt.scores[2]) { showMsg("Truco Aceito!", 'warn'); } }
 
                 updateUI(); checkAiTurn(); checkAiTrucoDecision();
