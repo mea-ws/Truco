@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Truco - v0.10.5</title>
+    <title>Truco - v0.10.6</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♣</text></svg>">
     <style>
         /* THEME VARIABLES */
@@ -1108,6 +1108,13 @@
             return Math.max(0, Math.min(100, prob));
         }
 
+        // Todos os assentos de um time específico (inclui quem pergunta, se for do time)
+        function getTeamPIDs(team) {
+            var arr = [];
+            for (var p = 1; p <= getNumPlayers(); p++) { if (getTeam(p) === team) arr.push(p); }
+            return arr;
+        }
+
         // Todos os assentos do meu time, exceto eu mesmo — length=1 em 2v2
         // (comportamento atual), length=2 em 3v3/Trios (ainda não selecionável).
         function getPartnerPIDs() {
@@ -1248,7 +1255,8 @@
                     uiTurn.innerText = st.rules === 'mineiro' ? "MÃO DE 10: DECIDA!" : "MÃO DE 11: DECIDA!"; uiTurn.style.color = "var(--warn)";
                 } else {
                     if(!isExiting) { setBottomGroup(null); actionBar.classList.remove('danger-zone'); }
-                    uiTurn.innerText = st.rules === 'mineiro' ? "RIVAIS PENSANDO (MÃO DE 10)..." : "RIVAIS PENSANDO (MÃO DE 11)..."; uiTurn.style.color = "var(--warn)";
+                    var rivalWord = st.gameFormat === '1v1' ? "RIVAL PENSANDO" : "RIVAIS PENSANDO";
+                    uiTurn.innerText = st.rules === 'mineiro' ? (rivalWord + " (MÃO DE 10)...") : (rivalWord + " (MÃO DE 11)..."); uiTurn.style.color = "var(--warn)";
                 }
             }
             else if (st.trucoState === 'partner_fold') {
@@ -1299,7 +1307,7 @@
                     } else { btnRaise.classList.add('hidden'); }
                 } else {
                     if(!isExiting) { setBottomGroup(null); actionBar.classList.remove('danger-zone'); }
-                    uiTurn.innerText = "AGUARDANDO RIVAL..."; uiTurn.style.color = "var(--warn)";
+                    uiTurn.innerText = st.gameFormat === '1v1' ? "AGUARDANDO RIVAL..." : "AGUARDANDO RIVAIS..."; uiTurn.style.color = "var(--warn)";
                 }
             } else {
                 if (!grpConfirmFold.classList.contains('active') && !isExiting && myPID !== 0) { setBottomGroup('grp-normal'); actionBar.classList.remove('danger-zone'); }
@@ -1620,14 +1628,17 @@
 
         function handleMao11() {
             if (st.maoDeXTeam === 1 && myPID !== 0) {
-                if (st.gameFormat === '2v2') {
+                if (st.gameFormat !== '1v1') {
                     renderMesa(null, null, false, true); 
-                    var probComb = aiContextProb(3);
+                    var partners = getPartnerPIDs();
+                    var probComb = 0;
+                    for (var pi = 0; pi < partners.length; pi++) { probComb = Math.max(probComb, aiContextProb(partners[pi])); }
                     var advice = "";
-                    if (probComb < 35) advice = "Parceiro: Melhor correr";
-                    else if (probComb < 65) advice = "Parceiro: Não tô confiante...";
-                    else if (probComb < 80) advice = "Parceiro: Acho que dá pra ganhar";
-                    else advice = "Parceiro: Bora!";
+                    var advPrefix = partners.length > 1 ? "Parceiros: " : "Parceiro: ";
+                    if (probComb < 35) advice = advPrefix + "Melhor correr";
+                    else if (probComb < 65) advice = advPrefix + "Não tô confiante...";
+                    else if (probComb < 80) advice = advPrefix + "Acho que dá pra ganhar";
+                    else advice = advPrefix + "Bora!";
                     
                     getEl('ui-deck-indicator').innerText = advice.toUpperCase();
                     var m = st.rules === 'mineiro' ? "Mão de 10! Analise as cartas." : "Mão de 11! Analise as cartas.";
@@ -1666,7 +1677,7 @@
 
         function aiDecideMao11() {
             var prob = aiContextProb(2);
-            if (st.gameFormat === '2v2') prob = Math.max(prob, aiContextProb(4));
+            getTeamPIDs(2).forEach(function(p) { if (p !== 2) prob = Math.max(prob, aiContextProb(p)); });
             var accept = (prob >= 42); 
             var txt = st.rules === 'mineiro' ? "10" : "11";
             
@@ -1696,7 +1707,7 @@
         window.executeFold = function() { 
             cancelFold();
             if(animLock || st.turn !== myPID || st.trucoState !== 'none') return;
-            showMsg("Você correu!", 'neg'); st.scores[getOppTeam(getTeam(myPID))] += st.handVal;
+            showMsg(st.gameFormat === '1v1' ? "Você correu!" : "Vocês correram!", 'neg'); st.scores[getOppTeam(getTeam(myPID))] += st.handVal;
             if(st.scores[getOppTeam(getTeam(myPID))] >= 12) { autoSave(); triggerEndGame(false); return; }
             var nxtFirst = getNextTurn(st.firstPlayerOfRound);
             if (myPID === 1 || gameMode !== 'json') { startRound(nxtFirst); } else { st.needsNewRound = true; st.nextFirstPlayer = nxtFirst; autoSave(); }
@@ -1825,7 +1836,8 @@
             var baseVal = (st.trucoState === 'pending') ? st.proposedVal : st.handVal;
             st.proposedVal = getNextTrucoVal(baseVal);
             st.trucoBy = myPID; st.lastTruco = myPID; st.trucoState = 'pending';
-            showMsg("Você pediu " + getTrucoName(st.proposedVal) + "!", 'neu'); window.lastAdviceLevel = 0; 
+            var pedMsg = (st.gameFormat === '1v1' ? "Você pediu " : "Vocês pediram ") + getTrucoName(st.proposedVal) + "!";
+            showMsg(pedMsg, 'neu'); window.lastAdviceLevel = 0; 
             updateUI(); updateTurnGlow(); autoSave(); checkAiTrucoDecision();
         };
 
@@ -1834,10 +1846,10 @@
             if(accept) {
                 st.humanAccepted = true; 
                 st.handVal = st.proposedVal; st.proposedVal = 0;
-                showMsg("Você Aceitou!", 'pos'); st.trucoState = 'none'; updateUI(); autoSave();
+                showMsg(st.gameFormat === '1v1' ? "Você Aceitou!" : "Vocês Aceitaram!", 'pos'); st.trucoState = 'none'; updateUI(); autoSave();
                 animLock = false; updateTurnGlow(); checkAiTurn();
             } else {
-                showMsg("Você Correu!", 'neg'); st.trucoState = 'none'; 
+                showMsg(st.gameFormat === '1v1' ? "Você Correu!" : "Vocês Correram!", 'neg'); st.trucoState = 'none'; 
                 var callingTeam = getTeam(st.trucoBy);
                 var pts = st.handVal; 
                 st.scores[callingTeam] += pts;
@@ -1906,17 +1918,17 @@
             if(raise) {
                 st.proposedVal = getNextTrucoVal(st.proposedVal); 
                 st.trucoBy = pid; st.lastTruco = pid;
-                var tMsg = (st.gameFormat === '2v2' && myTeam === getTeam(myPID)) ? "Parceiro pediu " : (getPlayerName(pid) + " pediu ");
+                var tMsg = st.gameFormat === '1v1' ? "O Rival pediu " : "Os Rivais pediram ";
                 showMsg(tMsg + getTrucoName(st.proposedVal) + "!", 'neg');
                 animLock = false; updateUI(); updateTurnGlow(); checkAiTrucoDecision(); return;
             }
             if(accept) {
                 st.handVal = st.proposedVal; st.proposedVal = 0;
                 st.aiJustAccepted = true; 
-                showMsg(getPlayerName(pid) + " ACEITOU!", 'neg');
+                showMsg(st.gameFormat === '1v1' ? "O Rival ACEITOU!" : "Os Rivais ACEITARAM!", 'neg');
                 st.trucoState = 'none'; animLock = false; updateUI(); checkAiTurn();
             } else {
-                var msg = st.gameFormat === '1v1' ? "O Rival CORREU!" : (getPlayerName(pid) + " CORREU!");
+                var msg = st.gameFormat === '1v1' ? "O Rival CORREU!" : "Os Rivais CORRERAM!";
                 showMsg(msg, 'pos');
                 st.trucoState = 'none';
                 var pts = st.handVal;
@@ -1980,7 +1992,7 @@
                 if(askTruco) {
                     st.proposedVal = getNextTrucoVal(st.handVal);
                     st.trucoBy = pid; st.lastTruco = pid; st.trucoState = 'pending';
-                    var tMsg = (st.gameFormat === '2v2' && !isRival) ? "Parceiro pediu " : (getPlayerName(pid) + " pediu ");
+                    var tMsg = getPlayerName(pid) + " pediu ";
                     showMsg(tMsg + getTrucoName(st.proposedVal) + "!", 'neu');
                     window.lastAdviceLevel = 0; animLock = false;
                     updateUI(); updateTurnGlow(); autoSave(); checkAiTrucoDecision(); return;
@@ -2057,7 +2069,7 @@
 
                 if(foldProb > 0 && prob <= foldProb && Math.random() < foldChance) {
                     if (isRival) {
-                        var fMsg = st.gameFormat === '1v1' ? "O Rival foi ao baralho!" : (getPlayerName(pid) + " foi ao baralho!");
+                        var fMsg = st.gameFormat === '1v1' ? "O Rival foi ao baralho!" : "Os Rivais foram ao baralho!";
                         showMsg(fMsg, 'pos');
                         st.scores[oppTeam] += st.handVal;
                         if(st.scores[oppTeam] >= 12) { animLock = false; triggerEndGame(getTeam(myPID) === oppTeam); return; }
@@ -2508,7 +2520,7 @@
                     if (st.table.length > oldSt.table.length && st.table[st.table.length - 1].p !== myPID) { renderMesa(null, st.table[st.table.length - 1].p); } else { renderMesa(); }
                 }
 
-                if (st.trucoState === 'pending' && oldSt.trucoState !== 'pending' && getTeam(st.trucoBy) !== getTeam(myPID)) { showMsg("Rivais pediram " + getTrucoName(st.proposedVal) + "!", 'neg'); } 
+                if (st.trucoState === 'pending' && oldSt.trucoState !== 'pending' && getTeam(st.trucoBy) !== getTeam(myPID)) { showMsg(getPlayerName(st.trucoBy) + " pediu " + getTrucoName(st.proposedVal) + "!", 'neg'); } 
                 else if (st.trucoState === 'none' && oldSt.trucoState === 'pending') { if (st.scores[1] === oldSt.scores[1] && st.scores[2] === oldSt.scores[2]) { showMsg("Truco Aceito!", 'warn'); } }
 
                 updateUI(); checkAiTurn(); checkAiTrucoDecision();
