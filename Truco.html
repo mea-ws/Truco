@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Truco - v0.9.9</title>
+    <title>Truco - v0.9.10</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♣</text></svg>">
     <style>
         /* THEME VARIABLES */
@@ -236,7 +236,7 @@
         .danger-zone { animation: dangerPulse 1s infinite alternate ease-in-out; }
         @keyframes dangerPulse { 0% { border-color: rgba(234, 179, 8, 0.4); box-shadow: 0 0 10px rgba(234, 179, 8, 0.2); } 100% { border-color: rgba(234, 179, 8, 1); box-shadow: 0 0 30px rgba(234, 179, 8, 0.6); } }
 
-        #sync-ui { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); background: var(--btn-s-bg); padding: 4px 10px; border-radius: 6px; font-size: 0.7rem; font-weight: bold; border: 1px solid var(--glass-border); display: flex; align-items: center; gap: 6px; transition: opacity 0.3s; z-index: 5; }
+        #sync-ui { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); background: var(--btn-s-bg); padding: 4px 10px; border-radius: 6px; font-size: 0.7rem; font-weight: bold; border: 1px solid var(--glass-border); display: flex; align-items: center; gap: 6px; z-index: 5; }
         .sync-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--prim); box-shadow: 0 0 6px var(--prim); animation: blink 1.5s infinite ease-in-out; }
         @keyframes blink { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.8); } 100% { opacity: 1; transform: scale(1); } }
 
@@ -498,6 +498,12 @@
                 <button class="action-btn" onclick="cancelFold()"><span class="key-box">N</span> NÃO</button>
             </div>
 
+            <div id="grp-partner-fold" class="legend-group">
+                <span class="static-info" style="color: var(--warn); font-weight: bold;">Parceiro quer correr!</span>
+                <button class="action-btn danger" onclick="respondPartnerFold(true)"><span class="key-box highlight">S</span> CORRER</button>
+                <button class="action-btn primary" onclick="respondPartnerFold(false)"><span class="key-box">N</span> JOGAR</button>
+            </div>
+
             <div id="grp-mao11" class="legend-group">
                 <span id="txt-mao11-title" class="static-info" style="color: var(--warn); font-weight: bold;">Mão de 11!</span>
                 <button class="action-btn primary" onclick="respondMao11(true)"><span class="key-box highlight" style="color:var(--prim); border-color:var(--prim); background:rgba(255,255,255,0.8);">A</span> ACEITAR</button>
@@ -536,7 +542,7 @@
         var st = {
             version: 0, roundId: 0, turn: 1, handVal: 1, proposedVal: 0,
             trucoBy: 0, trucoState: 'none', lastTruco: 0,
-            firstPlayerOfRound: 1, humanAccepted: false,
+            firstPlayerOfRound: 1, humanAccepted: false, partnerForcedPlay: false,
             isMaoDeX: false, maoDeXTeam: 0, maoDeFerro: false,
             gameFormat: '1v1', rules: 'paulista',
             scores: { 1: 0, 2: 0 }, trickResults: [], trickWinners: [],
@@ -721,12 +727,17 @@
             getEl('grp-confirm-fold').classList.remove('active');
             getEl('grp-confirm-exit').classList.remove('active');
             getEl('grp-mao11').classList.remove('active');
+            getEl('grp-partner-fold').classList.remove('active');
             if (id) getEl(id).classList.add('active');
         }
 
         window.toggleHide = function() {
             if(animLock || st.turn !== myPID || st.trucoState !== 'none' || st.isMaoDeX || st.maoDeFerro) return;
-            if(st.trickResults.length === 0) { showMsg("A 1ª carta não pode ser escondida!", 'warn', 2000); return; }
+            
+            if(st.trickResults.length === 0) {
+                showMsg("A 1ª carta não pode ser escondida!", 'warn', 2000);
+                return;
+            }
 
             window.isHiding = !window.isHiding;
             var btn = getEl('btn-hide-card');
@@ -761,17 +772,41 @@
         document.addEventListener('keydown', function(e) {
             if (getEl('scr-game').classList.contains('hidden') || (animLock && st.trucoState !== 'mao11')) return;
             var key = e.key.toUpperCase();
-            if (key === 'ESCAPE') { if (getEl('grp-confirm-exit').classList.contains('active')) cancelExit(); else requestExit(); return; }
-            if (getEl('grp-confirm-exit').classList.contains('active')) { if (key === 'S') location.reload(); else if (key === 'N') cancelExit(); return; }
-            if (getEl('grp-confirm-fold').classList.contains('active')) { if (key === 'S') executeFold(); else if (key === 'N') cancelFold(); return; }
+            
+            if (key === 'ESCAPE') {
+                if (getEl('grp-confirm-exit').classList.contains('active')) cancelExit();
+                else requestExit();
+                return;
+            }
+
+            if (getEl('grp-confirm-exit').classList.contains('active')) {
+                if (key === 'S') location.reload();
+                else if (key === 'N') cancelExit();
+                return;
+            }
+
+            if (getEl('grp-confirm-fold').classList.contains('active')) {
+                if (key === 'S') executeFold();
+                else if (key === 'N') cancelFold();
+                return;
+            }
+            
+            if (st.trucoState === 'partner_fold') {
+                if (key === 'S') respondPartnerFold(true);
+                else if (key === 'N') respondPartnerFold(false);
+                return;
+            }
 
             if (st.trucoState === 'mao11' && st.maoDeXTeam === 1 && myPID !== 0) {
-                if (key === 'A') respondMao11(true); else if (key === 'C') respondMao11(false); return;
+                if (key === 'A') respondMao11(true);
+                else if (key === 'C') respondMao11(false);
+                return;
             }
 
             if (st.trucoState === 'pending') {
                 if (getTeam(st.trucoBy) !== getTeam(myPID) && myPID !== 0) {
-                    if (key === 'A') respondTruco(true); else if (key === 'C') respondTruco(false);
+                    if (key === 'A') respondTruco(true);
+                    else if (key === 'C') respondTruco(false);
                     else if (key === 'T' && !getEl('cmd-raise').classList.contains('hidden')) requestTruco();
                 }
             } else if (st.turn === myPID && st.trucoState === 'none') {
@@ -779,7 +814,9 @@
                     var idx = parseInt(key) - 1;
                     if (idx < st.hands[myPID].length) playCard(idx);
                 }
-                else if (key === 'E') { if (!getEl('btn-hide-card').hasAttribute('disabled')) toggleHide(); }
+                else if (key === 'E') {
+                    if (!getEl('btn-hide-card').hasAttribute('disabled')) toggleHide();
+                }
                 else if (key === 'T' && !getEl('cmd-truco').classList.contains('hidden')) requestTruco();
                 else if (key === 'D' && !getEl('cmd-fold').classList.contains('hidden')) requestFold();
             }
@@ -804,31 +841,44 @@
             setTimeout(function() {
                 var endScr = getEl('scr-end');
                 endScr.className = 'show ' + (isWin ? 'end-win' : 'end-loss');
+                
                 var title = isWin ? "🏆 PARABÉNS!" : "💀 TENTE NOVAMENTE";
                 getEl('end-title').innerText = title;
+                
                 var msg = "";
                 if(st.gameFormat === '1v1') { msg = isWin ? "Você dominou a mesa e venceu!" : "O rival levou a melhor dessa vez."; }
                 else { msg = isWin ? "Sua equipe dominou a mesa e venceu!" : "Os rivais levaram a melhor dessa vez."; }
                 getEl('end-msg').innerText = msg;
+                
             }, 800);
         }
 
         window.playAgain = function() {
             if (gameMode === 'ws') {
                 var btn = document.querySelector('#scr-end .btn-p');
-                btn.innerText = "AGUARDANDO..."; btn.style.opacity = '0.5'; btn.style.pointerEvents = 'none';
-                if(window.wsConn && window.wsConn.readyState === WebSocket.OPEN) { window.wsConn.send(JSON.stringify({ type: 'play_again' })); }
+                btn.innerText = "AGUARDANDO...";
+                btn.style.opacity = '0.5';
+                btn.style.pointerEvents = 'none';
+                if(window.wsConn && window.wsConn.readyState === WebSocket.OPEN) {
+                    window.wsConn.send(JSON.stringify({ type: 'play_again' }));
+                }
                 return;
             }
             getEl('scr-end').className = ''; 
-            st.scores = { 1: 0, 2: 0 }; st.vazas = { 1: 0, 2: 0 }; st.firstPlayerOfRound = 1;
-            if (gameMode === 'webrtc' || gameMode === 'json') autoSave(); 
+            st.scores = { 1: 0, 2: 0 };
+            st.vazas = { 1: 0, 2: 0 };
+            st.firstPlayerOfRound = 1;
+            
+            if (gameMode === 'webrtc' || gameMode === 'json') {
+                autoSave(); 
+            }
             startRound(st.firstPlayerOfRound);
         };
 
         function createCardDOM(c, isBack, isInteractive, idx, isVira, posContext) {
             var w = document.createElement('div');
             w.className = 'card-wrapper' + (isInteractive ? ' interactive' : '');
+
             var d = document.createElement('div');
             d.className = 'card' + (isBack ? ' back' : '');
             if(!isBack && c) {
@@ -862,12 +912,19 @@
                 if (p > -1 && st.trickResults.length > 0) {
                     var isThisNuts = true;
                     if (st.rules === 'paulista') {
-                        for (var s=0; s<4; s++) { var mp = 100 + s; if (mp > p && !playedPowers.includes(mp)) isThisNuts = false; }
+                        for (var s=0; s<4; s++) {
+                            var mp = 100 + s;
+                            if (mp > p && !playedPowers.includes(mp)) isThisNuts = false;
+                        }
                     } else { 
-                        [200, 199, 198, 197].forEach(mp => { if (mp > p && !playedPowers.includes(mp)) isThisNuts = false; });
+                        [200, 199, 198, 197].forEach(mp => {
+                            if (mp > p && !playedPowers.includes(mp)) isThisNuts = false;
+                        });
                     }
                     if (isThisNuts && p < 100) {
-                        for (var v=0; v<activeVals.length; v++) { if (v > p && !playedPowers.includes(v)) isThisNuts = false; }
+                        for (var v=0; v<activeVals.length; v++) {
+                            if (v > p && !playedPowers.includes(v)) isThisNuts = false;
+                        }
                     }
                     if (isThisNuts) hasNuts = true;
                 }
@@ -881,6 +938,7 @@
             else if (fortes >= 1) base = 30;
 
             if (hasNuts) base += 40;
+
             return { prob: base, manilhas: manilhas, fortes: fortes, isNuts: hasNuts };
         }
 
@@ -919,6 +977,11 @@
                         if(tHand) tHand.querySelectorAll('.card').forEach(c => c.classList.add('active-turn'));
                     }
                 }
+            } else if (st.trucoState === 'partner_fold') {
+                var tHandPartner = getEl('box-' + getUIPos(3));
+                var tHandMe = getEl('box-' + getUIPos(myPID));
+                if(tHandPartner) tHandPartner.querySelectorAll('.card').forEach(c => c.classList.add('active-turn'));
+                if(tHandMe) tHandMe.querySelectorAll('.card').forEach(c => c.classList.add('active-turn'));
             } else if (st.trucoState === 'none') {
                 var tHand = getEl('box-' + getUIPos(st.turn));
                 if(tHand) tHand.querySelectorAll('.card').forEach(c => c.classList.add('active-turn'));
@@ -928,6 +991,7 @@
         function isAwaitingMyAction() {
             if (st.trucoState === 'pending') return getTeam(st.trucoBy) !== getTeam(myPID);
             if (st.trucoState === 'mao11') return st.maoDeXTeam === 1;
+            if (st.trucoState === 'partner_fold') return true;
             return st.turn === myPID;
         }
 
@@ -973,6 +1037,7 @@
             getEl('ui-s0').innerText = st.scores[getTeam(refPID)]; 
             getEl('ui-s1').innerText = st.scores[getOppTeam(getTeam(refPID))];
             
+            var handValPoints = st.handVal;
             if (st.isMaoDeX || st.maoDeFerro) {
                 getEl('ui-val').innerText = (st.rules === 'mineiro') ? "4" : "3";
             } else { 
@@ -983,7 +1048,7 @@
             if (st.maoDeFerro) indicatorText = "⚡ MÃO DE FERRO ⚡";
 
             var thres = st.rules === 'mineiro' ? 10 : 11;
-            var myTeamScore = st.scores[getTeam(refPID)]; 
+            var myTeamScore = st.scores[getTeam(refPID)]; var oppTeamScore = st.scores[getOppTeam(getTeam(refPID))];
             var meX = (myTeamScore === thres); 
             var isMyTurn = (st.turn === myPID);
             var uiTurn = getEl('ui-turn');
@@ -1005,6 +1070,11 @@
                     if(!isExiting) { setBottomGroup(null); actionBar.classList.remove('danger-zone'); }
                     uiTurn.innerText = st.rules === 'mineiro' ? "RIVAIS PENSANDO (MÃO DE 10)..." : "RIVAIS PENSANDO (MÃO DE 11)..."; uiTurn.style.color = "var(--warn)";
                 }
+            }
+            else if (st.trucoState === 'partner_fold') {
+                btnHide.setAttribute('disabled', 'true'); btnHide.classList.add('disabled');
+                if (!isExiting) { setBottomGroup('grp-partner-fold'); actionBar.classList.add('danger-zone'); }
+                uiTurn.innerText = "DECISÃO DE FUGA!"; uiTurn.style.color = "var(--warn)";
             }
             else if (st.trucoState === 'pending') {
                 btnHide.setAttribute('disabled', 'true'); btnHide.classList.add('disabled');
@@ -1293,6 +1363,7 @@
         function startRound(firstPlayer) {
             var deck = []; window.lastAdviceLevel = 0; st.humanAccepted = false; resetHideBtn();
             var activeVals = getActiveVals();
+            st.partnerForcedPlay = false; // Reset da jogada forçada
             
             if (st.rules === 'goiano') {
                 for(var s=0; s<4; s++) { for(var v=0; v<VALS_LIMPO.length; v++) { deck.push({s: SUITS[s], v: VALS_LIMPO[v]}); } }
@@ -1433,6 +1504,25 @@
             if(st.scores[getOppTeam(getTeam(myPID))] >= 12) { autoSave(); triggerEndGame(false); return; }
             var nxtFirst = getNextTurn(st.firstPlayerOfRound);
             if (myPID === 1 || gameMode !== 'json') { startRound(nxtFirst); } else { st.needsNewRound = true; st.nextFirstPlayer = nxtFirst; autoSave(); }
+        };
+
+        window.respondPartnerFold = function(accept) {
+            if(animLock || st.trucoState !== 'partner_fold') return;
+            if(accept) {
+                showMsg("Vocês correram!", 'neg');
+                st.trucoState = 'none';
+                st.scores[2] += st.handVal;
+                if(st.scores[2] >= 12) { autoSave(); triggerEndGame(false); return; }
+                var nxtFirst = getNextTurn(st.firstPlayerOfRound);
+                if (myPID === 1 || gameMode !== 'json') { startRound(nxtFirst); } else { st.needsNewRound = true; st.nextFirstPlayer = nxtFirst; autoSave(); }
+            } else {
+                showMsg("Você mandou jogar!", 'pos', 1500);
+                st.trucoState = 'none';
+                st.partnerForcedPlay = true;
+                updateUI();
+                autoSave();
+                checkAiTurn();
+            }
         };
 
         window.playCard = function(idx) {
@@ -1633,8 +1723,8 @@
         }
 
         function aiPlay(pid) {
-            if(st.turn !== pid || (st.trucoState !== 'none' && st.trucoState !== 'mao11')) { animLock = false; return; }
-            if(st.trucoState === 'mao11') { animLock = false; return; }
+            if(st.turn !== pid || (st.trucoState !== 'none' && st.trucoState !== 'mao11' && st.trucoState !== 'partner_fold')) { animLock = false; return; }
+            if(st.trucoState === 'mao11' || st.trucoState === 'partner_fold') { animLock = false; return; }
 
             var myTeam  = getTeam(pid);
             var oppTeam = getOppTeam(myTeam);
@@ -1740,17 +1830,23 @@
                 }
             }
 
-            if(st.table.length === 0 && !myX && !st.isMaoDeX && !maoDeFerro && isRival) {
+            if(st.table.length === 0 && !myX && !st.isMaoDeX && !maoDeFerro) {
                 var foldProb = 0; var foldChance = 0;
                 if(aiDifficulty === 1) { foldProb = 15; foldChance = 0.88; }      
                 else if(aiDifficulty === 2) { foldProb = 10; foldChance = 0.50; } 
 
                 if(foldProb > 0 && prob <= foldProb && Math.random() < foldChance) {
-                    var fMsg = st.gameFormat === '1v1' ? "O Rival foi ao baralho!" : (getPlayerName(pid) + " foi ao baralho!");
-                    showMsg(fMsg, 'pos');
-                    st.scores[oppTeam] += st.handVal;
-                    if(st.scores[oppTeam] >= 12) { animLock = false; triggerEndGame(getTeam(myPID) === oppTeam); return; }
-                    animLock = false; setTimeout(function(){ startRound(getNextTurn(st.firstPlayerOfRound)); }, 2000); return;
+                    if (isRival) {
+                        var fMsg = st.gameFormat === '1v1' ? "O Rival foi ao baralho!" : (getPlayerName(pid) + " foi ao baralho!");
+                        showMsg(fMsg, 'pos');
+                        st.scores[oppTeam] += st.handVal;
+                        if(st.scores[oppTeam] >= 12) { animLock = false; triggerEndGame(getTeam(myPID) === oppTeam); return; }
+                        animLock = false; setTimeout(function(){ startRound(getNextTurn(st.firstPlayerOfRound)); }, 2000); return;
+                    } else if (!st.partnerForcedPlay) {
+                        st.trucoState = 'partner_fold';
+                        showMsg("Parceiro quer ir ao baralho!", 'warn');
+                        animLock = false; updateUI(); return;
+                    }
                 }
             }
 
@@ -1987,7 +2083,8 @@
                     }
                     
                     if(lastWinner === 3) { showMsg("Canga (Empate)!", 'neu', 1300); } else { 
-                        var isMyWin = (lastWinner === getTeam(myPID));
+                        var refPID = myPID === 0 ? 1 : myPID;
+                        var isMyWin = (lastWinner === getTeam(refPID));
                         var msg = st.gameFormat === '1v1' ? (isMyWin ? "Você fez a mão!" : "O Rival fez a mão!") : (isMyWin ? "A mão é de vocês!" : "Os rivais fizeram a mão!");
                         showMsg(msg, isMyWin ? 'pos' : 'neg', 1300); 
                     }
