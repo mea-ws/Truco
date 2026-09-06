@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Truco - v0.8.4</title>
+    <title>Truco - v0.8.5</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♣</text></svg>">
     <style>
         /* BASE & THEME */
@@ -59,10 +59,12 @@
         .hud-container.notify-neg { border-color: var(--dang); box-shadow: 0 0 25px rgba(239, 68, 68, 0.25); }
         .hud-container.notify-neu { border-color: var(--warn); box-shadow: 0 0 25px rgba(234, 179, 8, 0.25); }
 
-        .hud-side { flex: 1; display: flex; flex-direction: column; }
-        .hud-center { flex: 1; text-align: center; }
+        .hud-side { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+        .hud-center { flex: 1; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 0; }
         .hud-right { text-align: right; align-items: flex-end; }
         
+        #ui-turn { font-size: 0.85rem; font-weight:bold; color: var(--txt-d); transition: var(--trans); white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+
         .vaza-track { display: flex; gap: 5px; margin-top: 5px; }
         .vaza-pip { width: 10px; height: 10px; border-radius: 50%; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); }
         .vaza-pip.win { background: var(--prim); border-color: var(--prim); box-shadow: 0 0 8px var(--prim); }
@@ -126,7 +128,7 @@
         }
 
         /* BOTTOM HUD ANIMADO */
-        .legend-container { position: relative; margin-top: 10px; padding: 0 16px; min-height: 48px; height: 48px; box-sizing: border-box; z-index: 20; overflow: hidden; flex-shrink: 0; display: flex; justify-content: center; align-items: center; }
+        .legend-container { position: relative; margin-top: 10px; padding: 10px 16px; min-height: 66px; height: 66px; box-sizing: border-box; z-index: 20; overflow: hidden; flex-shrink: 0; display: flex; justify-content: center; align-items: center; }
         
         .legend-group { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; gap: 12px; align-items: center; justify-content: center; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); opacity: 0; transform: translateY(100%); pointer-events: none; }
         .legend-group.active { opacity: 1; transform: translateY(0); pointer-events: auto; }
@@ -177,6 +179,8 @@
             .legend-group { gap: 8px; }
             .play-text { display: none; }
             .btn-esc { right: 8px; opacity: 0.6; padding: 8px 12px; }
+            
+            #ui-turn { font-size: clamp(0.7rem, 3vw, 0.85rem); }
             
             #ghost-manilha { left: 5px; gap: 4px; }
             #deck-area { right: 5px; gap: 4px; }
@@ -256,8 +260,10 @@
                     <div id="vazas-my" class="vaza-track"></div>
                 </div>
                 <div class="hud-center">
-                    <span id="ui-turn" style="font-size: 0.85rem; font-weight:bold; color: var(--txt-d); transition: var(--trans);">Preparando...</span><br>
-                    VALE: <b id="ui-val" style="color: white;">1</b>
+                    <span id="ui-turn">Preparando...</span>
+                    <div style="margin-top: 2px;">
+                        <span style="font-size: 0.75rem;">VALE:</span> <b id="ui-val" style="color: white; font-size: 0.9rem;">1</b>
+                    </div>
                     <div id="ui-deck-indicator" style="font-size: 0.65rem; color: var(--prim); margin-top: 2px;">BARALHO SUJO</div>
                 </div>
                 <div class="hud-side hud-right">
@@ -268,7 +274,6 @@
         </div>
 
         <div class="table">
-            
             <!-- ELEMENTOS INTERNOS DA MESA -->
             <div id="ghost-manilha" class="hidden">
                 <span id="ghost-m-label">MANILHA</span>
@@ -463,8 +468,15 @@
             setTimeout(function() {
                 var endScr = getEl('scr-end');
                 endScr.className = 'show ' + (isWin ? 'end-win' : 'end-loss');
-                getEl('end-title').innerText = isWin ? "🏆 PARABÉNS!" : "💀 TENTE NOVAMENTE";
-                getEl('end-msg').innerText = isWin ? "Sua equipe dominou a mesa e venceu!" : "Os rivais levaram a melhor dessa vez.";
+                
+                var title = isWin ? "🏆 PARABÉNS!" : "💀 TENTE NOVAMENTE";
+                getEl('end-title').innerText = title;
+                
+                var msg = "";
+                if(st.gameFormat === '1v1') { msg = isWin ? "Você dominou a mesa e venceu!" : "O rival levou a melhor dessa vez."; }
+                else { msg = isWin ? "Sua equipe dominou a mesa e venceu!" : "Os rivais levaram a melhor dessa vez."; }
+                getEl('end-msg').innerText = msg;
+                
             }, 800);
         }
 
@@ -522,7 +534,7 @@
             getEl('ui-val').innerText = TRUCO_NAMES[st.handVal] + (st.handVal > 1 ? " ("+st.handVal+")" : "");
             
             var baseDeckText = st.deckMode === 'limpo' ? "BARALHO LIMPO" : "BARALHO SUJO";
-            getEl('ui-deck-indicator').innerText = baseDeckText;
+            var indicatorText = baseDeckText;
 
             var myTeamScore = st.scores[getTeam(myPID)]; var oppTeamScore = st.scores[getOppTeam(getTeam(myPID))];
             var me11 = (myTeamScore === 11); var opp11 = (oppTeamScore === 11); var maoDeFerro = (me11 && opp11);
@@ -540,11 +552,14 @@
                     uiTurn.innerText = "⚠️ DECIDA! ⚠️"; uiTurn.style.color = "var(--warn)";
                     
                     var advice = getPartnerAdvice();
-                    if(advice && window.lastAdviceLevel !== st.handVal) {
-                        window.lastAdviceLevel = st.handVal;
-                        setTimeout(function() {
-                            if (st.trucoState === 'pending') { showMsg(advice, 'pos', 2300); }
-                        }, 1500);
+                    if(st.gameFormat === '2v2' && advice) {
+                        indicatorText = advice.toUpperCase();
+                        if(window.lastAdviceLevel !== st.handVal) {
+                            window.lastAdviceLevel = st.handVal;
+                            setTimeout(function() {
+                                if (st.trucoState === 'pending') { showMsg(advice, 'pos', 2300); }
+                            }, 1500);
+                        }
                     }
 
                     if(st.handVal < 12 && !me11 && getTeam(st.lastTruco) !== getTeam(myPID)) { 
@@ -566,6 +581,8 @@
                 } else { btnTruco.classList.add('hidden'); }
                 if(isMyTurn && !maoDeFerro) btnFold.classList.remove('hidden'); else btnFold.classList.add('hidden');
             }
+            
+            getEl('ui-deck-indicator').innerText = indicatorText;
 
             var myVazas = getEl('vazas-my'); var oppVazas = getEl('vazas-opp');
             myVazas.innerHTML = ''; oppVazas.innerHTML = '';
@@ -594,12 +611,25 @@
                 gmContainer.classList.add('hidden');
             }
 
-            // Indicador dinâmico de Turno Ativo (Soft Neon Glow)
+            // Indicador dinâmico de Turno Ativo
             document.querySelectorAll('.card').forEach(c => c.classList.remove('active-turn'));
-            if (st.trucoState === 'none' && !animLock) {
-                var turnPos = getUIPos(st.turn);
-                var turnHand = getEl('box-' + turnPos);
-                if(turnHand) turnHand.querySelectorAll('.card').forEach(c => c.classList.add('active-turn'));
+            if (!animLock) {
+                if (st.trucoState === 'pending') {
+                    // Turno visual para quem deve responder ao Truco
+                    var answeringTeam = getOppTeam(getTeam(st.trucoBy));
+                    for(var p = 1; p <= getNumPlayers(); p++) {
+                        if(getTeam(p) === answeringTeam) {
+                            var tPos = getUIPos(p);
+                            var tHand = getEl('box-' + tPos);
+                            if(tHand) tHand.querySelectorAll('.card').forEach(c => c.classList.add('active-turn'));
+                        }
+                    }
+                } else {
+                    // Turno visual normal
+                    var turnPos = getUIPos(st.turn);
+                    var turnHand = getEl('box-' + turnPos);
+                    if(turnHand) turnHand.querySelectorAll('.card').forEach(c => c.classList.add('active-turn'));
+                }
             }
         }
 
@@ -627,7 +657,6 @@
                 var dom = createCardDOM(tblCard.c, false, false, 0, false, 'table');
                 dom.style.position = 'absolute';
                 
-                // Espaçamento Amplo para Evitar Sobreposições Fix 6
                 var posOffset = {
                     'left': 'translate(-55px, -10px) rotate(-20deg)',
                     'right': 'translate(55px, 10px) rotate(20deg)',
@@ -689,7 +718,7 @@
                 flyCard.style.position = 'fixed';
                 flyCard.style.left = deckRect.left + 'px';
                 flyCard.style.top = deckRect.top + 'px';
-                flyCard.style.zIndex = '999'; 
+                flyCard.style.zIndex = '25'; // Fix z-index para não sobrepor o placar (z-index: 30)
                 flyCard.style.margin = '0';
                 flyCard.style.transition = 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
                 document.body.appendChild(flyCard);
@@ -699,30 +728,29 @@
                 flyCard.style.height = targetRect.height + 'px';
 
                 flyCards.push({ fly: flyCard, target: w, isMy: isMy, isVira: isVira });
-                void flyCard.offsetWidth; // force reflow
+                void flyCard.offsetWidth; 
 
                 setTimeout(() => {
-                    var finalRect = w.getBoundingClientRect(); // re-check in case layout settles
+                    var finalRect = w.getBoundingClientRect(); 
                     flyCard.style.left = finalRect.left + 'px';
                     flyCard.style.top = finalRect.top + 'px';
                 }, delay + 10);
                 delay += 70;
             });
 
-            // Dispara a revelação APENAS após todas as cartas chegarem aos destinos
             setTimeout(() => {
-                st.viraRevealed = true; // Permite renderização correta das infos em updateUI futuramente
+                st.viraRevealed = true; 
                 
                 flyCards.forEach(item => {
-                    item.fly.remove(); // Tira a carta fantasma voando
-                    item.target.style.opacity = '1'; // Acende o HTML real da carta
+                    item.fly.remove(); 
+                    item.target.style.opacity = '1'; 
                     
                     var innerCard = item.target.querySelector('.card');
                     if(innerCard && (item.isMy || item.isVira)) {
                         innerCard.classList.remove('back');
                         innerCard.style.transition = 'none';
                         innerCard.style.transform = 'rotateY(180deg)';
-                        void innerCard.offsetWidth; // Recalcula reflow pra animar a virada
+                        void innerCard.offsetWidth; 
                         innerCard.style.transition = 'transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
                         innerCard.style.transform = 'rotateY(0deg)';
                     }
@@ -732,9 +760,9 @@
                     updateUI(); 
                     animLock = false; 
                     checkAiTurn(); 
-                }, 550); // Aguarda o flip finalizar
+                }, 550); 
 
-            }, delay + 420); // Delay total das viagens espaciais
+            }, delay + 420); 
         }
 
         window.startGame = function(modeStr, playerID) {
@@ -824,7 +852,13 @@
                 nextTurn = st.table[0].p; 
             } else { 
                 var myTeam = getTeam(myPID);
-                showMsg((myTeam === trickWinnerTeam) ? "A mão é de vocês!" : "Os rivais fizeram a mão!", (myTeam === trickWinnerTeam) ? 'pos' : 'neg'); 
+                var isMyWin = (myTeam === trickWinnerTeam);
+                var msg = "";
+                
+                if(st.gameFormat === '1v1') { msg = isMyWin ? "Você fez a mão!" : "O Rival fez a mão!"; }
+                else { msg = isMyWin ? "A mão é de vocês!" : "Os rivais fizeram a mão!"; }
+                
+                showMsg(msg, isMyWin ? 'pos' : 'neg'); 
                 st.vazas[trickWinnerTeam]++; 
                 nextTurn = winners[0];
             }
@@ -1021,7 +1055,13 @@
                     if (oldSt.roundId !== st.roundId) { animDeal(); } 
                     else if (st.trickResults.length > oldSt.trickResults.length) {
                         var lastWinner = st.trickResults[st.trickResults.length - 1];
-                        if(lastWinner === 3) { showMsg("Canga (Empate)!", 'neu'); } else { showMsg((lastWinner === getTeam(myPID)) ? "A mão é de vocês!" : "Rivais fizeram a mão!", (lastWinner === getTeam(myPID)) ? 'pos' : 'neg'); }
+                        if(lastWinner === 3) { showMsg("Canga (Empate)!", 'neu'); } else { 
+                            var isMyWin = (lastWinner === getTeam(myPID));
+                            var msg = "";
+                            if(st.gameFormat === '1v1') { msg = isMyWin ? "Você fez a mão!" : "O Rival fez a mão!"; }
+                            else { msg = isMyWin ? "A mão é de vocês!" : "Os rivais fizeram a mão!"; }
+                            showMsg(msg, isMyWin ? 'pos' : 'neg'); 
+                        }
                         if(st.table.length === 0 && st.lastTable.length === getNumPlayers()) { renderMesa(st.lastTable); setTimeout(function(){ renderMesa(); }, 1500); } else { renderMesa(); }
                     } 
                     else { 
