@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Truco - v0.8.10</title>
+    <title>Truco - v0.8.11</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♣</text></svg>">
     <style>
         /* BASE & THEME */
@@ -393,8 +393,8 @@
             firstPlayerOfRound: 1, humanAccepted: false,
             isMaoDe11: false, maoDe11Team: 0, maoDeFerro: false,
             gameFormat: '1v1',
-            scores: { 1: 0, 2: 0 }, vazas: { 1: 0, 2: 0 },
-            hands: { 1: [], 2: [], 3: [], 4: [] }, table: [], lastTable: [], trickResults: [],
+            scores: { 1: 0, 2: 0 }, trickResults: [],
+            hands: { 1: [], 2: [], 3: [], 4: [] }, table: [], lastTable: [],
             playedCards: [], 
             vira: null, manilha: '', deckMode: 'sujo', viraRevealed: false
         };
@@ -623,18 +623,26 @@
             var fortes = myPowers.filter(p => p >= activeVals.length - 3 && p <= 99).length;
 
             var baseProb = 10;
-            if(manilhas >= 2) baseProb = 95;
-            else if(manilhas == 1 && fortes >= 1) baseProb = 85;
-            else if(manilhas == 1) baseProb = 60;
-            else if(fortes >= 2) baseProb = 50;
-            else if(fortes == 1) baseProb = 30;
+            if (isNuts) { baseProb = 95; }
+            else {
+                if(manilhas >= 2) baseProb = 90;
+                else if(manilhas == 1 && fortes >= 1) baseProb = 85;
+                else if(manilhas == 1) baseProb = 65;
+                else if(fortes >= 2) baseProb = 50;
+                else if(fortes == 1) baseProb = 30;
+            }
 
-            if (isNuts && st.vazas[myTeam] == 1) baseProb = 100;
+            var t1Wins = st.trickResults.filter(r => r === 1).length;
+            var t2Wins = st.trickResults.filter(r => r === 2).length;
+            var myTeamTrickWins = myTeam === 1 ? t1Wins : t2Wins;
+            var oppTeamTrickWins = myTeam === 1 ? t2Wins : t1Wins;
+
+            if (isNuts && myTeamTrickWins == 1) baseProb = 100;
             if (isNuts && st.trickResults.length === 0) baseProb = 85;
 
             var prob = baseProb;
-            if(st.vazas[myTeam] == 1 && st.vazas[oppTeam] == 0) prob += 30;
-            if(st.vazas[oppTeam] == 1 && st.vazas[myTeam] == 0) prob -= 30;
+            if(myTeamTrickWins == 1 && oppTeamTrickWins == 0) prob += 25;
+            if(oppTeamTrickWins == 1 && myTeamTrickWins == 0) prob -= 25;
             if(st.deckMode === 'limpo' && prob > 40 && prob < 90) prob += 10;
 
             return {
@@ -651,7 +659,7 @@
         // --- SISTEMA DE NEON GLOW ---
         function updateTurnGlow() {
             document.querySelectorAll('.card').forEach(c => c.classList.remove('active-turn'));
-            if (animLock && st.trucoState !== 'mao11') return; // Bloqueia glow durante animações espaciais
+            if (animLock && st.trucoState !== 'mao11') return;
 
             if (st.trucoState === 'mao11') {
                 for(var p = 1; p <= getNumPlayers(); p++) {
@@ -672,6 +680,12 @@
                 var tHand = getEl('box-' + getUIPos(st.turn));
                 if(tHand) tHand.querySelectorAll('.card').forEach(c => c.classList.add('active-turn'));
             }
+        }
+
+        function isAwaitingMyAction() {
+            if (st.trucoState === 'pending') return getTeam(st.trucoBy) !== getTeam(myPID);
+            if (st.trucoState === 'mao11') return st.maoDe11Team === 1;
+            return st.turn === myPID;
         }
 
         function updateUI() {
@@ -714,12 +728,14 @@
                     uiTurn.innerText = "⚠️ DECIDA! ⚠️"; uiTurn.style.color = "var(--warn)";
                     
                     if(st.gameFormat === '2v2') {
-                        var probComb = Math.max(analyzeGameState(1).prob, analyzeGameState(3).prob);
+                        var partnerState = analyzeGameState(3);
                         var advice = "";
-                        if (probComb < 30) advice = "Parceiro: Sugiro correr";
-                        else if (probComb > 75) advice = "Parceiro: Sugiro aumentar!";
-                        else if (probComb > 50) advice = "Parceiro: Sugiro aceitar";
-                        else advice = "Parceiro: Acho que é blefe";
+                        if (partnerState.prob < 35) advice = "Parceiro: Sugiro correr";
+                        else if (partnerState.prob < 65) advice = "Parceiro: Sugiro aceitar";
+                        else {
+                            if (st.handVal < 12) advice = "Parceiro: Sugiro aumentar!";
+                            else advice = "Parceiro: Bora!";
+                        }
 
                         indicatorText = advice.toUpperCase();
                         if(window.lastAdviceLevel !== st.handVal) {
@@ -757,6 +773,10 @@
                 getEl('ui-deck-indicator').innerText = indicatorText;
             }
 
+            var t1Wins = st.trickResults.filter(r => r === 1).length;
+            var t2Wins = st.trickResults.filter(r => r === 2).length;
+            var ties = st.trickResults.filter(r => r === 3).length;
+
             var myVazas = getEl('vazas-my'); var oppVazas = getEl('vazas-opp');
             myVazas.innerHTML = ''; oppVazas.innerHTML = '';
             for(var i=0; i<3; i++) {
@@ -784,7 +804,7 @@
                 gmContainer.classList.add('hidden');
             }
 
-            updateTurnGlow(); // Garante o neon glow
+            updateTurnGlow(); 
         }
 
         function renderMesa(customTable, animOriginPID, isDealing, showPartnerMao11) {
@@ -804,7 +824,7 @@
                     if (showPartnerMao11 && p === 3) isBack = false; 
                     
                     var dom = createCardDOM(hand[i], isBack, isMy, i, false, pos);
-                    if(isDealing) dom.style.opacity = '0'; // Zero-frame Reveal
+                    if(isDealing) dom.style.opacity = '0'; 
                     dest.appendChild(dom);
                 }
             }
@@ -857,7 +877,7 @@
                 lastCard.style.transform = finalTrans; lastCard.style.opacity = '1';
             }
 
-            updateTurnGlow(); // Assegura o neon nas cartas injetadas
+            updateTurnGlow();
         }
 
         function animDeal() {
@@ -941,7 +961,7 @@
             
             nav((modeStr === 'pc' ? 'scr-mode' : 'scr-multi'), 'scr-game');
             if (myPID === 1) {
-                st.firstPlayerOfRound = 1; // Round 1 starts with P1
+                st.firstPlayerOfRound = 1; 
                 startRound(st.firstPlayerOfRound);
             }
         };
@@ -951,7 +971,6 @@
             var activeVals = getActiveVals();
             for(var s=0; s<4; s++) { for(var v=0; v<activeVals.length; v++) { deck.push({s: SUITS[s], v: activeVals[v]}); } }
             
-            // Algoritmo Fisher-Yates (Matematicamente 100% Aleatório)
             for (var r = deck.length - 1; r > 0; r--) {
                 var j = Math.floor(Math.random() * (r + 1));
                 var temp = deck[r]; deck[r] = deck[j]; deck[j] = temp;
@@ -967,19 +986,17 @@
             st.vira = deck.pop(); st.viraRevealed = false;
             st.manilha = activeVals[(activeVals.indexOf(st.vira.v) + 1) % activeVals.length];
             
-            st.table = []; st.lastTable = []; st.vazas = {1:0, 2:0}; st.trickResults = []; 
+            st.table = []; st.lastTable = []; st.trickResults = []; 
             st.playedCards = []; 
             
             st.handVal = 1; st.trucoBy = 0; st.trucoState = 'none'; 
             
-            // Controle de Turnos: firstPlayerOfRound governa a Rodada. O current st.turn segue o fluxo.
             st.firstPlayerOfRound = firstPlayer;
             st.turn = firstPlayer;
             
             st.lastTruco = 0; st.needsNewRound = false;
             st.isMaoDe11 = false; st.maoDe11Team = 0; st.maoDeFerro = false;
             
-            // Detecção da Mão de 11 e Mão de Ferro
             if (st.scores[1] === 11 && st.scores[2] === 11) {
                 st.maoDeFerro = true; st.handVal = 3;
             } else if (st.scores[1] === 11) {
@@ -996,25 +1013,16 @@
         function handleMao11() {
             if (st.maoDe11Team === 1) {
                 if (st.gameFormat === '2v2') {
-                    renderMesa(null, null, false, true); // Revela parceiro
-                    var s1 = analyzeGameState(1);
-                    var s3 = analyzeGameState(3);
-                    var combinedProb = Math.max(s1.prob, s3.prob) + 15;
-                    
-                    var advice = "";
-                    if (combinedProb < 40) advice = "Parceiro: Melhor correr";
-                    else if (combinedProb < 60) advice = "Parceiro: Não tô confiante...";
-                    else if (combinedProb < 80) advice = "Parceiro: Acho que dá pra ganhar";
-                    else advice = "Parceiro: Bora?";
-                    
-                    getEl('ui-deck-indicator').innerText = advice.toUpperCase();
+                    renderMesa(null, null, false, true); 
+                    var advice = getPartnerAdvice();
+                    if(advice) { getEl('ui-deck-indicator').innerText = advice.toUpperCase(); }
                     showMsg("Mão de 11! Analise as cartas.", 'warn', 3000);
                 } else {
                     showMsg("Sua Mão de 11! Deseja jogar?", 'warn', 3000);
                 }
                 updateUI();
             } else if (st.maoDe11Team === 2) {
-                animLock = true;
+                animLock = true; updateUI();
                 setTimeout(aiDecideMao11, 2500);
             }
         }
@@ -1025,7 +1033,7 @@
                 var msgAcc = st.gameFormat === '1v1' ? "Você Aceitou a Mão de 11!" : "Vocês Aceitaram a Mão de 11!";
                 showMsg(msgAcc, 'pos'); 
                 st.trucoState = 'none'; 
-                renderMesa(); // Esconde as cartas do parceiro de volta
+                renderMesa(); 
                 updateUI(); autoSave();
                 animLock = false; checkAiTurn();
             } else {
@@ -1034,7 +1042,7 @@
                 st.trucoState = 'none'; 
                 st.scores[2] += 1; 
                 if(st.scores[2] >= 12) { autoSave(); triggerEndGame(false); return; }
-                var nxtFirst = getNextTurn(st.firstPlayerOfRound); // Próxima rodada
+                var nxtFirst = getNextTurn(st.firstPlayerOfRound); 
                 if (myPID === 1 || gameMode === 'pc') { startRound(nxtFirst); } else { st.needsNewRound = true; st.nextFirstPlayer = nxtFirst; autoSave(); }
             }
         };
@@ -1109,8 +1117,8 @@
             var nextTurn = 1;
 
             if(trickWinnerTeam === 3) { 
-                showMsg("Canga (Empate)!", 'neu'); st.vazas[1]++; st.vazas[2]++; 
-                nextTurn = st.table[0].p; // Canga = Quem jogou a primeira carta começa a próxima
+                showMsg("Canga (Empate)!", 'neu'); 
+                nextTurn = st.table[0].p; 
             } else { 
                 var myTeam = getTeam(myPID);
                 var isMyWin = (myTeam === trickWinnerTeam);
@@ -1120,26 +1128,49 @@
                 else { msg = isMyWin ? "A mão é de vocês!" : "Os rivais fizeram a mão!"; }
                 
                 showMsg(msg, isMyWin ? 'pos' : 'neg'); 
-                st.vazas[trickWinnerTeam]++; 
-                nextTurn = winners[0]; // Vencedor da vaza começa a próxima
+                nextTurn = winners[0]; 
             }
 
             st.lastTable = JSON.parse(JSON.stringify(st.table)); 
             st.table = []; renderMesa(); updateUI();
 
-            if(st.vazas[1] >= 2 || st.vazas[2] >= 2) {
-                var roundWinner = 0;
-                if(st.vazas[1] >= 2 && st.vazas[2] >= 2) {
-                    if(st.trickResults[0] === 1 || st.trickResults[0] === 2) roundWinner = st.trickResults[0]; else if (st.trickResults[1] === 1 || st.trickResults[1] === 2) roundWinner = st.trickResults[1];
-                } else roundWinner = (st.vazas[1] >= 2) ? 1 : 2;
-                
-                if(roundWinner !== 0) st.scores[roundWinner] += st.handVal;
+            // Matemática verdadeira de desempates e vitórias da Rodada
+            var t1 = st.trickResults.filter(r => r === 1).length;
+            var t2 = st.trickResults.filter(r => r === 2).length;
+            var ties = st.trickResults.filter(r => r === 3).length;
+            var roundWinner = 0;
+
+            if (st.trickResults.length === 2) {
+                if (t1 === 2) roundWinner = 1;
+                else if (t2 === 2) roundWinner = 2;
+                else if (ties === 1) {
+                    if (t1 === 1) roundWinner = 1;
+                    else if (t2 === 1) roundWinner = 2;
+                }
+            } else if (st.trickResults.length === 3) {
+                if (t1 > t2) roundWinner = 1;
+                else if (t2 > t1) roundWinner = 2;
+                else if (ties === 3) roundWinner = 3; // Triplo Empate = Ninguém ganha
+                else if (ties === 1 && t1 === 1 && t2 === 1) roundWinner = st.trickResults[0]; 
+                else if (ties === 2) {
+                    if (t1 === 1) roundWinner = 1;
+                    else if (t2 === 1) roundWinner = 2;
+                }
+            }
+            
+            if(roundWinner !== 0) {
+                if (roundWinner === 3) {
+                    showMsg("Rodada Empatada! Ninguém pontua.", 'warn', 3000);
+                } else {
+                    st.scores[roundWinner] += st.handVal;
+                }
                 
                 if(st.scores[1] >= 12 || st.scores[2] >= 12) {
                     var iWon = st.scores[getTeam(myPID)] >= 12; autoSave(); triggerEndGame(iWon);
                 } else {
-                    var nxtFirst = getNextTurn(st.firstPlayerOfRound); // Girar o relógio de inicio de rodada
-                    if (myPID === 1 || gameMode === 'pc') { autoSave(); setTimeout(function(){ startRound(nxtFirst); }, 2000); } else { st.needsNewRound = true; st.nextFirstPlayer = nxtFirst; autoSave(); }
+                    var nxtFirst = getNextTurn(st.firstPlayerOfRound); 
+                    if (myPID === 1 || gameMode === 'pc') { autoSave(); setTimeout(function(){ startRound(nxtFirst); }, 2500); } 
+                    else { st.needsNewRound = true; st.nextFirstPlayer = nxtFirst; autoSave(); }
                 }
             } else { 
                 st.turn = nextTurn; animLock = false; updateUI(); autoSave(); checkAiTurn(); 
@@ -1158,7 +1189,7 @@
             if(accept) {
                 st.humanAccepted = true; 
                 showMsg("Você Aceitou!", 'pos'); st.trucoState = 'none'; updateUI(); autoSave();
-                animLock = false; checkAiTurn();
+                animLock = false; updateTurnGlow(); checkAiTurn();
             } else {
                 showMsg("Você Correu!", 'neg'); st.trucoState = 'none'; 
                 var callingTeam = getTeam(st.trucoBy);
@@ -1214,7 +1245,7 @@
                 if(state.prob >= 20 || state.isNuts) accept = true; 
                 if(accept && st.handVal < 12 && !my11 && !isOppDominatingTable) { 
                     if(state.isNuts || state.prob >= 50) raise = true; 
-                    else if (Math.random() < 0.40) raise = true; // Retruco blefe
+                    else if (Math.random() < 0.40) raise = true; 
                 }
             }
 
@@ -1250,7 +1281,7 @@
                 var canRaise = !(isPartner && st.humanAccepted); 
 
                 if (canRaise) {
-                    var isFirstTurn = st.table.length === 0;
+                    var isFirstTurn = st.trickResults.length === 0 && st.table.length === 0;
 
                     if (aiDifficulty === 1) { 
                         if (state.prob >= 90) askTruco = true; 
@@ -1260,13 +1291,13 @@
                     }
                     else if (aiDifficulty === 3) { 
                         if (state.prob >= 60 || state.isNuts) askTruco = true; 
-                        if (isFirstTurn && state.prob >= 45 && Math.random() < 0.25) askTruco = true; // Pressão de turno 1
-                        if (st.vazas[myTeam] === 1 && state.prob < 20 && Math.random() < 0.15) askTruco = true; // Blefe
+                        if (isFirstTurn && state.prob >= 45 && Math.random() < 0.25) askTruco = true; 
+                        if (st.vazas[myTeam] === 1 && state.prob < 20 && Math.random() < 0.15) askTruco = true; 
                     }
                     else if (aiDifficulty === 4) { 
                         if (state.prob >= 45 || state.isNuts) askTruco = true; 
-                        if (isFirstTurn && state.prob >= 25 && Math.random() < 0.40) askTruco = true; // Pressão forte de inicio
-                        if (state.prob <= 30 && Math.random() < 0.35) askTruco = true; // Blefe psicológico insano
+                        if (isFirstTurn && Math.random() < 0.35) askTruco = true; 
+                        if (state.prob <= 30 && Math.random() < 0.35) askTruco = true; 
                     }
                 }
 
