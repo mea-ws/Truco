@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Truco - v0.11.1</title>
+    <title>Truco - v0.11.4</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♣</text></svg>">
     <style>
         /* THEME VARIABLES */
@@ -169,12 +169,12 @@
 
         .hand-my { display: flex; justify-content: center; gap: 15px; height: 105px; width: 100%; margin-bottom: 5px; z-index: 15; }
         .hand-top { position: absolute; top: -35px; left: 50%; transform: translateX(-50%); display: flex; justify-content: center; gap: 8px; z-index: 5; transition: top 0.4s ease; }
-        .hand-left { position: absolute; left: -35px; top: 50%; transform: translateY(-50%) rotate(90deg); display: flex; justify-content: center; gap: 8px; z-index: 5; }
-        .hand-right { position: absolute; right: -35px; top: 50%; transform: translateY(-50%) rotate(-90deg); display: flex; justify-content: center; gap: 8px; z-index: 5; }
+        .hand-left { position: absolute; left: -35px; top: 50%; width: 70px; transform: translateY(-50%) rotate(90deg); display: flex; justify-content: center; gap: 8px; z-index: 5; }
+        .hand-right { position: absolute; right: -35px; top: 50%; width: 70px; transform: translateY(-50%) rotate(-90deg); display: flex; justify-content: center; gap: 8px; z-index: 5; }
 
         /* Assentos extras do Trios (3v3) — ativos quando .table ganha .fmt-3v3
            (aplicado em updateUI() sempre que st.gameFormat === '3v3'). */
-        .hand-left2, .hand-right2 { display: none; justify-content: center; gap: 8px; z-index: 5; position: absolute; }
+        .hand-left2, .hand-right2 { display: none; justify-content: center; gap: 8px; z-index: 5; position: absolute; width: 70px; }
         .table.fmt-3v3 .hand-left { top: 70%; }
         .table.fmt-3v3 .hand-right { top: 70%; }
         .table.fmt-3v3 .hand-left2 { display: flex; left: -35px; top: 24%; transform: translateY(-50%) rotate(90deg); }
@@ -302,10 +302,10 @@
             #deck-area { right: 5px; gap: 4px; }
             #ghost-m-card, .deck-stack-container, #deck-pile { width: 45px; height: 65px; }
             #vira-container { left: -30px; }
-            .hand-left { left: -25px; }
-            .hand-right { right: -25px; }
-            .table.fmt-3v3 .hand-left2 { left: -25px; }
-            .table.fmt-3v3 .hand-right2 { right: -25px; }
+            .hand-left { left: -25px; width: 50px; }
+            .hand-right { right: -25px; width: 50px; }
+            .table.fmt-3v3 .hand-left2 { left: -25px; width: 50px; }
+            .table.fmt-3v3 .hand-right2 { right: -25px; width: 50px; }
 
             #btn-hide-card { right: 5px; bottom: 5px; padding: 6px 10px; font-size: 0.7rem; }
         }
@@ -1126,6 +1126,52 @@
             return arr;
         }
 
+        // Quantas manilhas já foram jogadas nesta mão — quanto mais altas já
+        // saíram, mais forte relativamente fica o que resta na mão de qualquer
+        // um. Só as IAs mais espertas (Difícil/Insano) "contam" isso.
+        // Conta quantas cartas MAIS FORTES que a minha melhor carta na mão já
+        // foram jogadas nesta mão inteira — manilha ou não, qualquer carta.
+        // Isso é o que dá noção real de "quanto perigo já passou": se as
+        // cartas que me superariam já saíram de jogo, minha carta comum vira,
+        // na prática, uma carta forte pro que resta da rodada.
+        function countStrongerCardsGone(pid) {
+            var playedPowers = st.playedCards ? st.playedCards.map(c => getPower(c)) : [];
+            st.table.forEach(t => { if (!t.hidden) playedPowers.push(getPower(t.c)); });
+
+            var myBest = -1;
+            (st.hands[pid] || []).forEach(function(c) {
+                var p = getPower(c);
+                if (p > myBest) myBest = p;
+            });
+
+            return playedPowers.filter(function(p) { return p > myBest; }).length;
+        }
+
+        // Contexto de time: mais relevante no Trios (2 parceiros) do que em
+        // Duplas (1 parceiro) — reforça um pouco a confiança se o time está
+        // bem posicionado, puxa um pouco pra baixo se está mal.
+        function aiTeamStrengthBonus(pid) {
+            var partners = getTeamPIDs(getTeam(pid)).filter(function(p) { return p !== pid; });
+            if (partners.length === 0) return 0;
+            var sum = 0;
+            partners.forEach(function(p) { sum += aiHandStrength(p).prob; });
+            var avgPartner = sum / partners.length;
+            return (avgPartner - 40) * 0.15;
+        }
+
+        // Todas as IAs a partir do Difícil "contam" manilhas já jogadas e,
+        // no Trios, também levam em conta a força do time — o Insano tira
+        // o máximo proveito disso (não erra, analisa friamente cada mão).
+        function applyAiIntel(prob, pid) {
+            if (aiDifficulty >= 3) {
+                var gone = countStrongerCardsGone(pid);
+                var weight = aiDifficulty === 4 ? 6 : 3;
+                prob += Math.min(30, gone * weight);
+            }
+            if (getNumPlayers() > 4) prob += aiTeamStrengthBonus(pid);
+            return Math.max(0, Math.min(100, prob));
+        }
+
         // Todos os assentos do meu time, exceto eu mesmo — length=1 em 2v2
         // (comportamento atual), length=2 em 3v3/Trios.
         function getPartnerPIDs() {
@@ -1535,11 +1581,14 @@
 
             var flyCards = [];
             var delay = 0;
+            var rotMap = { 'box-my': 0, 'box-top': 0, 'box-left': 90, 'box-left2': 90, 'box-right': -90, 'box-right2': -90 };
 
             allWrappers.forEach(w => {
                 var c = w.querySelector('.card');
                 var isVira = c && c.id === 'vira-anim-target';
-                var isMy = w.parentElement.id === 'box-my';
+                var parentId = w.parentElement.id;
+                var isMy = parentId === 'box-my';
+                var rotDeg = rotMap[parentId] || 0;
 
                 var flyCard = document.createElement('div');
                 flyCard.className = 'card back';
@@ -1548,20 +1597,20 @@
                 flyCard.style.top = deckRect.top + 'px';
                 flyCard.style.zIndex = '25';
                 flyCard.style.margin = '0';
+                flyCard.style.transform = 'rotate(' + rotDeg + 'deg)';
                 flyCard.style.transition = 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
                 document.body.appendChild(flyCard);
-
-                var targetRect = w.getBoundingClientRect();
-                flyCard.style.width = targetRect.width + 'px';
-                flyCard.style.height = targetRect.height + 'px';
 
                 flyCards.push({ fly: flyCard, target: w, isMy: isMy, isVira: isVira });
                 void flyCard.offsetWidth; 
 
                 setTimeout(() => {
                     var finalRect = w.getBoundingClientRect(); 
-                    flyCard.style.left = finalRect.left + 'px';
-                    flyCard.style.top = finalRect.top + 'px';
+                    var natW = flyCard.offsetWidth, natH = flyCard.offsetHeight;
+                    var cx = finalRect.left + finalRect.width / 2;
+                    var cy = finalRect.top + finalRect.height / 2;
+                    flyCard.style.left = (cx - natW / 2) + 'px';
+                    flyCard.style.top = (cy - natH / 2) + 'px';
                 }, delay + 10);
                 delay += 70;
             });
@@ -1590,6 +1639,7 @@
                     if (st.trucoState === 'mao11') {
                         handleMao11();
                     } else {
+                        if (st.maoDeFerro) { showMsg("⚡ MÃO DE FERRO! NINGUÉM FOGE! ⚡", 'warn', 3000); }
                         checkAiTurn(); 
                     }
                 }, 550); 
@@ -1988,7 +2038,7 @@
             var myTeam = getTeam(pid);
             var thres = st.rules === 'mineiro' ? 10 : 11;
             var myX   = (st.scores[myTeam] === thres);
-            var prob   = aiContextProb(pid);
+            var prob   = applyAiIntel(aiContextProb(pid), pid);
             var accept = false, raise = false;
 
             if(aiDifficulty === 1) {
@@ -2054,7 +2104,7 @@
             var isRival = (myTeam !== getTeam(myPID));
 
             var h       = aiHandStrength(pid);
-            var prob    = aiContextProb(pid);
+            var prob    = applyAiIntel(aiContextProb(pid), pid);
             var nTricks = st.trickResults.length;
             var myW     = st.trickResults.filter(r => r === myTeam).length;
             var opW     = st.trickResults.filter(r => r === oppTeam).length;
@@ -2376,6 +2426,48 @@
         // Chamado pelo Host pra convidar mais um jogador além do guest
         // principal. Gera um código de convite igual ao clássico, só que
         // já embutindo qual pid o novo jogador vai ocupar.
+        // Comprime o payload (gzip nativo do navegador) antes de codificar em
+        // Base64 — reduz bastante o tamanho do código de convite, já que o SDP
+        // tem muita repetição de texto. Cai pra Base64 puro se o navegador não
+        // suportar a API (prefixo 'U'/'C' marca qual formato foi usado).
+        async function packCode(obj) {
+            var str = JSON.stringify(obj);
+            if (window.CompressionStream) {
+                try {
+                    var cs = new CompressionStream('gzip');
+                    var writer = cs.writable.getWriter();
+                    writer.write(new TextEncoder().encode(str));
+                    writer.close();
+                    var buf = await new Response(cs.readable).arrayBuffer();
+                    var bytes = new Uint8Array(buf);
+                    var binary = '';
+                    for (var i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+                    return 'C' + btoa(binary);
+                } catch(e) { /* cai pro fallback abaixo */ }
+            }
+            return 'U' + btoa(str);
+        }
+
+        async function unpackCode(codeStr) {
+            var mode = codeStr.charAt(0);
+            var data = codeStr.substring(1);
+            if (mode === 'U') return JSON.parse(atob(data));
+            if (mode === 'C') {
+                if (!window.DecompressionStream) throw new Error('Este navegador não suporta descomprimir o código.');
+                var binary = atob(data);
+                var bytes = new Uint8Array(binary.length);
+                for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+                var ds = new DecompressionStream('gzip');
+                var writer = ds.writable.getWriter();
+                writer.write(bytes);
+                writer.close();
+                var buf = await new Response(ds.readable).arrayBuffer();
+                return JSON.parse(new TextDecoder().decode(buf));
+            }
+            // Compatibilidade: códigos antigos (de antes dessa mudança) eram só Base64 puro, sem prefixo.
+            return JSON.parse(atob(codeStr));
+        }
+
         function setupExtraGuestPeer(targetPid) {
             var peer = { pc: null, dc: null, gatheringDone: false };
             peer.pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
@@ -2388,7 +2480,9 @@
                     peer.gatheringDone = true;
                     var payload = { sdp: peer.pc.localDescription, nick: myLocalNick, assignedPid: targetPid };
                     window._extraInviteCodes = window._extraInviteCodes || {};
-                    window._extraInviteCodes[targetPid] = btoa(JSON.stringify(payload));
+                    packCode(payload).then(function(codeStr) {
+                        window._extraInviteCodes[targetPid] = codeStr;
+                    });
                 }
             };
 
@@ -2397,11 +2491,11 @@
         }
 
         // Confirma a resposta (SDP answer) de um convidado extra específico.
-        function webrtcConfirmExtraGuest(targetPid, answerCodeStr) {
+        async function webrtcConfirmExtraGuest(targetPid, answerCodeStr) {
             var peer = hostPeers[targetPid];
             if (!peer) return;
             try {
-                var parsed = JSON.parse(atob(answerCodeStr));
+                var parsed = await unpackCode(answerCodeStr);
                 var answer = parsed.sdp || parsed;
                 if (parsed.nick) { st.nicks = st.nicks || {}; st.nicks[targetPid] = parsed.nick.substring(0, 10); }
                 peer.pc.setRemoteDescription(answer);
@@ -2517,9 +2611,9 @@
             };
         }
 
-        function finalizeLocalCode() {
+        async function finalizeLocalCode() {
             var payload = { sdp: pc.localDescription, nick: myLocalNick };
-            var codeStr = btoa(JSON.stringify(payload));
+            var codeStr = await packCode(payload);
             if (isHostWebRTC && pc.localDescription.type === 'offer') {
                 getEl('webrtc-data-host').value = codeStr;
                 webrtcSetStatus('✅ Código pronto! Copie e envie pro outro jogador.', 'success');
@@ -2568,11 +2662,11 @@
             webrtcSetStatus('🔌 Conexão perdida. Gere um novo código para reconectar.', 'error');
         }
 
-        window.webrtcHostConnect = function() {
+        window.webrtcHostConnect = async function() {
             try {
                 var ansStr = getEl('webrtc-answer-input').value.trim();
                 if(!ansStr) { webrtcSetStatus('Cole a resposta do outro jogador antes de confirmar.', 'error'); return; }
-                var parsed = JSON.parse(atob(ansStr));
+                var parsed = await unpackCode(ansStr);
                 var answer = parsed.sdp || parsed;
                 window._webrtcRemoteNick = (parsed.nick || 'Guest').substring(0, 10);
                 webrtcSetStatus('🔄 Conectando...', 'connecting');
@@ -2580,11 +2674,11 @@
             } catch(e) { webrtcSetStatus('❌ Código mal formatado. Confira e cole novamente.', 'error'); getEl('webrtc-btn-retry').classList.remove('hidden'); }
         };
 
-        window.webrtcGuestGenerateAnswer = function() {
+        window.webrtcGuestGenerateAnswer = async function() {
             try {
                 var offStr = getEl('webrtc-data-guest-input').value.trim();
                 if(!offStr) { webrtcSetStatus('Cole o código do Host antes de continuar.', 'error'); return; }
-                var parsed = JSON.parse(atob(offStr));
+                var parsed = await unpackCode(offStr);
                 var offer = parsed.sdp || parsed;
                 window._webrtcRemoteNick = (parsed.nick || 'Host').substring(0, 10);
                 webrtcSetStatus('🔄 Gerando resposta...', 'connecting');
