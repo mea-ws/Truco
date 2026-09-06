@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Truco - v0.9.10</title>
+    <title>Truco - v0.9.11</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♣</text></svg>">
     <style>
         /* THEME VARIABLES */
@@ -126,10 +126,10 @@
         .hud-container.notify-neu { border-color: var(--warn); box-shadow: 0 0 20px rgba(234, 179, 8, 0.2); }
 
         .hud-side { flex: 1; display: flex; flex-direction: column; min-width: 0; }
-        .hud-center { flex: 1; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 0; padding: 0 5px; }
+        .hud-center { flex: 1.2; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 0; padding: 0 5px; }
         .hud-right { text-align: right; align-items: flex-end; }
         
-        #ui-turn { font-size: 0.8rem; font-weight:bold; color: var(--txt-d); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; max-width: 130px; display: inline-block; }
+        #ui-turn { font-size: 0.8rem; font-weight:bold; color: var(--txt-d); white-space: nowrap; }
 
         .vaza-track { display: flex; gap: 5px; margin-top: 5px; }
         .vaza-pip { width: 10px; height: 10px; border-radius: 50%; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); }
@@ -272,7 +272,7 @@
             .play-text { display: none; }
             .btn-esc { position: relative; right: 0; opacity: 0.6; padding: 8px 12px; }
             
-            #ui-turn { font-size: clamp(0.7rem, 3vw, 0.85rem); max-width: 100px; }
+            #ui-turn { font-size: clamp(0.65rem, 2.5vw, 0.8rem); }
             
             #ghost-manilha { left: 5px; gap: 4px; }
             #deck-area { right: 5px; gap: 4px; }
@@ -897,11 +897,15 @@
             return w;
         }
 
+        // --- CÉREBRO DA IA ---
         function aiHandStrength(pid) {
             var myCards = st.hands[pid];
             var activeVals = getActiveVals();
             var manilhas = 0; var fortes = 0;
+            
             var playedPowers = st.playedCards ? st.playedCards.map(c => getPower(c)) : [];
+            st.table.forEach(t => { if (!t.hidden) playedPowers.push(getPower(t.c)); });
+
             var hasNuts = false;
 
             for(var i=0; i<myCards.length; i++) {
@@ -909,7 +913,7 @@
                 if (p > 99) manilhas++;
                 else if (p >= activeVals.length - 2) fortes++;
 
-                if (p > -1 && st.trickResults.length > 0) {
+                if (p > -1) {
                     var isThisNuts = true;
                     if (st.rules === 'paulista') {
                         for (var s=0; s<4; s++) {
@@ -1234,7 +1238,7 @@
 
             var viraDest = getEl('vira-container');
             if (st.rules === 'paulista' && st.vira) {
-                if (!getEl('vira-anim-target')) {
+                if (isDealing || !getEl('vira-anim-target')) {
                     viraDest.innerHTML = '';
                     var viraDOM = createCardDOM(st.vira, false, false, 0, true, 'vira');
                     viraDOM.firstChild.style.width = '50px'; viraDOM.firstChild.style.height = '75px'; viraDOM.firstChild.style.fontSize = '1.1rem';
@@ -1363,7 +1367,7 @@
         function startRound(firstPlayer) {
             var deck = []; window.lastAdviceLevel = 0; st.humanAccepted = false; resetHideBtn();
             var activeVals = getActiveVals();
-            st.partnerForcedPlay = false; // Reset da jogada forçada
+            st.partnerForcedPlay = false; 
             
             if (st.rules === 'goiano') {
                 for(var s=0; s<4; s++) { for(var v=0; v<VALS_LIMPO.length; v++) { deck.push({s: SUITS[s], v: VALS_LIMPO[v]}); } }
@@ -1548,6 +1552,8 @@
                 var pwr = st.table[i].hidden ? -1 : getPower(st.table[i].c);
                 if(pwr > highestPwr) { highestPwr = pwr; winners = [st.table[i].p]; } 
                 else if (pwr === highestPwr && pwr !== -1) { winners.push(st.table[i].p); }
+                
+                if (!st.table[i].hidden) { st.playedCards.push(st.table[i].c); }
             }
             
             st.trickWinners = winners;
@@ -1693,10 +1699,10 @@
                 }
             }
             else if(aiDifficulty === 4) {
-                accept = (prob >= 12) || (Math.random() < 0.58);
+                accept = (prob >= 15) || (Math.random() < 0.40);
                 if(accept && st.handVal < 12 && !myX) {
-                    if(prob >= 35) raise = true;
-                    else if(Math.random() < 0.65) raise = true; 
+                    if(prob >= 45) raise = true;
+                    else if(prob >= 20 && Math.random() < 0.50) raise = true; 
                 }
             }
 
@@ -1749,28 +1755,28 @@
                 if(canRaise) {
                     if(aiDifficulty === 1) { if(prob >= 85) askTruco = true; }
                     else if(aiDifficulty === 2) {
-                        if(prob >= 72) askTruco = true;
-                        if(!askTruco && Math.random() < 0.05) askTruco = true; 
+                        if(prob >= 70) askTruco = true;
+                        if(!askTruco && Math.random() < 0.10) askTruco = true; 
                     }
                     else if(aiDifficulty === 3) {
-                        if(prob >= 52) askTruco = true;
-                        if(isFirstPlay && Math.random() < 0.18) askTruco = true;      
-                        if(myW === 1 && opW === 0 && Math.random() < 0.38) askTruco = true; 
-                        if(!askTruco && Math.random() < 0.10) askTruco = true;        
+                        if(prob >= 55) askTruco = true;
+                        if(isFirstPlay && prob >= 20 && Math.random() < 0.20) askTruco = true;      
+                        if(myW === 1 && opW === 0 && Math.random() < 0.40) askTruco = true; 
+                        if(nTricks > 0 && prob >= 40 && Math.random() < 0.20) askTruco = true;        
                     }
                     else if(aiDifficulty === 4) {
-                        if(prob >= 30) askTruco = true;
-                        if(isFirstPlay && Math.random() < 0.65) askTruco = true;       
-                        if(myW === 1 && Math.random() < 0.72) askTruco = true;         
-                        if(opW === 1 && myW === 0 && Math.random() < 0.40) askTruco = true; 
-                        if(Math.random() < 0.45) askTruco = true;                      
+                        if(prob >= 45) askTruco = true;
+                        if(isFirstPlay && prob >= 20 && Math.random() < 0.50) askTruco = true;       
+                        if(myW === 1 && Math.random() < 0.60) askTruco = true;         
+                        if(opW === 1 && myW === 0 && prob >= 30 && Math.random() < 0.40) askTruco = true; 
+                        if(nTricks > 0 && Math.random() < 0.25) askTruco = true;                      
                     }
                 }
 
                 if(askTruco) {
                     st.proposedVal = getNextTrucoVal(st.handVal);
                     st.trucoBy = pid; st.lastTruco = pid; st.trucoState = 'pending';
-                    var tMsg = (st.gameFormat === '2v2' && myTeam === getTeam(myPID)) ? "Parceiro pediu " : (getPlayerName(pid) + " pediu ");
+                    var tMsg = (st.gameFormat === '2v2' && !isRival) ? "Parceiro pediu " : (getPlayerName(pid) + " pediu ");
                     showMsg(tMsg + getTrucoName(st.proposedVal) + "!", 'neu');
                     window.lastAdviceLevel = 0; animLock = false;
                     updateUI(); updateTurnGlow(); checkAiTrucoDecision(); return;
@@ -1806,14 +1812,24 @@
             if (respondingToEnemy) {
                 if (partnerIsWinning) {
                     playedIdx = indexed[0].idx;
-                    if (canHide && Math.random() < 0.6) hideThisCard = true;
+                    if (canHide && isRival && aiDifficulty >= 3 && Math.random() < 0.5) hideThisCard = true;
+                    if (canHide && !isRival && Math.random() < 0.6) hideThisCard = true;
                 } else {
                     var winningCards = indexed.filter(x => x.p > highestEnemyPwr);
                     if (winningCards.length > 0) {
-                        playedIdx = winningCards[0].idx;
+                        if (aiDifficulty === 1) {
+                            playedIdx = (Math.random() < 0.20) ? winningCards[Math.floor(Math.random() * winningCards.length)].idx : winningCards[0].idx;
+                        } else {
+                            playedIdx = winningCards[0].idx;
+                        }
                     } else {
-                        playedIdx = indexed[0].idx;
-                        if (canHide && Math.random() < 0.7) hideThisCard = true;
+                        if (aiDifficulty === 1) {
+                            playedIdx = (Math.random() < 0.20) ? indexed[indexed.length - 1].idx : indexed[0].idx;
+                        } else {
+                            playedIdx = indexed[0].idx;
+                            if (canHide && isRival && aiDifficulty >= 3 && Math.random() < 0.6) hideThisCard = true;
+                            if (canHide && !isRival && Math.random() < 0.7) hideThisCard = true;
+                        }
                     }
                 }
             } else {
