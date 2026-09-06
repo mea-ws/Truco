@@ -1,0 +1,9 @@
+# As cópias numeradas continuam no disco; no Git, cada versão é um commit de Truco.html
+/v0.*/
+
+/.claude/settings.local.json
+
+node_modules/
+/testes/test-results/
+/testes/playwright-report/
+/testes/resultados/

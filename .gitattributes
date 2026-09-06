@@ -1,0 +1,3 @@
+# O Git for Windows vem com autocrlf ligado e reescreveria os arquivos com CRLF
+# a cada checkout; o jogo é LF desde a v0.8.1.
+* text=auto eol=lf

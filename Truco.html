@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Truco - v0.7.1</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♣</text></svg>">
+    <style>
+        /* BASE & THEME */
+        :root {
+            --bg: #0f172a; --surf: #1e293b; --prim: #10b981; --prim-h: #059669;
+            --dang: #ef4444; --txt: #f8fafc; --txt-d: #94a3b8; --warn: #eab308;
+            --card-f: #ffffff; --card-b: #334155; --trans: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        
+        /* 100dvh para resolver problema de barra de navegadores no celular */
+        body, html { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: radial-gradient(circle at 20% 30%, #1e293b 0%, #0a0f1a 60%); 
+            color: var(--txt); margin: 0; padding: 0; overflow: hidden; height: 100dvh; width: 100vw;
+            display: flex; align-items: center; justify-content: center;
+            touch-action: none; overscroll-behavior: none;
+        }
+        
+        body::before { content: ''; position: absolute; top: -10%; right: -10%; width: 50vw; height: 50vw; background: radial-gradient(circle, rgba(16,185,129,0.08) 0%, transparent 60%); z-index: -1; }
+        body::after { content: ''; position: absolute; bottom: -10%; left: -10%; width: 50vw; height: 50vw; background: radial-gradient(circle, rgba(239,68,68,0.08) 0%, transparent 60%); z-index: -1; }
+
+        .hidden { display: none !important; }
+
+        /* UI PANELS */
+        .panel { width: 90%; max-width: 400px; background: rgba(30, 41, 59, 0.85); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); padding: 2rem; border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.6); text-align: center; border: 1px solid rgba(255,255,255,0.1); z-index: 50; }
+        .panel h1 { font-size: 2.5rem; margin: 0 0 1.5rem; font-weight: 900; letter-spacing: -2px; }
+        .btn-stack { display: flex; flex-direction: column; gap: 10px; }
+        
+        button { padding: 12px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; transition: var(--trans); font-size: 0.95rem; text-transform: uppercase; }
+        .btn-p { background: var(--prim); color: white; }
+        .btn-p:hover { background: var(--prim-h); transform: translateY(-2px); }
+        .btn-s { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: var(--txt); }
+        .btn-s:hover { background: rgba(255,255,255,0.1); transform: translateY(-2px); }
+        
+        .diff-selector { display: flex; gap: 8px; margin-bottom: 20px; }
+        .diff-btn { flex: 1; padding: 8px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: transparent; color: var(--txt-d); font-size: 0.8rem; cursor: pointer; transition: var(--trans); }
+        .diff-btn.active { background: var(--prim); color: white; border-color: var(--prim); font-weight: bold; transform: scale(1.05); box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3); }
+        .diff-btn.insano.active { background: var(--dang); border-color: var(--dang); box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3); }
+
+        /* GAME AREA & GLASS PANELS - padding bottom account for mobile safe areas */
+        .game-area { width: 100vw; height: 100dvh; display: flex; flex-direction: column; padding: 10px 10px max(10px, env(safe-area-inset-bottom)); box-sizing: border-box; position: relative; }
+        
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.45);
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            border-radius: 14px; border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); transition: var(--trans);
+        }
+
+        /* TOP HUD */
+        .hud-container { position: relative; overflow: hidden; margin-bottom: 10px; z-index: 20; flex-shrink: 0; }
+        .hud-content { display: flex; justify-content: space-between; align-items: center; padding: 8px 16px; transition: opacity 0.3s ease, transform 0.3s ease; }
+        
+        .stadium-display { position: absolute; top: -100%; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 1.1rem; letter-spacing: 1px; text-transform: uppercase; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); transition: top 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 21; pointer-events: none; }
+        .hud-container.show-msg .stadium-display { top: 0; }
+        .hud-container.show-msg .hud-content { opacity: 0.1; transform: scale(0.98); }
+        .hud-container.notify-pos { border-color: var(--prim); box-shadow: 0 0 25px rgba(16, 185, 129, 0.25); }
+        .hud-container.notify-neg { border-color: var(--dang); box-shadow: 0 0 25px rgba(239, 68, 68, 0.25); }
+        .hud-container.notify-neu { border-color: var(--warn); box-shadow: 0 0 25px rgba(234, 179, 8, 0.25); }
+
+        .hud-side { flex: 1; display: flex; flex-direction: column; }
+        .hud-center { flex: 1; text-align: center; }
+        .hud-right { text-align: right; align-items: flex-end; }
+        
+        .vaza-track { display: flex; gap: 5px; margin-top: 5px; }
+        .vaza-pip { width: 10px; height: 10px; border-radius: 50%; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); }
+        .vaza-pip.win { background: var(--prim); border-color: var(--prim); box-shadow: 0 0 8px var(--prim); }
+        .vaza-pip.loss { background: var(--dang); border-color: var(--dang); }
+        .vaza-pip.tie { background: var(--warn); border-color: var(--warn); }
+
+        /* TABLE & CARDS */
+        .table { flex-grow: 1; position: relative; border-radius: 16px; border: 2px dashed rgba(255,255,255,0.05); display: flex; flex-direction: column; justify-content: space-between; padding: 15px; overflow: hidden; z-index: 10; }
+
+        /* Cartas nos tamanhos padrão novamente */
+        .card { 
+            width: 70px; height: 105px; background: var(--card-f); border-radius: 8px; box-shadow: 0 6px 15px rgba(0,0,0,0.5);
+            display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 900; font-size: 1.4rem; color: #1e293b;
+            position: relative; user-select: none;
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease; 
+        }
+        .card.red { color: var(--dang); }
+        .card.back { background: var(--card-b); border: 3px solid #475569; color: transparent; cursor: default; }
+        .card.back::after { content: '♣'; color: rgba(255,255,255,0.05); font-size: 2.5rem; }
+        
+        .card-wrapper { position: relative; cursor: pointer; transition: var(--trans); }
+        .card-wrapper:hover { transform: translateY(-10px); z-index: 15; }
+        .key-hint { position: absolute; bottom: -22px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.6); color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; border: 1px solid rgba(255,255,255,0.2); pointer-events: none; }
+
+        .hand-container { display: flex; justify-content: center; gap: 15px; height: 105px; width: 100%; margin-bottom: 10px; }
+        .played-area { display: flex; justify-content: center; align-items: center; gap: 30px; height: 130px; position: relative; }
+        
+        #deck-pile { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); width: 70px; height: 105px; background: var(--card-b); border: 3px solid #475569; border-radius: 8px; display: flex; align-items: center; justify-content: center; box-shadow: -5px 5px 15px rgba(0,0,0,0.5); }
+        #deck-pile::after { content: '♣'; color: rgba(255,255,255,0.05); font-size: 2.5rem; }
+        .manilha-tag { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); background: var(--prim); color: white; font-size: 0.65rem; padding: 2px 8px; border-radius: 8px; font-weight: bold; letter-spacing: 1px; z-index: 5; white-space: nowrap; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+
+        /* BOTTOM HUD ANIMADO */
+        .legend-container { position: relative; margin-top: 10px; padding: 10px 16px; min-height: 48px; z-index: 20; overflow: hidden; flex-shrink: 0; display: flex; justify-content: center; align-items: center; }
+        
+        .legend-group { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; gap: 12px; align-items: center; justify-content: center; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); opacity: 0; transform: translateY(100%); pointer-events: none; }
+        .legend-group.active { opacity: 1; transform: translateY(0); pointer-events: auto; }
+        
+        .action-btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 8px; color: var(--txt); display: flex; align-items: center; gap: 8px; cursor: pointer; transition: var(--trans); font-size: 0.8rem; font-weight: bold; }
+        .action-btn:hover { background: rgba(255,255,255,0.15); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        .action-btn:active { transform: translateY(0); }
+        .action-btn.primary { background: rgba(16, 185, 129, 0.15); border-color: var(--prim); color: white; }
+        .action-btn.primary:hover { background: rgba(16, 185, 129, 0.3); }
+        .action-btn.danger { background: rgba(239, 68, 68, 0.15); border-color: var(--dang); color: white; }
+        .action-btn.danger:hover { background: rgba(239, 68, 68, 0.3); }
+
+        .btn-esc { position: absolute; right: 15px; opacity: 0.4; }
+        .btn-esc:hover { opacity: 1; }
+
+        .key-box { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.3); padding: 3px 8px; border-radius: 4px; font-weight: bold; color: white; box-shadow: 0 2px 0 rgba(255,255,255,0.1); display: inline-block; }
+        .key-box.highlight { background: rgba(239, 68, 68, 0.4); border-color: #fca5a5; color: #fff; }
+        
+        .static-info { font-size: 0.8rem; color: var(--txt-d); display: flex; align-items: center; gap: 6px; pointer-events: none; user-select: none; }
+
+        .danger-zone { animation: dangerPulse 1s infinite alternate ease-in-out; }
+        @keyframes dangerPulse { 0% { border-color: rgba(234, 179, 8, 0.4); box-shadow: 0 0 10px rgba(234, 179, 8, 0.2); background: rgba(234, 179, 8, 0.05); } 100% { border-color: rgba(234, 179, 8, 1); box-shadow: 0 0 30px rgba(234, 179, 8, 0.6); background: rgba(234, 179, 8, 0.15); } }
+
+        /* SYNC UI */
+        #sync-ui { 
+            position: absolute; left: 15px; top: 50%; transform: translateY(-50%);
+            background: rgba(0, 0, 0, 0.25); padding: 4px 10px; border-radius: 6px;
+            font-size: 0.7rem; font-weight: bold; border: 1px solid rgba(255,255,255,0.05);
+            display: flex; align-items: center; gap: 6px; transition: opacity 0.3s;
+            z-index: 5;
+        }
+        .sync-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--prim); box-shadow: 0 0 6px var(--prim); animation: blink 1.5s infinite ease-in-out; }
+        @keyframes blink { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.8); } 100% { opacity: 1; transform: scale(1); } }
+
+        /* END GAME OVERLAY */
+        #scr-end { 
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; display: flex; align-items: center; justify-content: center; z-index: 200; flex-direction: column; 
+            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); 
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.8s ease, background 0.8s ease; 
+        }
+        #scr-end.show { opacity: 1; pointer-events: auto; }
+        .end-win { background: rgba(16, 185, 129, 0.85); }
+        .end-loss { background: rgba(239, 68, 68, 0.85); }
+        .end-content { text-align: center; padding: 40px; background: rgba(15, 23, 42, 0.6); border-radius: 20px; border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 25px 50px rgba(0,0,0,0.5); transform: translateY(20px); transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        #scr-end.show .end-content { transform: translateY(0); }
+        .end-content h1 { font-size: 3rem; margin: 0 0 10px; text-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .end-content p { font-size: 1.1rem; margin-bottom: 30px; opacity: 0.9; }
+
+        /* MOBILE ADJUSTMENTS */
+        @media (max-width: 768px), (pointer: coarse) {
+            .key-box { display: none !important; }
+            .key-hint { display: none !important; }
+            .action-btn { padding: 12px 16px; font-size: 0.9rem; border-radius: 10px; }
+            .card { width: 55px; height: 85px; } /* Cartas um pouco menores para caberem bem */
+            .card-wrapper { margin: 0 -3px; }
+            .hand-container { height: 85px; gap: 8px; }
+            .played-area { gap: 15px; height: 110px; }
+            #deck-pile { width: 55px; height: 85px; right: 8px; }
+            .panel { padding: 1.5rem; width: 90%; }
+            .panel h1 { font-size: 2rem; }
+            .hud-content { padding: 6px 12px; }
+            .legend-group { gap: 8px; }
+            
+            /* Ocultando o texto para não encavalar com botão de Sair */
+            .play-text { display: none; }
+            /* Ajuste do botão de sair para mobile */
+            .btn-esc { right: 8px; opacity: 0.6; padding: 8px 12px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="scr-start" class="panel">
+        <h1>TRUCO<span style="color:var(--prim)">.</span></h1>
+        <div class="btn-stack">
+            <button class="btn-p" onclick="nav('scr-start', 'scr-mode')">SINGLE PLAYER</button>
+            <button class="btn-p" style="background: rgba(59, 130, 246, 0.9);" onclick="nav('scr-start', 'scr-multi')">MULTIPLAYER LOCAL</button>
+        </div>
+    </div>
+
+    <div id="scr-mode" class="panel hidden">
+        <h2>SINGLE PLAYER</h2>
+        <p style="color: var(--txt-d); font-size: 0.8rem; margin-bottom: 10px;">Selecione o Baralho:</p>
+        <div class="diff-selector">
+            <button class="diff-btn active" id="btn-deck-sujo-sp" onclick="setPendingDeck('sujo', 'sp')">BARALHO SUJO</button>
+            <button class="diff-btn" id="btn-deck-limpo-sp" onclick="setPendingDeck('limpo', 'sp')">BARALHO LIMPO</button>
+        </div>
+
+        <p style="color: var(--txt-d); font-size: 0.8rem; margin-bottom: 10px;">Dificuldade da IA:</p>
+        <div class="diff-selector">
+            <button class="diff-btn" id="btn-diff-1" onclick="setDiff(1)">FÁCIL</button>
+            <button class="diff-btn active" id="btn-diff-2" onclick="setDiff(2)">NORMAL</button>
+            <button class="diff-btn insano" id="btn-diff-3" onclick="setDiff(3)">INSANO</button>
+        </div>
+        <div class="btn-stack">
+            <button class="btn-p" onclick="startGame('pc', 1)">JOGAR AGORA</button>
+            <button class="btn-s" onclick="nav('scr-mode', 'scr-start')">VOLTAR</button>
+        </div>
+    </div>
+
+    <div id="scr-multi" class="panel hidden">
+        <h2>MULTIPLAYER (JSON)</h2>
+        <p style="font-size: 0.8rem; color: var(--txt-d); margin-bottom: 10px;">Opções do Host (Quem cria a mesa):</p>
+        <div class="diff-selector">
+            <button class="diff-btn active" id="btn-deck-sujo-mp" onclick="setPendingDeck('sujo', 'mp')">BARALHO SUJO</button>
+            <button class="diff-btn" id="btn-deck-limpo-mp" onclick="setPendingDeck('limpo', 'mp')">BARALHO LIMPO</button>
+        </div>
+        <div class="btn-stack">
+            <button class="btn-p" onclick="startMultiplayer('host')">CRIAR MESA (HOST - P1)</button>
+            <hr style="border-color: rgba(255,255,255,0.1); margin: 5px 0;">
+            <p style="font-size: 0.8rem; color: var(--txt-d); margin: 0;">O Guest recebe as regras automaticamente.</p>
+            <button class="btn-s" onclick="startMultiplayer('guest')">ENTRAR NA MESA (GUEST - P2)</button>
+            <button class="btn-s" onclick="nav('scr-multi', 'scr-start')">VOLTAR</button>
+        </div>
+    </div>
+
+    <div id="scr-game" class="game-area hidden">
+        <div id="main-hud" class="glass-panel hud-container">
+            <div id="stadium-text" class="stadium-display">Notificação</div>
+            <div class="hud-content">
+                <div class="hud-side">
+                    <div>EU: <b id="ui-s0" style="color:var(--prim); font-size: 1.1rem;">0</b></div>
+                    <div id="vazas-my" class="vaza-track"></div>
+                </div>
+                <div class="hud-center">
+                    <span id="ui-turn" style="font-size: 0.85rem; font-weight:bold; color: var(--txt-d); transition: var(--trans);">Preparando...</span><br>
+                    VALE: <b id="ui-val" style="color: white;">1</b>
+                    <div id="ui-deck-indicator" style="font-size: 0.65rem; color: var(--prim); margin-top: 2px;">BARALHO SUJO</div>
+                </div>
+                <div class="hud-side hud-right">
+                    <div>RIVAL: <b id="ui-s1" style="color:var(--dang); font-size: 1.1rem;">0</b></div>
+                    <div id="vazas-opp" class="vaza-track"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="table">
+            <div id="box-opp" class="hand-container"></div>
+            
+            <div class="played-area">
+                <div style="position: relative;">
+                    <div class="manilha-tag">VIRA</div>
+                    <div id="box-vira" style="width: 70px; height: 105px;"></div>
+                </div>
+                <div id="box-table" style="display: flex; gap: 15px; min-width: 140px; justify-content: center; height: 105px;"></div>
+            </div>
+            
+            <div id="box-my" class="hand-container"></div>
+            <div id="deck-pile"></div>
+        </div>
+
+        <div id="action-bar" class="glass-panel legend-container">
+            <div id="sync-ui" class="hidden">
+                <div class="sync-dot"></div>
+                <span id="sync-timer-txt" style="color: var(--txt-d);">Buscando...</span>
+            </div>
+
+            <!-- CONTROLES NORMAIS -->
+            <div id="grp-normal" class="legend-group active">
+                <div class="static-info"><span class="key-box">1</span><span class="key-box">2</span><span class="key-box">3</span> <span class="play-text">JOGAR CARTA</span></div>
+                <button id="cmd-truco" class="action-btn danger hidden" onclick="requestTruco()"><span class="key-box highlight">T</span> PEDIR TRUCO</button>
+                <button id="cmd-fold" class="action-btn hidden" onclick="requestFold()"><span class="key-box">D</span> DESCARTAR</button>
+            </div>
+            
+            <!-- CONTROLES DE RESPOSTA A TRUCO -->
+            <div id="grp-respond" class="legend-group">
+                <button class="action-btn primary" onclick="respondTruco(true)"><span class="key-box" style="color: var(--prim); border-color: var(--prim); background: rgba(255,255,255,0.8);">A</span> ACEITAR</button>
+                <button id="cmd-raise" class="action-btn danger hidden" onclick="requestTruco()"><span class="key-box highlight">T</span> SEIS!</button>
+                <button class="action-btn" onclick="respondTruco(false)"><span class="key-box">C</span> CORRER</button>
+            </div>
+
+            <!-- CONTROLES DE CONFIRMAÇÃO DE DESCARTE -->
+            <div id="grp-confirm-fold" class="legend-group">
+                <span class="static-info" style="color: var(--warn); font-weight: bold;">Tem certeza?</span>
+                <button class="action-btn danger" onclick="executeFold()"><span class="key-box highlight">S</span> SIM</button>
+                <button class="action-btn" onclick="cancelFold()"><span class="key-box">N</span> NÃO</button>
+            </div>
+
+            <button class="action-btn btn-esc" onclick="location.reload()"><span class="key-box">ESC</span> SAIR</button>
+        </div>
+    </div>
+
+    <!-- TELA DE FIM DE JOGO -->
+    <div id="scr-end">
+        <div class="end-content">
+            <h1 id="end-title">🏆 PARABÉNS!</h1>
+            <p id="end-msg">Você venceu a partida!</p>
+            <div class="btn-stack" style="max-width: 250px; margin: 0 auto;">
+                <button class="btn-p" style="background: white; color: black;" onclick="playAgain()">JOGAR NOVAMENTE</button>
+                <button class="btn-s" onclick="location.reload()">MENU PRINCIPAL</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    (function() {
+        "use strict";
+        
+        var SUITS = ['♦', '♠', '♥', '♣']; 
+        var VALS_SUJO = ['4', '5', '6', '7', 'Q', 'J', 'K', 'A', '2', '3'];
+        var VALS_LIMPO = ['Q', 'J', 'K', 'A', '2', '3'];
+        var TRUCO_NAMES = {1: '1', 3: 'TRUCO', 6: 'SEIS', 9: 'NOVE', 12: 'DOZE'};
+
+        var st = {
+            version: 0, roundId: 0, turn: 1, handVal: 1, 
+            trucoBy: 0, trucoState: 'none', lastTruco: 0,
+            needsNewRound: false, nextFirstPlayer: 1,
+            scores: { 1: 0, 2: 0 }, vazas: { 1: 0, 2: 0 },
+            hands: { 1: [], 2: [] }, table: [], lastTable: [], trickResults: [],
+            vira: null, manilha: '', deckMode: 'sujo'
+        };
+
+        var myPID = 1; var oppPID = 2;
+        var gameMode = 'pc'; var animLock = false;
+        var fileHandle = null; var syncCountdown = 3; var syncInterval = null; var activeTurnCheckTimer = 5;
+        var msgTimeout = null; var isSaving = false;
+        
+        var aiDifficulty = 2; 
+        var pendingDeckMode = 'sujo';
+
+        window.nav = function(f, t) { getEl(f).classList.add('hidden'); getEl(t).classList.remove('hidden'); };
+        function getEl(id) { return document.getElementById(id); }
+
+        window.setDiff = function(level) {
+            aiDifficulty = level;
+            document.querySelectorAll('#scr-mode .diff-btn:not([id^="btn-deck"])').forEach(b => b.classList.remove('active'));
+            getEl('btn-diff-' + level).classList.add('active');
+        };
+
+        window.setPendingDeck = function(mode, screen) {
+            pendingDeckMode = mode;
+            var prefix = screen === 'sp' ? 'sp' : 'mp';
+            getEl('btn-deck-sujo-' + prefix).classList.remove('active');
+            getEl('btn-deck-limpo-' + prefix).classList.remove('active');
+            getEl('btn-deck-' + mode + '-' + prefix).classList.add('active');
+        };
+
+        function getActiveVals() {
+            return st.deckMode === 'limpo' ? VALS_LIMPO : VALS_SUJO;
+        }
+
+        // Controla as animações da barra inferior
+        function setBottomGroup(id) {
+            getEl('grp-normal').classList.remove('active');
+            getEl('grp-respond').classList.remove('active');
+            getEl('grp-confirm-fold').classList.remove('active');
+            if (id) getEl(id).classList.add('active');
+        }
+
+        // --- KEYBOARD CONTROLS ---
+        document.addEventListener('keydown', function(e) {
+            if (getEl('scr-game').classList.contains('hidden') || animLock) return;
+            
+            var key = e.key.toUpperCase();
+            
+            if (key === 'ESCAPE') { location.reload(); return; }
+
+            if (getEl('grp-confirm-fold').classList.contains('active')) {
+                if (key === 'S') executeFold(); // Mudança para S
+                else if (key === 'N') cancelFold();
+                return;
+            }
+
+            if (st.trucoState === 'pending') {
+                if (st.trucoBy !== myPID) {
+                    if (key === 'A') respondTruco(true);
+                    else if (key === 'C') respondTruco(false);
+                    else if (key === 'T' && !getEl('cmd-raise').classList.contains('hidden')) requestTruco();
+                }
+            } else if (st.turn === myPID) {
+                if (['1', '2', '3'].includes(key)) {
+                    var idx = parseInt(key) - 1;
+                    if (idx < st.hands[myPID].length) playCard(idx);
+                }
+                else if (key === 'T' && !getEl('cmd-truco').classList.contains('hidden')) requestTruco();
+                else if (key === 'D' && !getEl('cmd-fold').classList.contains('hidden')) requestFold();
+            }
+        });
+
+        function showMsg(m, type) {
+            var hud = getEl('main-hud'); var display = getEl('stadium-text');
+            clearTimeout(msgTimeout);
+            hud.classList.remove('show-msg', 'notify-pos', 'notify-neg', 'notify-neu');
+            void hud.offsetWidth; 
+            
+            display.innerText = m;
+            if (type === 'pos') { hud.classList.add('notify-pos'); display.style.color = 'var(--prim)'; } 
+            else if (type === 'neg') { hud.classList.add('notify-neg'); display.style.color = 'var(--dang)'; } 
+            else { hud.classList.add('notify-neu'); display.style.color = 'var(--warn)'; }
+            
+            hud.classList.add('show-msg');
+            msgTimeout = setTimeout(function() { hud.classList.remove('show-msg', 'notify-pos', 'notify-neg', 'notify-neu'); }, 2200); 
+        }
+
+        function triggerEndGame(isWin) {
+            setTimeout(function() {
+                var endScr = getEl('scr-end');
+                endScr.className = 'show ' + (isWin ? 'end-win' : 'end-loss');
+                getEl('end-title').innerText = isWin ? "🏆 PARABÉNS!" : "💀 TENTE NOVAMENTE";
+                getEl('end-msg').innerText = isWin ? "Você dominou a mesa e venceu!" : "O rival levou a melhor dessa vez.";
+            }, 800);
+        }
+
+        window.playAgain = function() {
+            getEl('scr-end').className = ''; 
+            if (gameMode === 'pc') {
+                nav('scr-game', 'scr-mode');
+            } else {
+                nav('scr-game', 'scr-multi');
+                clearInterval(syncInterval); fileHandle = null; getEl('sync-ui').classList.add('hidden');
+            }
+        };
+
+        function getPower(c) {
+            if(!c) return -1;
+            var activeVals = getActiveVals();
+            if(c.v === st.manilha) return 100 + SUITS.indexOf(c.s);
+            return activeVals.indexOf(c.v);
+        }
+
+        function createCardDOM(c, isBack, isMy, idx) {
+            var w = document.createElement('div');
+            if (isMy) w.className = 'card-wrapper'; else w.style.position = 'relative';
+
+            var d = document.createElement('div');
+            d.className = 'card' + (isBack ? ' back' : '');
+            if(!isBack && c) {
+                if(c.s === '♥' || c.s === '♦') d.className += ' red';
+                d.innerHTML = '<span>'+c.v+'</span><small>'+c.s+'</small>';
+                if(isMy) {
+                    w.onclick = function() { playCard(idx); };
+                    var hint = document.createElement('div');
+                    hint.className = 'key-hint';
+                    hint.innerText = (idx + 1);
+                    w.appendChild(hint);
+                }
+            }
+            w.appendChild(d);
+            return w;
+        }
+
+        function isAwaitingMyAction() {
+            if (st.trucoState === 'pending') return st.trucoBy !== myPID;
+            return st.turn === myPID;
+        }
+
+        function updateUI() {
+            getEl('ui-s0').innerText = st.scores[myPID]; getEl('ui-s1').innerText = st.scores[oppPID];
+            getEl('ui-val').innerText = TRUCO_NAMES[st.handVal] + (st.handVal > 1 ? " ("+st.handVal+")" : "");
+            getEl('ui-deck-indicator').innerText = st.deckMode === 'limpo' ? "BARALHO LIMPO" : "BARALHO SUJO";
+
+            var me11 = (st.scores[myPID] === 11); var opp11 = (st.scores[oppPID] === 11); var maoDeFerro = (me11 && opp11);
+            var isMyTurn = (st.turn === myPID);
+            var uiTurn = getEl('ui-turn');
+            var grpConfirm = getEl('grp-confirm-fold');
+            var btnTruco = getEl('cmd-truco'); var btnFold = getEl('cmd-fold'); var btnRaise = getEl('cmd-raise');
+            var actionBar = getEl('action-bar');
+
+            // Reset confirm menu if UI updates from elsewhere
+            if(grpConfirm.classList.contains('active') && (!isMyTurn || st.trucoState !== 'none')) {
+                cancelFold();
+            }
+
+            if (st.trucoState === 'pending') {
+                if (st.trucoBy !== myPID) {
+                    setBottomGroup('grp-respond'); actionBar.classList.add('danger-zone');
+                    uiTurn.innerText = "⚠️ DECIDA! ⚠️"; uiTurn.style.color = "var(--warn)";
+                    if(st.handVal < 12 && !me11 && st.lastTruco !== myPID) { 
+                        btnRaise.classList.remove('hidden'); 
+                        btnRaise.innerHTML = '<span class="key-box highlight">T</span> PEDIR ' + TRUCO_NAMES[st.handVal + 3] + '!'; 
+                    } else { btnRaise.classList.add('hidden'); }
+                } else {
+                    setBottomGroup(null); actionBar.classList.remove('danger-zone');
+                    uiTurn.innerText = "AGUARDANDO RIVAL..."; uiTurn.style.color = "var(--warn)";
+                }
+            } else {
+                if (!grpConfirm.classList.contains('active')) {
+                    setBottomGroup('grp-normal'); actionBar.classList.remove('danger-zone');
+                }
+                uiTurn.innerText = isMyTurn ? "SUA VEZ JOGAR" : "VEZ DO RIVAL"; uiTurn.style.color = isMyTurn ? "var(--prim)" : "var(--txt-d)";
+                if(isMyTurn && st.handVal < 12 && !me11 && !maoDeFerro && st.table.length < 2 && st.lastTruco !== myPID) {
+                    btnTruco.classList.remove('hidden'); 
+                    btnTruco.innerHTML = '<span class="key-box highlight">T</span> PEDIR ' + TRUCO_NAMES[(st.handVal === 1) ? 3 : st.handVal + 3];
+                } else { btnTruco.classList.add('hidden'); }
+                if(isMyTurn && !maoDeFerro) btnFold.classList.remove('hidden'); else btnFold.classList.add('hidden');
+            }
+
+            var myVazas = getEl('vazas-my'); var oppVazas = getEl('vazas-opp');
+            myVazas.innerHTML = ''; oppVazas.innerHTML = '';
+            for(var i=0; i<3; i++) {
+                var res = st.trickResults[i];
+                var pipMy = document.createElement('div'); pipMy.className = 'vaza-pip';
+                if(res === myPID) pipMy.className += ' win'; else if(res === oppPID) pipMy.className += ' loss'; else if(res === 3) pipMy.className += ' tie';
+                myVazas.appendChild(pipMy);
+                var pipOpp = document.createElement('div'); pipOpp.className = 'vaza-pip';
+                if(res === oppPID) pipOpp.className += ' win'; else if(res === myPID) pipOpp.className += ' loss'; else if(res === 3) pipOpp.className += ' tie';
+                oppVazas.appendChild(pipOpp);
+            }
+        }
+
+        function renderMesa(customTable, animOriginPID) {
+            var bMy = getEl('box-my'); var bOp = getEl('box-opp'); var bTb = getEl('box-table'); var bVi = getEl('box-vira');
+            bMy.innerHTML = ''; bOp.innerHTML = ''; bTb.innerHTML = ''; bVi.innerHTML = '';
+            var myHand = st.hands[myPID] || []; var oppHand = st.hands[oppPID] || [];
+            var tableToRender = customTable || st.table;
+
+            // Fix container sizes if needed for the specific layout
+            for(var i=0; i<myHand.length; i++) bMy.appendChild(createCardDOM(myHand[i], false, true, i));
+            for(var j=0; j<oppHand.length; j++) bOp.appendChild(createCardDOM(null, true, false, 0));
+            for(var k=0; k<tableToRender.length; k++) bTb.appendChild(createCardDOM(tableToRender[k].c, false, false, 0));
+            if(st.vira) {
+                var viraDOM = createCardDOM(st.vira, false, false, 0);
+                // Evita problemas de tamanho na caixa do vira no CSS alterado
+                if (window.innerWidth <= 768) viraDOM.firstChild.style.width = '55px';
+                bVi.appendChild(viraDOM);
+            }
+
+            if (animOriginPID && bTb.children.length > 0) {
+                var lastCard = bTb.children[bTb.children.length - 1];
+                lastCard.style.transition = 'none';
+                
+                if (animOriginPID === myPID) {
+                    lastCard.style.transform = 'translateY(120px) scale(0.6)';
+                    lastCard.style.opacity = '0';
+                } else {
+                    lastCard.style.transform = 'translateY(-120px) scale(0.6) rotateY(180deg)';
+                    lastCard.style.opacity = '0';
+                }
+
+                void lastCard.offsetWidth; 
+                
+                lastCard.style.transition = 'all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+                lastCard.style.transform = 'translateY(0) scale(1) rotateY(0deg)';
+                lastCard.style.opacity = '1';
+            }
+        }
+
+        function animDeal() {
+            animLock = true; renderMesa(); 
+            var allCards = document.querySelectorAll('.card:not(#deck-pile):not(.back.hidden)');
+            var deckRect = getEl('deck-pile').getBoundingClientRect();
+
+            for(var i=0; i<allCards.length; i++) {
+                var card = allCards[i]; var cardRect = card.getBoundingClientRect();
+                if(cardRect.top === 0) continue; 
+                card.style.transition = 'none';
+                card.style.transform = 'translate(' + (deckRect.left - cardRect.left) + 'px, ' + (deckRect.top - cardRect.top) + 'px)';
+            }
+            void getEl('deck-pile').offsetWidth;
+
+            var delay = 0;
+            for(var j=0; j<allCards.length; j++) {
+                (function(c, d) { setTimeout(function() { c.style.transition = 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)'; c.style.transform = 'translate(0px, 0px)'; }, d); })(allCards[j], delay);
+                delay += 80; // Um pouco mais rápido
+            }
+            
+            setTimeout(function() { animLock = false; updateUI(); if(gameMode === 'pc' && st.turn === 2 && st.trucoState === 'none') { setTimeout(aiPlay, 600); } }, delay + 400);
+        }
+
+        window.startGame = function(modeStr, playerID) {
+            gameMode = modeStr; myPID = playerID; oppPID = (playerID === 1) ? 2 : 1;
+            st.scores = {1:0, 2:0}; 
+            
+            if (myPID === 1) st.deckMode = pendingDeckMode;
+            
+            window.nav((modeStr === 'pc' ? 'scr-mode' : 'scr-multi'), 'scr-game');
+            if (myPID === 1) startRound(1); 
+        };
+
+        function startRound(firstPlayer) {
+            var deck = []; 
+            var activeVals = getActiveVals();
+            for(var s=0; s<4; s++) { for(var v=0; v<activeVals.length; v++) { deck.push({s: SUITS[s], v: activeVals[v]}); } }
+            deck.sort(function() { return 0.5 - Math.random(); });
+            
+            st.roundId = Date.now(); 
+            st.hands = { 1: [deck.pop(), deck.pop(), deck.pop()], 2: [deck.pop(), deck.pop(), deck.pop()] };
+            st.vira = deck.pop(); 
+            st.manilha = activeVals[(activeVals.indexOf(st.vira.v) + 1) % activeVals.length];
+            
+            st.table = []; st.lastTable = []; st.vazas = {1:0, 2:0}; st.trickResults = []; 
+            st.handVal = 1; st.trucoBy = 0; st.trucoState = 'none'; st.turn = firstPlayer;
+            st.lastTruco = 0; st.needsNewRound = false;
+            
+            getEl('box-table').innerHTML = '';
+            setTimeout(function() { showMsg("A Manilha é a " + st.manilha, 'neu'); }, 600); 
+            updateUI(); animDeal(); autoSave(); 
+        }
+
+        window.requestFold = function() {
+            if(animLock || st.turn !== myPID || st.trucoState !== 'none') return;
+            setBottomGroup('grp-confirm-fold');
+            getEl('action-bar').classList.add('danger-zone');
+        };
+
+        window.cancelFold = function() {
+            setBottomGroup('grp-normal');
+            getEl('action-bar').classList.remove('danger-zone');
+        };
+
+        window.executeFold = function() { 
+            cancelFold();
+            if(animLock || st.turn !== myPID || st.trucoState !== 'none') return;
+            showMsg("Você foi ao baralho!", 'neg'); st.scores[oppPID] += st.handVal;
+            if(st.scores[oppPID] >= 12) { autoSave(); triggerEndGame(false); return; }
+            if (myPID === 1 || gameMode === 'pc') { startRound(oppPID); } else { st.needsNewRound = true; st.nextFirstPlayer = oppPID; autoSave(); }
+        };
+
+        window.playCard = function(idx) {
+            if(animLock || st.turn !== myPID || st.trucoState !== 'none') return;
+            var c = st.hands[myPID].splice(idx, 1)[0];
+            st.table.push({c: c, p: myPID});
+            renderMesa(null, myPID); 
+            
+            if(st.table.length === 2) { 
+                updateUI(); animLock = true; autoSave(); 
+                setTimeout(resolveTrick, 1800); 
+            } else { st.turn = oppPID; updateUI(); autoSave(); if(gameMode === 'pc') setTimeout(aiPlay, 1000); }
+        };
+
+        function resolveTrick() {
+            var winner = 0;
+            var p1Power = getPower(st.table[0].c); var p2Power = getPower(st.table[1].c);
+            if(p1Power > p2Power) winner = st.table[0].p; else if (p2Power > p1Power) winner = st.table[1].p; else winner = 3; 
+
+            st.trickResults.push(winner);
+            if(winner === 3) { showMsg("Canga (Empate)!", 'neu'); st.vazas[1]++; st.vazas[2]++; } 
+            else { showMsg((winner === myPID) ? "Você fez a mão!" : "Rival fez a mão!", (winner === myPID) ? 'pos' : 'neg'); st.vazas[winner]++; }
+
+            st.lastTable = JSON.parse(JSON.stringify(st.table)); 
+            st.table = []; renderMesa(); updateUI();
+
+            if(st.vazas[1] >= 2 || st.vazas[2] >= 2) {
+                var roundWinner = 0;
+                if(st.vazas[1] >= 2 && st.vazas[2] >= 2) {
+                    if(st.trickResults[0] === 1 || st.trickResults[0] === 2) roundWinner = st.trickResults[0]; else if (st.trickResults[1] === 1 || st.trickResults[1] === 2) roundWinner = st.trickResults[1];
+                } else roundWinner = (st.vazas[1] >= 2) ? 1 : 2;
+                
+                if(roundWinner !== 0) st.scores[roundWinner] += st.handVal;
+                
+                if(st.scores[1] >= 12 || st.scores[2] >= 12) {
+                    var iWon = st.scores[myPID] >= 12; autoSave(); triggerEndGame(iWon);
+                } else {
+                    if (myPID === 1 || gameMode === 'pc') { autoSave(); setTimeout(function(){ startRound((winner === 3) ? 1 : winner); }, 2000); } else { st.needsNewRound = true; st.nextFirstPlayer = (winner === 3) ? 1 : winner; autoSave(); }
+                }
+            } else { st.turn = (winner === 3) ? 1 : winner; animLock = false; updateUI(); autoSave(); if(gameMode === 'pc' && st.turn === 2) setTimeout(aiPlay, 1000); }
+        }
+
+        window.requestTruco = function() {
+            if(animLock) return;
+            st.handVal = (st.handVal === 1) ? 3 : st.handVal + 3; st.trucoBy = myPID; st.lastTruco = myPID; st.trucoState = 'pending';
+            showMsg("Você pediu " + TRUCO_NAMES[st.handVal] + "!", 'neu'); updateUI();
+            if(gameMode === 'pc') { animLock = true; setTimeout(aiDecideTruco, 1500); } else { autoSave(); }
+        };
+
+        window.respondTruco = function(accept) {
+            if(animLock) return;
+            if(accept) {
+                showMsg("Você Aceitou!", 'pos'); st.trucoState = 'none'; updateUI(); autoSave();
+                if(gameMode === 'pc' && st.turn === 2) { animLock = false; setTimeout(aiPlay, 800); }
+            } else {
+                showMsg("Você Correu!", 'neg'); st.trucoState = 'none'; st.scores[oppPID] += (st.handVal === 3) ? 1 : (st.handVal - 3);
+                if(st.scores[oppPID] >= 12) { autoSave(); triggerEndGame(false); return; }
+                if (myPID === 1 || gameMode === 'pc') { startRound(oppPID); } else { st.needsNewRound = true; st.nextFirstPlayer = oppPID; autoSave(); }
+            }
+        };
+
+        function getHandWinProb() {
+            var myCards = st.hands[2]; var prob = 0; var manilhas = 0; var fortes = 0;
+            var activeVals = getActiveVals();
+            for(var i=0; i<myCards.length; i++) {
+                var p = getPower(myCards[i]);
+                if(p > 99) manilhas++;
+                else if(p >= activeVals.length - 2) fortes++; 
+            }
+            
+            if(manilhas >= 2) prob = 95;
+            else if(manilhas == 1 && fortes >= 1) prob = 85;
+            else if(manilhas == 1) prob = 60;
+            else if(fortes >= 2) prob = 50;
+            else if(fortes == 1) prob = 30;
+            else prob = 10;
+            
+            if(st.vazas[2] == 1 && st.vazas[1] == 0) prob += 25;
+            if(st.vazas[1] == 1 && st.vazas[2] == 0) prob -= 25;
+            if(st.deckMode === 'limpo' && prob > 40 && prob < 90) prob += 10; 
+            return Math.max(0, Math.min(100, prob));
+        }
+
+        function aiDecideTruco() {
+            var prob = getHandWinProb();
+            var accept = false; var raise = false;
+            
+            if (aiDifficulty === 1) { 
+                if(prob >= 75) accept = true;
+            } else if (aiDifficulty === 2) { 
+                if(prob >= 45) accept = true;
+                if(prob >= 85 && st.handVal < 12 && Math.random() > 0.5) raise = true;
+            } else { 
+                if(prob >= 30) accept = true;
+                if(prob < 30 && Math.random() < 0.25) accept = true; 
+                
+                if(accept && st.handVal < 12 && st.scores[2] !== 11) {
+                    if(prob >= 70 || Math.random() < 0.3) raise = true; 
+                }
+            }
+
+            if (raise) {
+                st.handVal += 3; st.trucoBy = 2; st.lastTruco = 2; 
+                showMsg("A IA pediu " + TRUCO_NAMES[st.handVal] + "!", 'neg'); 
+                animLock = false; updateUI(); return; 
+            }
+
+            if(accept) {
+                showMsg("Rival ACEITOU!", 'neg'); st.trucoState = 'none'; animLock = false; updateUI(); 
+                if(st.turn === 2) setTimeout(aiPlay, 1000); 
+            } else {
+                showMsg("Rival CORREU!", 'pos'); st.trucoState = 'none'; st.scores[1] += (st.handVal === 3) ? 1 : (st.handVal - 3); animLock = false; 
+                if(st.scores[1] >= 12) { triggerEndGame(true); return; }
+                setTimeout(function(){ startRound(1); }, 2000);
+            }
+        }
+
+        function aiPlay() {
+            if(animLock || st.turn !== 2 || st.trucoState !== 'none') return;
+            var ai11 = (st.scores[2] === 11); var my11 = (st.scores[1] === 11); var maoDeFerro = (ai11 && my11);
+            var prob = getHandWinProb();
+
+            if(!ai11 && !maoDeFerro && st.handVal < 12 && st.lastTruco !== 2) {
+                var askTruco = false;
+                if (aiDifficulty === 1 && prob >= 90) askTruco = true;
+                else if (aiDifficulty === 2 && prob >= 65 && Math.random() > 0.3) askTruco = true;
+                else if (aiDifficulty === 3) {
+                    if (prob >= 50) askTruco = true;
+                    if (prob <= 20 && Math.random() < 0.40) askTruco = true; 
+                }
+
+                if (askTruco) {
+                    st.handVal = (st.handVal === 1) ? 3 : st.handVal + 3; st.trucoBy = 2; st.lastTruco = 2; st.trucoState = 'pending'; 
+                    showMsg("A IA pediu " + TRUCO_NAMES[st.handVal] + "!", 'neg'); updateUI(); return; 
+                }
+            }
+
+            var cards = st.hands[2];
+            var playedIdx = 0;
+            var indexedCards = cards.map((c, i) => ({c: c, idx: i, p: getPower(c)})).sort((a,b) => a.p - b.p);
+
+            if (st.table.length === 1) { 
+                var enemyPower = getPower(st.table[0].c);
+                var winningCards = indexedCards.filter(x => x.p > enemyPower);
+                
+                if (winningCards.length > 0) {
+                    playedIdx = winningCards[0].idx; 
+                } else {
+                    playedIdx = indexedCards[0].idx; 
+                }
+            } else { 
+                if (aiDifficulty === 1) {
+                    playedIdx = indexedCards[indexedCards.length - 1].idx; 
+                } else if (aiDifficulty === 2) {
+                    playedIdx = (Math.random() > 0.5) ? indexedCards[0].idx : indexedCards[indexedCards.length - 1].idx;
+                } else { 
+                    if (indexedCards[indexedCards.length - 1].p > 99 && st.trickResults.length === 0) {
+                        playedIdx = indexedCards[0].idx; 
+                    } else {
+                        playedIdx = indexedCards[indexedCards.length - 1].idx; 
+                    }
+                }
+            }
+
+            if(st.table.length === 0 && prob < 10 && aiDifficulty < 3 && !ai11) {
+                var shouldFold = (aiDifficulty === 1) ? true : (Math.random() < 0.4);
+                if(shouldFold) {
+                    showMsg("O Rival foi ao baralho!", 'pos'); st.scores[1] += st.handVal;
+                    if(st.scores[1] >= 12) { triggerEndGame(true); return; }
+                    animLock = false; setTimeout(function(){ startRound(1); }, 2000); return;
+                }
+            }
+            
+            var c = st.hands[2].splice(playedIdx, 1)[0]; 
+            st.table.push({c: c, p: 2}); 
+            renderMesa(null, 2); 
+            
+            if(st.table.length === 2) { updateUI(); animLock = true; setTimeout(resolveTrick, 1200); } else { st.turn = 1; updateUI(); }
+        }
+
+        // --- MULTIPLAYER SYNC ---
+        window.startMultiplayer = async function(role) {
+            if (!window.showSaveFilePicker && !window.showOpenFilePicker) { alert("Navegador não suportado para sincronia local."); return; }
+            try {
+                if(role === 'host') { 
+                    fileHandle = await window.showSaveFilePicker({ suggestedName: 'Truco_Sync.json', types: [{ description: 'JSON', accept: {'application/json': ['.json']} }]}); 
+                    startGame('human', 1); 
+                } 
+                else { 
+                    var [handle] = await window.showOpenFilePicker({ types: [{ description: 'JSON', accept: {'application/json': ['.json']} }]}); 
+                    fileHandle = handle; 
+                    startGame('human', 2); 
+                    await autoLoad(); 
+                }
+                getEl('sync-ui').classList.remove('hidden'); startSyncTimer();
+            } catch (e) {}
+        };
+
+        async function autoSave() {
+            if(gameMode !== 'human' || !fileHandle || isSaving) return;
+            isSaving = true;
+            st.version++; 
+            try { 
+                const writable = await fileHandle.createWritable(); 
+                await writable.write(JSON.stringify(st)); 
+                await writable.close(); 
+            } catch (e) { console.error("Erro no sync:", e); } 
+            finally { isSaving = false; }
+        }
+
+        async function autoLoad() {
+            if(gameMode !== 'human' || !fileHandle || isSaving) return;
+            try {
+                const file = await fileHandle.getFile(); const contents = await file.text();
+                if(contents.trim() === '') return; 
+                var loadedState = JSON.parse(contents);
+                
+                if(loadedState.version > st.version) {
+                    var oldSt = st; st = loadedState; animLock = false; 
+
+                    if(st.scores[1] >= 12 || st.scores[2] >= 12) { triggerEndGame(st.scores[myPID] >= 12); return; }
+                    if(st.needsNewRound && myPID === 1) { st.needsNewRound = false; startRound(st.nextFirstPlayer); return; }
+
+                    if (oldSt.roundId !== st.roundId) { animDeal(); setTimeout(function(){ showMsg("A Manilha é a " + st.manilha, 'neu'); }, 600); } 
+                    else if (st.trickResults.length > oldSt.trickResults.length) {
+                        var lastWinner = st.trickResults[st.trickResults.length - 1];
+                        if(lastWinner === 3) { showMsg("Canga (Empate)!", 'neu'); } else { showMsg((lastWinner === myPID) ? "Você fez a mão!" : "Rival fez a mão!", (lastWinner === myPID) ? 'pos' : 'neg'); }
+                        if(st.table.length === 0 && st.lastTable.length === 2) { renderMesa(st.lastTable); setTimeout(function(){ renderMesa(); }, 1500); } else { renderMesa(); }
+                    } 
+                    else { 
+                        if (st.table.length > oldSt.table.length && st.table[st.table.length - 1].p === oppPID) {
+                            renderMesa(null, oppPID);
+                        } else {
+                            renderMesa(); 
+                        }
+                    }
+
+                    if (st.trucoState === 'pending' && oldSt.trucoState !== 'pending' && st.trucoBy !== myPID) { showMsg("O Rival pediu " + TRUCO_NAMES[st.handVal] + "!", 'neg'); } 
+                    else if (st.trucoState === 'none' && oldSt.trucoState === 'pending') { if (st.scores[myPID] === oldSt.scores[myPID] && st.scores[oppPID] === oldSt.scores[oppPID]) { showMsg("Truco Aceito!", 'warn'); } }
+
+                    updateUI();
+                }
+            } catch (e) {}
+        }
+
+        function startSyncTimer() {
+            var uiText = getEl('sync-timer-txt'); syncCountdown = 3; clearInterval(syncInterval);
+            syncInterval = setInterval(function() {
+                if(isAwaitingMyAction()) { 
+                    uiText.innerText = "Sua vez!"; uiText.style.color = "var(--prim)"; 
+                    activeTurnCheckTimer--; if(activeTurnCheckTimer <= 0) { activeTurnCheckTimer = 5; autoLoad(); } return; 
+                }
+                activeTurnCheckTimer = 5; syncCountdown--; uiText.innerText = "Sincronizando em " + syncCountdown + "s..."; uiText.style.color = "var(--txt-d)";
+                if(syncCountdown <= 0) { syncCountdown = 3; uiText.innerText = "Sincronizando..."; autoLoad(); }
+            }, 1000);
+        }
+
+    })();
+    </script>
+</body>
+</html>
