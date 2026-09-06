@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Truco - v0.8.3</title>
+    <title>Truco - v0.8.4</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♣</text></svg>">
     <style>
         /* BASE & THEME */
@@ -49,7 +49,7 @@
         .glass-panel { background: rgba(15, 23, 42, 0.45); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-radius: 14px; border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); transition: var(--trans); }
 
         /* TOP HUD */
-        .hud-container { position: relative; overflow: hidden; margin-bottom: 10px; z-index: 30; flex-shrink: 0; min-height: 66px; display: flex; align-items: center; justify-content: center; }
+        .hud-container { position: relative; overflow: hidden; margin-bottom: 10px; z-index: 30; flex-shrink: 0; min-height: 66px; height: 66px; display: flex; align-items: center; justify-content: center; box-sizing: border-box; }
         .hud-content { display: flex; justify-content: space-between; align-items: center; padding: 8px 16px; width: 100%; transition: opacity 0.3s ease, transform 0.3s ease; }
         
         .stadium-display { position: absolute; top: -100%; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 1.1rem; letter-spacing: 1px; text-transform: uppercase; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(8px); transition: top 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 21; pointer-events: none; }
@@ -70,7 +70,7 @@
         .vaza-pip.tie { background: var(--warn); border-color: var(--warn); }
 
         /* TABLE & CARDS */
-        .table { flex-grow: 1; position: relative; border-radius: 16px; border: 2px dashed rgba(255,255,255,0.05); display: flex; flex-direction: column; justify-content: space-between; padding: 15px; overflow: hidden; z-index: 10; }
+        .table { flex: 1 1 auto; position: relative; border-radius: 16px; border: 2px dashed rgba(255,255,255,0.05); display: flex; flex-direction: column; justify-content: space-between; padding: 15px; overflow: hidden; z-index: 10; }
 
         .card { 
             width: 70px; height: 105px; background: var(--card-f); border-radius: 8px; box-shadow: 0 6px 15px rgba(0,0,0,0.5);
@@ -82,18 +82,21 @@
         .card.back { background: var(--card-b); border: 3px solid #475569; color: transparent !important; cursor: default; }
         .card.back::after { content: '♣'; color: rgba(255,255,255,0.05); font-size: 2.5rem; position: absolute; }
         
-        /* Brilho do Turno Ativo */
-        .card.active-turn { box-shadow: 0 0 18px 2px rgba(59, 130, 246, 0.85), inset 0 0 15px rgba(59, 130, 246, 0.3); }
+        /* Brilho do Turno Ativo Suavizado */
+        .card.active-turn { 
+            outline: 2px solid rgba(59, 130, 246, 0.8); outline-offset: 1px;
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.5), inset 0 0 5px rgba(59, 130, 246, 0.2), 0 6px 15px rgba(0,0,0,0.5); 
+        }
 
         .card-wrapper { position: relative; cursor: pointer; transition: var(--trans); }
         .card-wrapper.interactive:hover { transform: translateY(-10px); z-index: 15; }
         .key-hint { position: absolute; bottom: -22px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.6); color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; border: 1px solid rgba(255,255,255,0.2); pointer-events: none; }
 
-        /* PLAYER POSITIONS (Cortadas propositalmente) */
+        /* PLAYER POSITIONS (Com Clipping Permanente) */
         .hand-my { display: flex; justify-content: center; gap: 15px; height: 105px; width: 100%; margin-bottom: 5px; z-index: 15; }
         .hand-top { position: absolute; top: -35px; left: 50%; transform: translateX(-50%); display: flex; justify-content: center; gap: 8px; z-index: 5; }
-        .hand-left { position: absolute; left: -40px; top: 50%; transform: translateY(-50%) rotate(90deg); display: flex; justify-content: center; gap: 8px; z-index: 5; }
-        .hand-right { position: absolute; right: -40px; top: 50%; transform: translateY(-50%) rotate(-90deg); display: flex; justify-content: center; gap: 8px; z-index: 5; }
+        .hand-left { position: absolute; left: -35px; top: 50%; transform: translateY(-50%) rotate(90deg); display: flex; justify-content: center; gap: 8px; z-index: 5; }
+        .hand-right { position: absolute; right: -35px; top: 50%; transform: translateY(-50%) rotate(-90deg); display: flex; justify-content: center; gap: 8px; z-index: 5; }
         
         .hand-top .card, .hand-left .card, .hand-right .card { width: 50px; height: 75px; }
         .hand-top .card::after, .hand-left .card::after, .hand-right .card::after { font-size: 1.8rem; }
@@ -101,32 +104,29 @@
         .played-area { display: flex; justify-content: center; align-items: center; width: 100%; height: 100%; position: relative; }
         #box-table { position: relative; width: 180px; height: 180px; display: flex; align-items: center; justify-content: center; }
 
-        /* DECK PILE E VIRA */
-        #deck-area { position: absolute; top: 100px; right: 25px; z-index: 10; display: flex; flex-direction: column; align-items: center; gap: 8px; }
-        #deck-area-label { order: 2; font-size: 0.75rem; color: var(--txt-d); font-weight: bold; letter-spacing: 2px; }
+        /* DECK PILE E VIRA (Dentro da Mesa) */
+        #deck-area { position: absolute; top: 15px; right: 10px; z-index: 10; display: flex; flex-direction: row; align-items: center; gap: 8px; }
+        #deck-area-label { font-size: 0.75rem; color: var(--txt-d); font-weight: bold; letter-spacing: 2px; writing-mode: vertical-rl; opacity: 0.8; margin-bottom: 4px; }
         .deck-stack-container { position: relative; width: 50px; height: 75px; }
         #deck-pile { width: 50px; height: 75px; position: absolute; top: 0; left: 0; box-shadow: -2px 2px 10px rgba(0,0,0,0.5); }
         #deck-pile::after { font-size: 1.8rem; }
         
         #vira-container { position: absolute; top: 15px; left: -35px; transform: rotate(-15deg); z-index: 5; }
 
-        /* GHOST MANILHA */
-        #ghost-manilha { position: absolute; top: 100px; left: 25px; z-index: 10; display: flex; flex-direction: column; align-items: center; gap: 8px; transition: opacity 0.5s ease; }
+        /* GHOST MANILHA (Dentro da Mesa) */
+        #ghost-manilha { position: absolute; top: 15px; left: 10px; z-index: 10; display: flex; flex-direction: row; align-items: center; gap: 8px; transition: opacity 0.5s ease; }
         #ghost-manilha.hidden { opacity: 0; pointer-events: none; }
-        #ghost-m-label { order: 2; font-size: 0.75rem; color: var(--prim); font-weight: bold; letter-spacing: 2px; text-shadow: 0 0 8px rgba(16,185,129,0.4); }
+        #ghost-m-label { font-size: 0.75rem; color: var(--prim); font-weight: bold; letter-spacing: 2px; writing-mode: vertical-rl; transform: rotate(180deg); text-shadow: 0 0 8px rgba(16,185,129,0.4); opacity: 0.8; margin-bottom: 4px; }
         
         #ghost-m-card { 
-            width: 50px; height: 75px; 
-            background: rgba(255, 255, 255, 0.05); 
+            width: 50px; height: 75px; background: rgba(255, 255, 255, 0.05); 
             backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); 
-            border: 1px solid rgba(255, 255, 255, 0.2); 
-            box-shadow: 0 8px 32px rgba(0,0,0,0.3); 
-            color: white; 
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 8px 32px rgba(0,0,0,0.3); 
+            color: white; display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
 
         /* BOTTOM HUD ANIMADO */
-        .legend-container { position: relative; margin-top: 10px; padding: 10px 16px; min-height: 48px; z-index: 20; overflow: hidden; flex-shrink: 0; display: flex; justify-content: center; align-items: center; }
+        .legend-container { position: relative; margin-top: 10px; padding: 0 16px; min-height: 48px; height: 48px; box-sizing: border-box; z-index: 20; overflow: hidden; flex-shrink: 0; display: flex; justify-content: center; align-items: center; }
         
         .legend-group { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; gap: 12px; align-items: center; justify-content: center; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); opacity: 0; transform: translateY(100%); pointer-events: none; }
         .legend-group.active { opacity: 1; transform: translateY(0); pointer-events: auto; }
@@ -177,12 +177,13 @@
             .legend-group { gap: 8px; }
             .play-text { display: none; }
             .btn-esc { right: 8px; opacity: 0.6; padding: 8px 12px; }
-            #ghost-manilha { top: 85px; left: 10px; }
-            #deck-area { top: 85px; right: 10px; }
-            #ghost-m-card, .deck-stack-container, #deck-pile { width: 40px; height: 60px; }
-            #vira-container { left: -25px; top: 10px; }
-            .hand-left { left: -35px; }
-            .hand-right { right: -35px; }
+            
+            #ghost-manilha { left: 5px; gap: 4px; }
+            #deck-area { right: 5px; gap: 4px; }
+            #ghost-m-card, .deck-stack-container, #deck-pile { width: 45px; height: 65px; }
+            #vira-container { left: -30px; }
+            .hand-left { left: -25px; }
+            .hand-right { right: -25px; }
         }
     </style>
 </head>
@@ -266,20 +267,22 @@
             </div>
         </div>
 
-        <div id="ghost-manilha" class="hidden">
-            <span id="ghost-m-label">MANILHA</span>
-            <div id="ghost-m-card" class="card"></div>
-        </div>
-
-        <div id="deck-area">
-            <div class="deck-stack-container">
-                <div id="vira-container"></div>
-                <div id="deck-pile" class="card back"></div>
-            </div>
-            <span id="deck-area-label">VIRA</span>
-        </div>
-
         <div class="table">
+            
+            <!-- ELEMENTOS INTERNOS DA MESA -->
+            <div id="ghost-manilha" class="hidden">
+                <span id="ghost-m-label">MANILHA</span>
+                <div id="ghost-m-card" class="card"></div>
+            </div>
+
+            <div id="deck-area">
+                <div class="deck-stack-container">
+                    <div id="vira-container"></div>
+                    <div id="deck-pile" class="card back"></div>
+                </div>
+                <span id="deck-area-label">VIRA</span>
+            </div>
+
             <div id="box-top" class="hand-top"></div>
             <div id="box-left" class="hand-left"></div>
             <div id="box-right" class="hand-right"></div>
@@ -576,7 +579,6 @@
                 oppVazas.appendChild(pipOpp);
             }
 
-            // Update Ghost Manilha Glassmorphism
             var gmContainer = getEl('ghost-manilha');
             if (st.viraRevealed && st.manilha) {
                 gmContainer.classList.remove('hidden');
@@ -592,14 +594,12 @@
                 gmContainer.classList.add('hidden');
             }
 
-            // Indicador dinâmico de Turno Ativo (Neon Glow)
+            // Indicador dinâmico de Turno Ativo (Soft Neon Glow)
             document.querySelectorAll('.card').forEach(c => c.classList.remove('active-turn'));
             if (st.trucoState === 'none' && !animLock) {
                 var turnPos = getUIPos(st.turn);
                 var turnHand = getEl('box-' + turnPos);
-                if(turnHand) {
-                    turnHand.querySelectorAll('.card').forEach(c => c.classList.add('active-turn'));
-                }
+                if(turnHand) turnHand.querySelectorAll('.card').forEach(c => c.classList.add('active-turn'));
             }
         }
 
@@ -626,10 +626,18 @@
                 var tPos = getUIPos(tblCard.p);
                 var dom = createCardDOM(tblCard.c, false, false, 0, false, 'table');
                 dom.style.position = 'absolute';
-                if(tPos === 'left') { dom.style.transform = 'translate(-45px, 0) rotate(15deg)'; }
-                else if(tPos === 'right') { dom.style.transform = 'translate(45px, 0) rotate(-15deg)'; }
-                else if(tPos === 'top') { dom.style.transform = 'translate(0, -35px)'; }
-                else { dom.style.transform = 'translate(0, 35px)'; }
+                
+                // Espaçamento Amplo para Evitar Sobreposições Fix 6
+                var posOffset = {
+                    'left': 'translate(-55px, -10px) rotate(-20deg)',
+                    'right': 'translate(55px, 10px) rotate(20deg)',
+                    'top': 'translate(10px, -50px) rotate(10deg)',
+                    'my': 'translate(-10px, 50px) rotate(-10deg)'
+                };
+                var zIndexMap = { 'top': 1, 'left': 2, 'right': 3, 'my': 4 };
+                
+                dom.style.transform = posOffset[tPos];
+                dom.style.zIndex = zIndexMap[tPos] + k;
                 bTb.appendChild(dom);
             }
 
@@ -638,7 +646,7 @@
             if(st.vira) {
                 var viraDOM = createCardDOM(st.vira, false, false, 0, true, 'vira');
                 viraDOM.firstChild.style.width = '50px'; viraDOM.firstChild.style.height = '75px'; viraDOM.firstChild.style.fontSize = '1.1rem';
-                if(window.innerWidth <= 768) { viraDOM.firstChild.style.width = '40px'; viraDOM.firstChild.style.height = '60px'; }
+                if(window.innerWidth <= 768) { viraDOM.firstChild.style.width = '45px'; viraDOM.firstChild.style.height = '65px'; }
                 viraDOM.firstChild.id = 'vira-anim-target';
                 viraDest.appendChild(viraDOM);
             }
@@ -666,15 +674,15 @@
             var allWrappers = document.querySelectorAll('.table .card-wrapper, #vira-container .card-wrapper');
             var deckRect = getEl('deck-pile').getBoundingClientRect();
 
-            allWrappers.forEach(w => {
-                w.style.transition = 'none';
-                w.style.opacity = '0';
-            });
+            allWrappers.forEach(w => w.style.opacity = '0');
 
+            var flyCards = [];
             var delay = 0;
+
             allWrappers.forEach(w => {
                 var c = w.querySelector('.card');
                 var isVira = c && c.id === 'vira-anim-target';
+                var isMy = w.parentElement.id === 'box-my';
 
                 var flyCard = document.createElement('div');
                 flyCard.className = 'card back';
@@ -690,35 +698,43 @@
                 flyCard.style.width = targetRect.width + 'px';
                 flyCard.style.height = targetRect.height + 'px';
 
-                void flyCard.offsetWidth;
+                flyCards.push({ fly: flyCard, target: w, isMy: isMy, isVira: isVira });
+                void flyCard.offsetWidth; // force reflow
 
                 setTimeout(() => {
-                    flyCard.style.left = targetRect.left + 'px';
-                    flyCard.style.top = targetRect.top + 'px';
-                    
-                    setTimeout(() => {
-                        flyCard.remove();
-                        w.style.transition = 'none';
-                        w.style.opacity = '1';
-                        
-                        if(isVira) {
-                            st.viraRevealed = true;
-                            renderMesa();
-                            var vCard = document.getElementById('vira-anim-target');
-                            if(vCard) {
-                                vCard.style.transition = 'none';
-                                vCard.style.transform = 'rotateY(180deg)';
-                                void vCard.offsetWidth;
-                                vCard.style.transition = 'transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
-                                vCard.style.transform = 'rotateY(0deg)';
-                            }
-                        }
-                    }, 400); // Exato tempo de transição da viagem
-                }, delay);
-                delay += 60;
+                    var finalRect = w.getBoundingClientRect(); // re-check in case layout settles
+                    flyCard.style.left = finalRect.left + 'px';
+                    flyCard.style.top = finalRect.top + 'px';
+                }, delay + 10);
+                delay += 70;
             });
 
-            setTimeout(() => { animLock = false; updateUI(); checkAiTurn(); }, delay + 500);
+            // Dispara a revelação APENAS após todas as cartas chegarem aos destinos
+            setTimeout(() => {
+                st.viraRevealed = true; // Permite renderização correta das infos em updateUI futuramente
+                
+                flyCards.forEach(item => {
+                    item.fly.remove(); // Tira a carta fantasma voando
+                    item.target.style.opacity = '1'; // Acende o HTML real da carta
+                    
+                    var innerCard = item.target.querySelector('.card');
+                    if(innerCard && (item.isMy || item.isVira)) {
+                        innerCard.classList.remove('back');
+                        innerCard.style.transition = 'none';
+                        innerCard.style.transform = 'rotateY(180deg)';
+                        void innerCard.offsetWidth; // Recalcula reflow pra animar a virada
+                        innerCard.style.transition = 'transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+                        innerCard.style.transform = 'rotateY(0deg)';
+                    }
+                });
+
+                setTimeout(() => { 
+                    updateUI(); 
+                    animLock = false; 
+                    checkAiTurn(); 
+                }, 550); // Aguarda o flip finalizar
+
+            }, delay + 420); // Delay total das viagens espaciais
         }
 
         window.startGame = function(modeStr, playerID) {
@@ -805,7 +821,7 @@
 
             if(trickWinnerTeam === 3) { 
                 showMsg("Canga (Empate)!", 'neu'); st.vazas[1]++; st.vazas[2]++; 
-                nextTurn = st.table[0].p; // O jogador que jogou a primeira carta nesta vaza volta a jogar
+                nextTurn = st.table[0].p; 
             } else { 
                 var myTeam = getTeam(myPID);
                 showMsg((myTeam === trickWinnerTeam) ? "A mão é de vocês!" : "Os rivais fizeram a mão!", (myTeam === trickWinnerTeam) ? 'pos' : 'neg'); 
