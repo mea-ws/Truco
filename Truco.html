@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Truco - v0.11.4</title>
+    <title>Truco - v0.11.7</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♣</text></svg>">
     <style>
         /* THEME VARIABLES */
@@ -181,6 +181,8 @@
         .table.fmt-3v3 .hand-right2 { display: flex; right: -35px; top: 24%; transform: translateY(-50%) rotate(-90deg); }
         
         .hand-top.show-partner-cards { top: 10px !important; z-index: 100 !important; }
+        .hand-left2.show-partner-cards { left: 15% !important; right: auto !important; top: 10px !important; transform: translateX(-50%) rotate(0deg) !important; z-index: 100 !important; }
+        .hand-right2.show-partner-cards { right: 15% !important; left: auto !important; top: 10px !important; transform: translateX(50%) rotate(0deg) !important; z-index: 100 !important; }
 
         .hand-top .card, .hand-left .card, .hand-right .card, .hand-left2 .card, .hand-right2 .card { width: 50px; height: 75px; }
         .hand-top .card::after, .hand-left .card::after, .hand-right .card::after, .hand-left2 .card::after, .hand-right2 .card::after { font-size: 1.8rem; }
@@ -423,6 +425,9 @@
             <button class="diff-btn" id="btn-fmt-3v3-mp" onclick="setPendingFormat('3v3', 'mp')">TRIOS (3 X 3)</button>
         </div>
 
+        <div class="section-label">Jogadores Humanos (o resto é IA):</div>
+        <div class="diff-selector" id="human-count-selector-mp"></div>
+
         <div class="section-label">Selecione o Baralho:</div>
         <div class="diff-selector">
             <button class="diff-btn active" id="btn-deck-sujo-mp" onclick="setPendingDeck('sujo', 'mp')">BARALHO SUJO</button>
@@ -454,6 +459,7 @@
             <div class="section-label" style="text-align:left;">Seu código (envie pro outro jogador):</div>
             <textarea id="webrtc-data-host" class="webrtc-code-box" readonly onclick="this.select()"></textarea>
             <button class="action-btn primary" style="width:100%; justify-content:center;" onclick="copyWebrtcCode('webrtc-data-host', this)">📋 COPIAR CÓDIGO</button>
+            <button class="action-btn btn-share-code hidden" style="width:100%; justify-content:center;" onclick="shareWebrtcCode('webrtc-data-host')">📤 COMPARTILHAR</button>
 
             <div class="section-label" style="text-align:left; margin-top:6px;">Cole aqui a resposta do outro jogador:</div>
             <textarea id="webrtc-answer-input" class="webrtc-code-box" placeholder="Aguardando você colar a resposta..."></textarea>
@@ -474,6 +480,7 @@
                 <div class="section-label" style="text-align:left;">Sua resposta (envie pro Host):</div>
                 <textarea id="webrtc-data-guest-output" class="webrtc-code-box" readonly onclick="this.select()"></textarea>
                 <button class="action-btn primary" style="width:100%; justify-content:center;" onclick="copyWebrtcCode('webrtc-data-guest-output', this)">📋 COPIAR RESPOSTA</button>
+                <button class="action-btn btn-share-code hidden" style="width:100%; justify-content:center;" onclick="shareWebrtcCode('webrtc-data-guest-output')">📤 COMPARTILHAR</button>
             </div>
         </div>
 
@@ -481,9 +488,37 @@
         <button class="btn-s" style="width:100%; margin-top:10px;" onclick="webrtcAbortIfActive(); nav('scr-webrtc-connect', 'scr-local-rules')">VOLTAR</button>
     </div>
 
+    <div id="scr-webrtc-invite-more" class="panel hidden">
+        <h2>CONVIDAR MAIS JOGADORES</h2>
+        <div class="wizard-instructions" style="margin-bottom: 12px;">
+            Faltam <b id="invite-more-count">0</b> jogador(es) humano(s) na mesa. Gere um código, envie pro próximo jogador e cole a resposta dele abaixo — igual ao convite principal.
+        </div>
+
+        <div id="invite-more-status-box" class="hidden" style="margin-bottom: 12px;">
+            <div class="webrtc-status-dot"></div>
+            <span id="invite-more-status-text">Aguardando...</span>
+        </div>
+
+        <div class="btn-stack">
+            <div class="section-label" style="text-align:left;">Código do convite (envie pro próximo jogador):</div>
+            <textarea id="invite-more-code-out" class="webrtc-code-box" readonly onclick="this.select()" placeholder="Gerando código, aguarde..."></textarea>
+            <button class="action-btn primary" style="width:100%; justify-content:center;" onclick="copyWebrtcCode('invite-more-code-out', this)">📋 COPIAR CÓDIGO</button>
+            <button class="action-btn btn-share-code hidden" style="width:100%; justify-content:center;" onclick="shareWebrtcCode('invite-more-code-out')">📤 COMPARTILHAR</button>
+
+            <div class="section-label" style="text-align:left; margin-top:6px;">Cole aqui a resposta do novo jogador:</div>
+            <textarea id="invite-more-answer-in" class="webrtc-code-box" placeholder="Aguardando você colar a resposta..."></textarea>
+            <button class="btn-p" style="background: rgba(16, 185, 129, 0.8);" onclick="confirmInviteMoreAnswer()">✅ CONFIRMAR E CONECTAR</button>
+        </div>
+
+        <button class="btn-s" style="width:100%; margin-top:10px;" onclick="skipInviteMore()">VOLTAR AO JOGO (RESTO EM IA)</button>
+    </div>
+
     <div id="scr-online" class="panel hidden">
         <h2>MULTIPLAYER ONLINE</h2>
-        
+
+        <div class="section-label">Seu Nickname:</div>
+        <input type="text" id="ws-nick" maxlength="10" placeholder="Seu Nickname" style="padding: 8px; border-radius: 8px; border: 1px solid var(--glass-border); background: var(--btn-s-bg); color: var(--txt); width: 100%; box-sizing: border-box; text-align: center; font-weight: bold; margin-bottom: 15px;">
+
         <div class="section-label">Regras do Jogo:</div>
         <div class="diff-selector">
             <button class="diff-btn active" id="btn-rules-paulista-on" onclick="setRules('paulista', 'on')">PAULISTA</button>
@@ -498,6 +533,9 @@
             <button class="diff-btn" id="btn-fmt-3v3-on" onclick="setPendingFormat('3v3', 'on')">TRIOS (3 X 3)</button>
         </div>
 
+        <div class="section-label">Jogadores Humanos (o resto é IA):</div>
+        <div class="diff-selector" id="human-count-selector-on"></div>
+
         <div class="section-label">Selecione o Baralho:</div>
         <div class="diff-selector">
             <button class="diff-btn active" id="btn-deck-sujo-on" onclick="setPendingDeck('sujo', 'on')">BARALHO SUJO</button>
@@ -505,17 +543,29 @@
         </div>
 
         <div class="btn-stack" style="margin-top:15px;">
-            <input type="text" id="ws-nick" placeholder="Seu Nickname" style="padding: 8px; border-radius: 8px; border: 1px solid var(--glass-border); background: var(--btn-s-bg); color: var(--txt); width: 100%; box-sizing: border-box; text-align: center; font-weight: bold;">
-            <input type="text" id="ws-room" placeholder="ID da Sala (Opcional p/ Criar)" style="padding: 8px; border-radius: 8px; border: 1px solid var(--glass-border); background: var(--btn-s-bg); color: var(--txt); width: 100%; box-sizing: border-box; text-align: center; font-size: 0.9rem;">
-            
-            <div style="display: flex; gap: 8px;">
-                <button class="btn-p" style="flex:1;" onclick="startMultiplayer('host', 'ws')">CRIAR SALA</button>
-                <button class="btn-s" style="flex:1;" onclick="startMultiplayer('guest', 'ws')">ENTRAR</button>
-            </div>
-            <button class="btn-s" style="width: 100%;" onclick="startMultiplayer('spectator', 'ws')">ENTRAR COMO ESPECTADOR</button>
+            <button class="btn-p" onclick="goToOnlineRoomScreen(false)">CONTINUAR</button>
+            <button class="btn-s" onclick="goToOnlineRoomScreen(true)">ENTRAR COMO ESPECTADOR</button>
         </div>
 
         <button class="btn-s" style="width: 100%; margin-top: 15px;" onclick="nav('scr-online', 'scr-multi-choice')">VOLTAR</button>
+    </div>
+
+    <div id="scr-online-room" class="panel hidden">
+        <h2 id="online-room-title">SALA ONLINE</h2>
+
+        <div class="section-label">ID da Sala:</div>
+        <input type="text" id="ws-room" placeholder="ID da Sala" style="padding: 8px; border-radius: 8px; border: 1px solid var(--glass-border); background: var(--btn-s-bg); color: var(--txt); width: 100%; box-sizing: border-box; text-align: center; font-size: 0.9rem; margin-bottom: 15px;">
+
+        <div id="online-room-hostguest" class="btn-stack">
+            <button class="btn-p" onclick="startMultiplayer('host', 'ws')">CRIAR SALA</button>
+            <button class="btn-s" onclick="startMultiplayer('guest', 'ws')">ENTRAR NA SALA</button>
+        </div>
+
+        <div id="online-room-spectator" class="btn-stack hidden">
+            <button class="btn-p" onclick="startMultiplayer('spectator', 'ws')">ASSISTIR</button>
+        </div>
+
+        <button class="btn-s" style="width: 100%; margin-top: 15px;" onclick="nav('scr-online-room', 'scr-online')">VOLTAR</button>
     </div>
 
     <div id="scr-lobby" class="panel hidden">
@@ -618,6 +668,7 @@
                 <button class="action-btn" onclick="cancelExit()"><span class="key-box">N</span> NÃO</button>
             </div>
 
+            <button id="btn-invite-more" class="action-btn hidden" onclick="startInviteMoreFlow('scr-game')">➕ CONVIDAR</button>
             <button class="action-btn btn-esc" onclick="requestExit()"><span class="key-box">ESC</span> SAIR</button>
         </div>
     </div>
@@ -674,6 +725,7 @@
             // decide se um assento é IA ou não passa a ser esse array, não
             // mais um número de pid fixo espalhado pelo código.
             humanSeats: [1, 2],
+            expectedHumans: 2,
             partnerFoldPid: 0
         };
 
@@ -691,6 +743,7 @@
         var pendingDeckMode = 'sujo';
         var pendingFormat = '1v1';
         var pendingRules = 'paulista';
+        var pendingHumanCount = 2;
 
         window.nav = function(f, t) { document.getElementById(f).classList.add('hidden'); document.getElementById(t).classList.remove('hidden'); };
         function getEl(id) { return document.getElementById(id); }
@@ -739,8 +792,8 @@
                 getEl('btn-deck-sujo-' + prefix).removeAttribute('disabled');
             } else if (rules === 'goiano') {
                 setPendingDeck('limpo', screen);
-                getEl('btn-deck-sujo-' + prefix).setAttribute('disabled', 'true');
                 getEl('btn-deck-limpo-' + prefix).removeAttribute('disabled');
+                getEl('btn-deck-sujo-' + prefix).removeAttribute('disabled');
             } else {
                 getEl('btn-deck-limpo-' + prefix).removeAttribute('disabled');
                 getEl('btn-deck-sujo-' + prefix).removeAttribute('disabled');
@@ -749,7 +802,6 @@
 
         window.setPendingDeck = function(mode, screen) {
             if (pendingRules === 'mineiro' && mode === 'limpo') return; 
-            if (pendingRules === 'goiano' && mode === 'sujo') return;
             pendingDeckMode = mode;
             var prefix = screen;
             getEl('btn-deck-sujo-' + prefix).classList.remove('active');
@@ -764,6 +816,30 @@
             getEl('btn-fmt-2v2-' + prefix).classList.remove('active');
             getEl('btn-fmt-3v3-' + prefix).classList.remove('active');
             getEl('btn-fmt-' + fmt + '-' + prefix).classList.add('active');
+            renderHumanCountSelector(prefix);
+        };
+
+        // Seletor de "quantos jogadores humanos" — reconstrói as opções (1..N)
+        // toda vez que o formato muda, já que N depende do formato escolhido.
+        function renderHumanCountSelector(screen) {
+            var container = getEl('human-count-selector-' + screen);
+            if (!container) return;
+            var maxP = FORMAT_SEATS[pendingFormat] || 2;
+            if (pendingHumanCount > maxP) pendingHumanCount = maxP;
+            if (pendingHumanCount < 1) pendingHumanCount = Math.min(2, maxP);
+            container.innerHTML = '';
+            for (var i = 1; i <= maxP; i++) {
+                var btn = document.createElement('button');
+                btn.className = 'diff-btn' + (i === pendingHumanCount ? ' active' : '');
+                btn.innerText = i;
+                btn.onclick = (function(n) { return function() { setPendingHumanCount(n, screen); }; })(i);
+                container.appendChild(btn);
+            }
+        }
+
+        window.setPendingHumanCount = function(n, screen) {
+            pendingHumanCount = n;
+            renderHumanCountSelector(screen);
         };
 
         function getActiveVals() { return st.deckMode === 'limpo' ? VALS_LIMPO : VALS_SUJO; }
@@ -1163,12 +1239,12 @@
         // no Trios, também levam em conta a força do time — o Insano tira
         // o máximo proveito disso (não erra, analisa friamente cada mão).
         function applyAiIntel(prob, pid) {
-            if (aiDifficulty >= 3) {
+            if (aiDifficulty >= 2) {
                 var gone = countStrongerCardsGone(pid);
                 var weight = aiDifficulty === 4 ? 6 : 3;
                 prob += Math.min(30, gone * weight);
+                if (getNumPlayers() > 2) prob += aiTeamStrengthBonus(pid);
             }
-            if (getNumPlayers() > 4) prob += aiTeamStrengthBonus(pid);
             return Math.max(0, Math.min(100, prob));
         }
 
@@ -1291,6 +1367,13 @@
         function updateUI() {
             var tableEl = document.querySelector('.table');
             if (tableEl) tableEl.classList.toggle('fmt-3v3', st.gameFormat === '3v3');
+
+            var inviteBtn = getEl('btn-invite-more');
+            if (inviteBtn) {
+                var canInviteMore = isHostWebRTC && gameMode === 'webrtc' &&
+                    st.humanSeats && (st.humanSeats.length < (st.expectedHumans || 2)) && getNextOpenHumanSeat();
+                inviteBtn.classList.toggle('hidden', !canInviteMore);
+            }
 
             var refPID = myPID === 0 ? 1 : myPID;
             getEl('label-s0').innerText = st.gameFormat === '1v1' ? "EU:" : "NÓS:";
@@ -1476,16 +1559,17 @@
                 var dest = getEl('box-' + pos);
                 if (!dest) continue;
                 
-			if (showPartnerMao11 && pos === 'top') {
+			var isPartnerSeat = (p !== myPID && getTeam(p) === getTeam(myPID));
+			if (showPartnerMao11 && isPartnerSeat) {
                 dest.classList.add('show-partner-cards');
-            } else if (pos === 'top') {
+            } else {
                 dest.classList.remove('show-partner-cards');
             }
 
             for (var i = 0; i < hand.length; i++) {
                 var isMy = (p === myPID);
                 var isBack = !isMy;
-                if (showPartnerMao11 && pos === 'top') isBack = false; 
+                if (showPartnerMao11 && isPartnerSeat) isBack = false; 
                     
                     var dom = createCardDOM(hand[i], isBack, isMy, i, false, pos);
                     if(isDealing) dom.style.opacity = '0'; 
@@ -1652,8 +1736,11 @@
             st.gameFormat = pendingFormat;
             st.rules = pendingRules;
             st.scores = {1:0, 2:0}; window.lastAdviceLevel = 0; st.humanAccepted = false;
-            if (modeStr === 'pc') { st.nicks = {1:'',2:'',3:'',4:'',5:'',6:''}; window.wsPlayers = {}; st.humanSeats = [1]; }
-            else if (modeStr === 'json' || (modeStr === 'webrtc' && !webrtcResuming)) { st.humanSeats = [1, 2]; }
+            if (modeStr === 'pc') { st.nicks = {1:'',2:'',3:'',4:'',5:'',6:''}; window.wsPlayers = {}; st.humanSeats = [1]; st.expectedHumans = 1; }
+            else if (modeStr === 'json' || (modeStr === 'webrtc' && !webrtcResuming)) {
+                if (playerID === 1) { st.humanSeats = [1]; st.expectedHumans = pendingHumanCount; }
+                else { st.humanSeats = (st.humanSeats && st.humanSeats.length) ? st.humanSeats : [1, playerID]; }
+            }
             
             if (myPID === 1) st.deckMode = pendingDeckMode;
             
@@ -1670,12 +1757,17 @@
             var activeVals = getActiveVals();
             st.partnerForcedPlay = false; 
             
-            if (st.rules === 'goiano') {
+            if (st.rules === 'goiano' && st.deckMode === 'limpo') {
+                // Padrão regional do Goiano: base Limpo + 3 manilhas fixas extras
+                // (4♣, 7♥, 7♦) que não existem no baralho Limpo normal.
                 for(var s=0; s<4; s++) { for(var v=0; v<VALS_LIMPO.length; v++) { deck.push({s: SUITS[s], v: VALS_LIMPO[v]}); } }
                 deck.push({s: '♣', v: '4'});
                 deck.push({s: '♥', v: '7'});
                 deck.push({s: '♦', v: '7'});
             } else {
+                // Paulista, Mineiro, ou Goiano+Sujo: as 4 manilhas fixas do Goiano
+                // (4♣, 7♥, 7♦, A♠) já existem naturalmente no baralho Sujo completo,
+                // então não precisa empurrar cartas extras (evita duplicar).
                 for(var s=0; s<4; s++) { for(var v=0; v<activeVals.length; v++) { deck.push({s: SUITS[s], v: activeVals[v]}); } }
             }
             
@@ -2219,8 +2311,25 @@
                 var foldProb = 0; var foldChance = 0;
                 if(aiDifficulty === 1) { foldProb = 15; foldChance = 0.88; }      
                 else if(aiDifficulty === 2) { foldProb = 10; foldChance = 0.50; } 
+                else if(aiDifficulty === 3) { foldProb = 5;  foldChance = 0.35; } // só em mãos absolutamente horríveis
 
-                if(foldProb > 0 && prob <= foldProb && Math.random() < foldChance) {
+                // Na Normal e na Difícil, em Duplas/Trios, ir ao baralho precisa ser
+                // "combinado" com o time inteiro — sem ver as cartas exatas dos
+                // aliados, mas considerando se o time como um todo parece fraco. Só
+                // folda se NINGUÉM do time (nem quem decide, nem os parceiros)
+                // parecer bem. A Fácil não tem esse cuidado, decide sozinha mesmo
+                // (erro proposital). A Insana nunca folda (foldProb=0 já resolve isso).
+                var teamAllowsFold = true;
+                if (aiDifficulty === 2 || aiDifficulty === 3) {
+                    var foldPartners = getPartnerPIDs();
+                    if (foldPartners.length > 0) {
+                        var teamBest = prob;
+                        foldPartners.forEach(function(p) { teamBest = Math.max(teamBest, aiHandStrength(p).prob); });
+                        teamAllowsFold = (teamBest <= foldProb);
+                    }
+                }
+
+                if(foldProb > 0 && prob <= foldProb && Math.random() < foldChance && teamAllowsFold) {
                     if (isRival) {
                         var fMsg = st.gameFormat === '1v1' ? "O Rival foi ao baralho!" : "Os Rivais foram ao baralho!";
                         showMsg(fMsg, 'pos');
@@ -2263,9 +2372,9 @@
                 
                 getEl('lobby-room-id').innerText = room;
                 getEl('lobby-logs').innerHTML = '';
-                nav('scr-online', 'scr-lobby');
+                nav('scr-online-room', 'scr-lobby');
                 
-                connectWS(url, room, nick, pendingFormat, role === 'spectator');
+                connectWS(url, room, nick, pendingFormat, role === 'spectator', pendingHumanCount);
             } else if (method === 'json') {
                 if (!window.showSaveFilePicker && !window.showOpenFilePicker) { alert("Navegador não suportado."); return; }
                 try {
@@ -2306,15 +2415,15 @@
         window.wsConn = null;
         window.wsPlayers = {};
 
-        function connectWS(url, roomId, nick, format, isSpectator) {
+        function connectWS(url, roomId, nick, format, isSpectator, expectedHumans) {
             try {
                 window.wsConn = new WebSocket(url);
             } catch(e) {
-                alert("Erro ao conectar no servidor."); nav('scr-lobby', 'scr-online'); return;
+                alert("Erro ao conectar no servidor."); nav('scr-lobby', 'scr-online-room'); return;
             }
             
             window.wsConn.onopen = function() {
-                window.wsConn.send(JSON.stringify({ type: 'join_room', roomId: roomId, nick: nick, format: format, isSpectator: isSpectator }));
+                window.wsConn.send(JSON.stringify({ type: 'join_room', roomId: roomId, nick: nick, format: format, isSpectator: isSpectator, expectedHumans: expectedHumans || FORMAT_SEATS[format] || 2 }));
             };
             
             window.wsConn.onmessage = function(e) {
@@ -2468,7 +2577,7 @@
             return JSON.parse(atob(codeStr));
         }
 
-        function setupExtraGuestPeer(targetPid) {
+        function setupExtraGuestPeer(targetPid, onReady) {
             var peer = { pc: null, dc: null, gatheringDone: false };
             peer.pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
             peer.dc = peer.pc.createDataChannel('truco');
@@ -2482,6 +2591,7 @@
                     window._extraInviteCodes = window._extraInviteCodes || {};
                     packCode(payload).then(function(codeStr) {
                         window._extraInviteCodes[targetPid] = codeStr;
+                        if (onReady) onReady(codeStr);
                     });
                 }
             };
@@ -2500,6 +2610,57 @@
                 if (parsed.nick) { st.nicks = st.nicks || {}; st.nicks[targetPid] = parsed.nick.substring(0, 10); }
                 peer.pc.setRemoteDescription(answer);
             } catch(e) { showMsg("Código de resposta inválido.", 'neg'); }
+        }
+
+        // Abre a tela de "convidar mais um" — reaproveita o backend de
+        // hostPeers/setupExtraGuestPeer, só que numa tela dedicada e simples,
+        // acessível tanto logo após conectar com o guest principal quanto
+        // depois, a qualquer momento, pelo menu de pausa.
+        window.startInviteMoreFlow = function(fromScreen) {
+            var nextPid = getNextOpenHumanSeat();
+            if (!nextPid) { showMsg("A mesa já está com todos os assentos ocupados.", 'neu'); return; }
+            window._inviteMoreTargetPid = nextPid;
+
+            var expected = st.expectedHumans || 2;
+            getEl('invite-more-count').innerText = Math.max(0, expected - st.humanSeats.length);
+            getEl('invite-more-code-out').value = '';
+            getEl('invite-more-code-out').placeholder = 'Gerando código, aguarde...';
+            getEl('invite-more-answer-in').value = '';
+            getEl('invite-more-status-box').classList.add('hidden');
+
+            nav(fromScreen || 'scr-game', 'scr-webrtc-invite-more');
+
+            setupExtraGuestPeer(nextPid, function(codeStr) {
+                getEl('invite-more-code-out').value = codeStr;
+            });
+        };
+
+        window.confirmInviteMoreAnswer = async function() {
+            var answerCodeStr = getEl('invite-more-answer-in').value.trim();
+            if (!answerCodeStr) { showMsg("Cole a resposta do novo jogador antes de confirmar.", 'neg'); return; }
+            var box = getEl('invite-more-status-box');
+            box.classList.remove('hidden');
+            getEl('invite-more-status-text').innerText = '🔄 Conectando...';
+            await webrtcConfirmExtraGuest(window._inviteMoreTargetPid, answerCodeStr);
+            setTimeout(function() {
+                nav('scr-webrtc-invite-more', 'scr-game');
+                maybeOfferInviteMore();
+            }, 1200);
+        };
+
+        window.skipInviteMore = function() {
+            nav('scr-webrtc-invite-more', 'scr-game');
+        };
+
+        // Depois de conectar com alguém (o guest principal ou um extra),
+        // avisa discretamente se ainda tem gente esperada faltando — sem
+        // forçar uma tela nova, só uma notificação com o caminho pro menu.
+        function maybeOfferInviteMore() {
+            if (!isHostWebRTC || gameMode !== 'webrtc') return;
+            var expected = st.expectedHumans || 2;
+            if (st.humanSeats.length < expected && getNextOpenHumanSeat()) {
+                showMsg("Ainda faltam jogadores — use CONVIDAR no menu de pausa.", 'neu', 3500);
+            }
         }
 
         function setupExtraPeerDataChannel(pid, peer) {
@@ -2553,6 +2714,20 @@
                 mpMethod = 'webrtc';
                 enterWebrtcConnectScreen('scr-local-rules');
             }
+        };
+
+        // Vai da tela de Regras (Online) pra tela de Sala, alternando entre o
+        // modo Host/Guest normal e o modo Espectador (que só assiste, herdando
+        // as regras da sala já criada por outra pessoa).
+        window.goToOnlineRoomScreen = function(isSpectator) {
+            var nick = getEl('ws-nick').value.trim();
+            if (nick) { myLocalNick = nick.substring(0, 10); try { localStorage.setItem('trucoNick', myLocalNick); } catch(e) {} }
+
+            getEl('online-room-hostguest').classList.toggle('hidden', isSpectator);
+            getEl('online-room-spectator').classList.toggle('hidden', !isSpectator);
+            getEl('online-room-title').innerText = isSpectator ? 'ASSISTIR PARTIDA' : 'SALA ONLINE';
+            getEl('ws-room').value = '';
+            nav('scr-online', 'scr-online-room');
         };
 
         function enterWebrtcConnectScreen(fromScreen) {
@@ -2642,8 +2817,9 @@
                     st.nicks[1] = myLocalNick;
                     st.nicks[2] = window._webrtcRemoteNick || 'Guest';
                     startGame('webrtc', 1);
+                    setTimeout(maybeOfferInviteMore, 2500);
                 } else {
-                    startGame('webrtc', 2);
+                    startGame('webrtc', window._webrtcAssignedPid || 2);
                 }
             };
             dc.onmessage = event => {
@@ -2681,6 +2857,7 @@
                 var parsed = await unpackCode(offStr);
                 var offer = parsed.sdp || parsed;
                 window._webrtcRemoteNick = (parsed.nick || 'Host').substring(0, 10);
+                window._webrtcAssignedPid = parsed.assignedPid || 2;
                 webrtcSetStatus('🔄 Gerando resposta...', 'connecting');
                 pc.setRemoteDescription(offer).then(function() {
                     pc.createAnswer().then(function(answer) { pc.setLocalDescription(answer); });
@@ -2702,6 +2879,15 @@
                 });
             } else {
                 try { document.execCommand('copy'); feedback(true); } catch(e) { feedback(false); }
+            }
+        };
+
+        // Compartilhamento direto (WhatsApp, SMS, etc.) via menu nativo do
+        // celular — bem mais rápido que copiar e colar manualmente.
+        window.shareWebrtcCode = function(id) {
+            var el = getEl(id);
+            if (navigator.share) {
+                navigator.share({ text: el.value }).catch(function(){});
             }
         };
 
@@ -2872,6 +3058,13 @@
             var savedNick = localStorage.getItem('trucoNick');
             if (savedNick) { getEl('local-nick').value = savedNick; myLocalNick = savedNick; }
         } catch(e) {}
+
+        renderHumanCountSelector('mp');
+        renderHumanCountSelector('on');
+
+        if (navigator.share) {
+            document.querySelectorAll('.btn-share-code').forEach(function(b) { b.classList.remove('hidden'); });
+        }
 
         checkForBackup();
 
