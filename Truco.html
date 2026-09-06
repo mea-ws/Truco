@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Truco - v0.8.7</title>
+    <title>Truco - v0.8.8</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♣</text></svg>">
     <style>
         /* BASE & THEME */
@@ -26,7 +26,7 @@
 
         .hidden { display: none !important; }
 
-        /* UI PANELS - NOW WITH FULL GLASSMORPHISM */
+        /* UI PANELS - GLASSMORPHISM */
         .panel { 
             width: 90%; max-width: 400px; 
             background: rgba(15, 23, 42, 0.45); 
@@ -47,8 +47,22 @@
         
         .diff-selector { display: flex; gap: 8px; margin-bottom: 15px; }
         .diff-btn { flex: 1; padding: 6px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: transparent; color: var(--txt-d); font-size: 0.75rem; cursor: pointer; transition: var(--trans); }
-        .diff-btn.active { background: var(--prim); color: white; border-color: var(--prim); font-weight: bold; transform: scale(1.05); box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3); }
-        .diff-btn.insano.active { background: var(--dang); border-color: var(--dang); box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3); }
+        
+        /* Glassmorphism Active Buttons */
+        .diff-btn.active { 
+            background: rgba(16, 185, 129, 0.25); border-color: rgba(16, 185, 129, 0.8); 
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4); color: white; font-weight: bold; 
+            transform: scale(1.05); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); 
+        }
+        .diff-btn.dificil.active { 
+            background: rgba(239, 68, 68, 0.25); border-color: rgba(239, 68, 68, 0.8); 
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4); 
+        }
+        .diff-btn.insano.active { 
+            background: rgba(147, 51, 234, 0.25); border-color: rgba(147, 51, 234, 0.8); 
+            box-shadow: 0 4px 15px rgba(147, 51, 234, 0.4); 
+        }
+
         .section-label { color: var(--txt-d); font-size: 0.8rem; margin-bottom: 8px; text-align: left; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
 
         /* GAME AREA & GLASS PANELS */
@@ -154,7 +168,7 @@
         .key-box { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.3); padding: 3px 8px; border-radius: 4px; font-weight: bold; color: white; box-shadow: 0 2px 0 rgba(255,255,255,0.1); display: inline-block; }
         .key-box.highlight { background: rgba(239, 68, 68, 0.4); border-color: #fca5a5; color: #fff; }
         
-        .static-info { font-size: 0.8rem; color: var(--txt-d); display: flex; align-items: center; gap: 6px; pointer-events: none; user-select: none; }
+        .static-info { font-size: 0.8rem; color: var(--txt-d); display: flex; align-items: center; gap: 6px; pointer-events: none; user-select: none; text-transform: uppercase; }
 
         .danger-zone { animation: dangerPulse 1s infinite alternate ease-in-out; }
         @keyframes dangerPulse { 0% { border-color: rgba(234, 179, 8, 0.4); box-shadow: 0 0 10px rgba(234, 179, 8, 0.2); background: rgba(234, 179, 8, 0.05); } 100% { border-color: rgba(234, 179, 8, 1); box-shadow: 0 0 30px rgba(234, 179, 8, 0.6); background: rgba(234, 179, 8, 0.15); } }
@@ -164,7 +178,7 @@
         .sync-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--prim); box-shadow: 0 0 6px var(--prim); animation: blink 1.5s infinite ease-in-out; }
         @keyframes blink { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.8); } 100% { opacity: 1; transform: scale(1); } }
 
-        /* END GAME OVERLAY - WITH FULL GLASSMORPHISM */
+        /* END GAME OVERLAY - GLASSMORPHISM */
         #scr-end { position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; display: flex; align-items: center; justify-content: center; z-index: 200; flex-direction: column; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); opacity: 0; pointer-events: none; transition: opacity 0.8s ease, background 0.8s ease; }
         #scr-end.show { opacity: 1; pointer-events: auto; }
         .end-win { background: rgba(16, 185, 129, 0.85); }
@@ -226,7 +240,7 @@
         <div class="diff-selector" style="flex-wrap: wrap;">
             <button class="diff-btn" id="btn-diff-1" onclick="setDiff(1)">FÁCIL</button>
             <button class="diff-btn active" id="btn-diff-2" onclick="setDiff(2)">NORMAL</button>
-            <button class="diff-btn" id="btn-diff-3" onclick="setDiff(3)">DIFÍCIL</button>
+            <button class="diff-btn dificil" id="btn-diff-3" onclick="setDiff(3)">DIFÍCIL</button>
             <button class="diff-btn insano" id="btn-diff-4" onclick="setDiff(4)">INSANO</button>
         </div>
         <div class="btn-stack">
@@ -272,7 +286,7 @@
                     <div style="margin-top: 2px;">
                         <span style="font-size: 0.75rem;">VALE:</span> <b id="ui-val" style="color: white; font-size: 0.9rem;">1</b>
                     </div>
-                    <div id="ui-deck-indicator" style="font-size: 0.65rem; color: var(--prim); margin-top: 2px;">BARALHO SUJO</div>
+                    <div id="ui-deck-indicator" style="font-size: 0.65rem; color: var(--prim); margin-top: 2px; text-transform: uppercase;">BARALHO SUJO</div>
                 </div>
                 <div class="hud-side hud-right">
                     <div>ELES: <b id="ui-s1" style="color:var(--dang); font-size: 1.1rem;">0</b></div>
@@ -334,6 +348,13 @@
                 <button class="action-btn" onclick="cancelFold()"><span class="key-box">N</span> NÃO</button>
             </div>
 
+            <!-- MÃO DE 11 -->
+            <div id="grp-mao11" class="legend-group">
+                <span class="static-info" style="color: var(--warn); font-weight: bold;">Mão de 11!</span>
+                <button class="action-btn primary" onclick="respondMao11(true)"><span class="key-box highlight" style="color:var(--prim); border-color:var(--prim); background:rgba(255,255,255,0.8);">A</span> JOGAR (VALE 3)</button>
+                <button class="action-btn" onclick="respondMao11(false)"><span class="key-box">C</span> CORRER (PERDE 1)</button>
+            </div>
+
             <!-- CONTROLES DE CONFIRMAÇÃO DE SAÍDA -->
             <div id="grp-confirm-exit" class="legend-group">
                 <span class="static-info" style="color: var(--warn); font-weight: bold;">Sair do Jogo?</span>
@@ -369,6 +390,7 @@
             version: 0, roundId: 0, turn: 1, handVal: 1, 
             trucoBy: 0, trucoState: 'none', lastTruco: 0,
             needsNewRound: false, nextFirstPlayer: 1, humanAccepted: false,
+            isMaoDe11: false, maoDe11Team: 0, maoDeFerro: false,
             gameFormat: '1v1',
             scores: { 1: 0, 2: 0 }, vazas: { 1: 0, 2: 0 },
             hands: { 1: [], 2: [], 3: [], 4: [] }, table: [], lastTable: [], trickResults: [],
@@ -434,23 +456,25 @@
             getEl('grp-respond').classList.remove('active');
             getEl('grp-confirm-fold').classList.remove('active');
             getEl('grp-confirm-exit').classList.remove('active');
+            getEl('grp-mao11').classList.remove('active');
             if (id) getEl(id).classList.add('active');
         }
 
         window.requestExit = function() {
+            if(animLock && st.trucoState !== 'mao11') return;
             setBottomGroup('grp-confirm-exit');
             getEl('action-bar').classList.add('danger-zone');
         };
         
         window.cancelExit = function() {
-            setBottomGroup('grp-normal');
+            setBottomGroup(null);
             getEl('action-bar').classList.remove('danger-zone');
-            updateUI(); // Retorna aos controles corretos do estado atual do jogo
+            updateUI(); 
         };
 
         // --- CONTROLES DE TECLADO ---
         document.addEventListener('keydown', function(e) {
-            if (getEl('scr-game').classList.contains('hidden') || animLock) return;
+            if (getEl('scr-game').classList.contains('hidden') || (animLock && st.trucoState !== 'mao11')) return;
             var key = e.key.toUpperCase();
             
             if (key === 'ESCAPE') {
@@ -471,13 +495,19 @@
                 return;
             }
 
+            if (st.trucoState === 'mao11' && st.maoDe11Team === 1) {
+                if (key === 'A') respondMao11(true);
+                else if (key === 'C') respondMao11(false);
+                return;
+            }
+
             if (st.trucoState === 'pending') {
                 if (getTeam(st.trucoBy) !== getTeam(myPID)) {
                     if (key === 'A') respondTruco(true);
                     else if (key === 'C') respondTruco(false);
                     else if (key === 'T' && !getEl('cmd-raise').classList.contains('hidden')) requestTruco();
                 }
-            } else if (st.turn === myPID) {
+            } else if (st.turn === myPID && st.trucoState === 'none') {
                 if (['1', '2', '3'].includes(key)) {
                     var idx = parseInt(key) - 1;
                     if (idx < st.hands[myPID].length) playCard(idx);
@@ -554,6 +584,7 @@
 
         function isAwaitingMyAction() {
             if (st.trucoState === 'pending') return getTeam(st.trucoBy) !== getTeam(myPID);
+            if (st.trucoState === 'mao11') return st.maoDe11Team === 1;
             return st.turn === myPID;
         }
 
@@ -569,13 +600,17 @@
         function updateUI() {
             getEl('ui-s0').innerText = st.scores[getTeam(myPID)]; 
             getEl('ui-s1').innerText = st.scores[getOppTeam(getTeam(myPID))];
-            getEl('ui-val').innerText = TRUCO_NAMES[st.handVal] + (st.handVal > 1 ? " ("+st.handVal+")" : "");
+            
+            // Tratamento especial de texto para Mão de 11/Ferro (não mostra a palavra 'TRUCO')
+            if (st.isMaoDe11 || st.maoDeFerro) { getEl('ui-val').innerText = "3"; }
+            else { getEl('ui-val').innerText = TRUCO_NAMES[st.handVal] + (st.handVal > 1 ? " ("+st.handVal+")" : ""); }
             
             var baseDeckText = st.deckMode === 'limpo' ? "BARALHO LIMPO" : "BARALHO SUJO";
             var indicatorText = baseDeckText;
+            if (st.maoDeFerro) indicatorText = "⚡ MÃO DE FERRO ⚡";
 
             var myTeamScore = st.scores[getTeam(myPID)]; var oppTeamScore = st.scores[getOppTeam(getTeam(myPID))];
-            var me11 = (myTeamScore === 11); var opp11 = (oppTeamScore === 11); var maoDeFerro = (me11 && opp11);
+            var me11 = (myTeamScore === 11); var opp11 = (oppTeamScore === 11);
             var isMyTurn = (st.turn === myPID);
             var uiTurn = getEl('ui-turn');
             var grpConfirmFold = getEl('grp-confirm-fold');
@@ -585,7 +620,16 @@
 
             if(grpConfirmFold.classList.contains('active') && (!isMyTurn || st.trucoState !== 'none')) cancelFold();
 
-            if (st.trucoState === 'pending') {
+            if (st.trucoState === 'mao11') {
+                if (st.maoDe11Team === 1) {
+                    if(!isExiting) { setBottomGroup('grp-mao11'); actionBar.classList.add('danger-zone'); }
+                    uiTurn.innerText = "MÃO DE 11: DECIDA!"; uiTurn.style.color = "var(--warn)";
+                } else {
+                    if(!isExiting) { setBottomGroup(null); actionBar.classList.remove('danger-zone'); }
+                    uiTurn.innerText = "RIVAIS PENSANDO (MÃO DE 11)..."; uiTurn.style.color = "var(--warn)";
+                }
+            }
+            else if (st.trucoState === 'pending') {
                 if (getTeam(st.trucoBy) !== getTeam(myPID)) {
                     if(!isExiting) { setBottomGroup('grp-respond'); actionBar.classList.add('danger-zone'); }
                     uiTurn.innerText = "⚠️ DECIDA! ⚠️"; uiTurn.style.color = "var(--warn)";
@@ -611,17 +655,23 @@
                 }
             } else {
                 if (!grpConfirmFold.classList.contains('active') && !isExiting) { setBottomGroup('grp-normal'); actionBar.classList.remove('danger-zone'); }
-                uiTurn.innerText = isMyTurn ? "SUA VEZ JOGAR" : ("VEZ DE: " + getPlayerName(st.turn).toUpperCase()); 
+                
+                if (st.maoDeFerro) { uiTurn.innerText = isMyTurn ? "SUA VEZ (MÃO DE FERRO)" : ("VEZ DE: " + getPlayerName(st.turn).toUpperCase()); }
+                else { uiTurn.innerText = isMyTurn ? "SUA VEZ JOGAR" : ("VEZ DE: " + getPlayerName(st.turn).toUpperCase()); }
+                
                 uiTurn.style.color = isMyTurn ? "var(--prim)" : "var(--txt-d)";
                 
-                if(isMyTurn && st.handVal < 12 && !me11 && !maoDeFerro && st.table.length < getNumPlayers() && getTeam(st.lastTruco) !== getTeam(myPID)) {
+                if(isMyTurn && st.handVal < 12 && !me11 && !st.maoDeFerro && !st.isMaoDe11 && st.table.length < getNumPlayers() && getTeam(st.lastTruco) !== getTeam(myPID)) {
                     btnTruco.classList.remove('hidden'); 
                     btnTruco.innerHTML = '<span class="key-box highlight">T</span> PEDIR ' + TRUCO_NAMES[(st.handVal === 1) ? 3 : st.handVal + 3];
                 } else { btnTruco.classList.add('hidden'); }
-                if(isMyTurn && !maoDeFerro) btnFold.classList.remove('hidden'); else btnFold.classList.add('hidden');
+                if(isMyTurn && !st.maoDeFerro) btnFold.classList.remove('hidden'); else btnFold.classList.add('hidden');
             }
             
-            getEl('ui-deck-indicator').innerText = indicatorText;
+            // Só sobrescreve se o Dica de Mão de 11 não substituiu ainda hoje
+            if (!(st.trucoState === 'mao11' && st.maoDe11Team === 1 && st.gameFormat === '2v2')) {
+                getEl('ui-deck-indicator').innerText = indicatorText;
+            }
 
             var myVazas = getEl('vazas-my'); var oppVazas = getEl('vazas-opp');
             myVazas.innerHTML = ''; oppVazas.innerHTML = '';
@@ -654,7 +704,6 @@
             document.querySelectorAll('.card').forEach(c => c.classList.remove('active-turn'));
             if (!animLock) {
                 if (st.trucoState === 'pending') {
-                    // Turno visual para quem deve responder ao Truco
                     var answeringTeam = getOppTeam(getTeam(st.trucoBy));
                     for(var p = 1; p <= getNumPlayers(); p++) {
                         if(getTeam(p) === answeringTeam) {
@@ -663,8 +712,7 @@
                             if(tHand) tHand.querySelectorAll('.card').forEach(c => c.classList.add('active-turn'));
                         }
                     }
-                } else {
-                    // Turno visual normal
+                } else if (st.trucoState === 'none') {
                     var turnPos = getUIPos(st.turn);
                     var turnHand = getEl('box-' + turnPos);
                     if(turnHand) turnHand.querySelectorAll('.card').forEach(c => c.classList.add('active-turn'));
@@ -672,8 +720,7 @@
             }
         }
 
-        // Parâmetro isDealing impede que as cartas pisquem e dêem spoiler das mãos na inicialização
-        function renderMesa(customTable, animOriginPID, isDealing) {
+        function renderMesa(customTable, animOriginPID, isDealing, showPartnerMao11) {
             var bMy = getEl('box-my'); var bTop = getEl('box-top'); var bLeft = getEl('box-left'); var bRight = getEl('box-right');
             var bTb = getEl('box-table'); 
             bMy.innerHTML = ''; bTop.innerHTML = ''; bLeft.innerHTML = ''; bRight.innerHTML = ''; bTb.innerHTML = '';
@@ -686,8 +733,11 @@
                 if (!dest) continue;
                 for (var i = 0; i < hand.length; i++) {
                     var isMy = (p === myPID);
-                    var dom = createCardDOM(hand[i], !isMy, isMy, i, false, pos);
-                    if(isDealing) dom.style.opacity = '0'; // Impede o flicker da revelação
+                    var isBack = !isMy;
+                    if (showPartnerMao11 && p === 3) isBack = false; // Revela carta pro parceiro
+                    
+                    var dom = createCardDOM(hand[i], isBack, isMy, i, false, pos);
+                    if(isDealing) dom.style.opacity = '0'; // Zero-frame Reveal (Evita piscar antes da animação voar)
                     dest.appendChild(dom);
                 }
             }
@@ -719,7 +769,7 @@
                 viraDOM.firstChild.style.width = '50px'; viraDOM.firstChild.style.height = '75px'; viraDOM.firstChild.style.fontSize = '1.1rem';
                 if(window.innerWidth <= 768) { viraDOM.firstChild.style.width = '45px'; viraDOM.firstChild.style.height = '65px'; }
                 viraDOM.firstChild.id = 'vira-anim-target';
-                if(isDealing) viraDOM.style.opacity = '0'; // Impede o flicker
+                if(isDealing) viraDOM.style.opacity = '0';
                 viraDest.appendChild(viraDOM);
             }
 
@@ -743,7 +793,7 @@
 
         function animDeal() {
             animLock = true; 
-            renderMesa(null, null, true); // true = isDealing, não deixa ninguem ver o HTML antes do fim
+            renderMesa(null, null, true, false); // isDealing = true para não vazar a mão
 
             var allWrappers = document.querySelectorAll('.table .card-wrapper, #vira-container .card-wrapper');
             var deckRect = getEl('deck-pile').getBoundingClientRect();
@@ -802,7 +852,12 @@
                 setTimeout(() => { 
                     updateUI(); 
                     animLock = false; 
-                    checkAiTurn(); 
+                    
+                    if (st.trucoState === 'mao11') {
+                        handleMao11();
+                    } else {
+                        checkAiTurn(); 
+                    }
                 }, 550); 
 
             }, delay + 420); 
@@ -824,7 +879,7 @@
             var activeVals = getActiveVals();
             for(var s=0; s<4; s++) { for(var v=0; v<activeVals.length; v++) { deck.push({s: SUITS[s], v: activeVals[v]}); } }
             
-            // Fisher-Yates (Matematicamente imprevisível) - Randomização Genuína
+            // Algoritmo Fisher-Yates (Matematicamente 100% Aleatório e Justo)
             for (var r = deck.length - 1; r > 0; r--) {
                 var j = Math.floor(Math.random() * (r + 1));
                 var temp = deck[r]; deck[r] = deck[j]; deck[j] = temp;
@@ -843,9 +898,83 @@
             st.table = []; st.lastTable = []; st.vazas = {1:0, 2:0}; st.trickResults = []; 
             st.handVal = 1; st.trucoBy = 0; st.trucoState = 'none'; st.turn = firstPlayer;
             st.lastTruco = 0; st.needsNewRound = false;
+            st.isMaoDe11 = false; st.maoDe11Team = 0; st.maoDeFerro = false;
+            
+            // Detecção da Mão de 11 e Mão de Ferro
+            if (st.scores[1] === 11 && st.scores[2] === 11) {
+                st.maoDeFerro = true; st.handVal = 3;
+            } else if (st.scores[1] === 11) {
+                st.isMaoDe11 = true; st.maoDe11Team = 1; st.handVal = 3; st.trucoState = 'mao11';
+            } else if (st.scores[2] === 11) {
+                st.isMaoDe11 = true; st.maoDe11Team = 2; st.handVal = 3; st.trucoState = 'mao11';
+            }
             
             getEl('box-table').innerHTML = '';
             updateUI(); animDeal(); autoSave(); 
+        }
+
+        // --- SISTEMA MÃO DE 11 ---
+        function handleMao11() {
+            if (st.maoDe11Team === 1) {
+                if (st.gameFormat === '2v2') {
+                    renderMesa(null, null, false, true); // Renderiza com parceiro Face Up
+                    var combinedProb = Math.max(getHandWinProb(1), getHandWinProb(3)) + 15;
+                    var advice = "";
+                    if (combinedProb < 40) advice = "Parceiro: Melhor correr";
+                    else if (combinedProb < 60) advice = "Parceiro: Não tô confiante...";
+                    else if (combinedProb < 80) advice = "Parceiro: Acho que dá pra ganhar";
+                    else advice = "Parceiro: Bora?";
+                    
+                    getEl('ui-deck-indicator').innerText = advice.toUpperCase();
+                    showMsg("Mão de 11! Analise as cartas.", 'warn', 3000);
+                } else {
+                    showMsg("Sua Mão de 11! Deseja jogar?", 'warn', 3000);
+                }
+                updateUI();
+            } else if (st.maoDe11Team === 2) {
+                animLock = true;
+                setTimeout(aiDecideMao11, 2500);
+            }
+        }
+
+        window.respondMao11 = function(accept) {
+            if(animLock || st.trucoState !== 'mao11') return;
+            if(accept) {
+                showMsg("Vocês Aceitaram a Mão de 11!", 'pos'); 
+                st.trucoState = 'none'; 
+                renderMesa(); // Esconde as cartas do parceiro de volta
+                updateUI(); autoSave();
+                animLock = false; checkAiTurn();
+            } else {
+                showMsg("Vocês Correram da Mão de 11!", 'neg'); 
+                st.trucoState = 'none'; 
+                st.scores[2] += 1; // Correr na Mão de 11 vale 1 pt pros rivais
+                if(st.scores[2] >= 12) { autoSave(); triggerEndGame(false); return; }
+                var nxtFirst = getNextTurn(st.nextFirstPlayer || 1);
+                if (myPID === 1 || gameMode === 'pc') { startRound(nxtFirst); } else { st.needsNewRound = true; st.nextFirstPlayer = nxtFirst; autoSave(); }
+            }
+        };
+
+        function aiDecideMao11() {
+            var prob = getHandWinProb(2);
+            if (st.gameFormat === '2v2') prob = Math.max(prob, getHandWinProb(4)) + 15;
+            
+            var accept = (prob >= 45); // IA só aceita a 11 se tiver 45%+ de chance combinada
+            
+            if (accept) {
+                var msg = st.gameFormat === '1v1' ? "O Rival aceitou a Mão de 11!" : "Os Rivais aceitaram a Mão de 11!";
+                showMsg(msg, 'neg');
+                st.trucoState = 'none';
+                animLock = false;
+                updateUI();
+                checkAiTurn();
+            } else {
+                var msg = st.gameFormat === '1v1' ? "O Rival correu da Mão de 11!" : "Os Rivais correram da Mão de 11!";
+                showMsg(msg, 'pos');
+                st.scores[1] += 1;
+                if(st.scores[1] >= 12) { triggerEndGame(true); return; }
+                setTimeout(function(){ startRound(getNextTurn(st.nextFirstPlayer || 1)); }, 2000);
+            }
         }
 
         window.requestFold = function() {
@@ -867,7 +996,7 @@
         };
 
         window.playCard = function(idx) {
-            if(animLock || st.turn !== myPID || st.trucoState !== 'none') return;
+            if(animLock || st.turn !== myPID || (st.trucoState !== 'none' && st.trucoState !== 'pending')) return;
             var c = st.hands[myPID].splice(idx, 1)[0];
             st.table.push({c: c, p: myPID});
             renderMesa(null, myPID); 
@@ -942,7 +1071,7 @@
         window.respondTruco = function(accept) {
             if(animLock) return;
             if(accept) {
-                st.humanAccepted = true; // Informa a IA parceira que a sua dupla já aceitou as condições
+                st.humanAccepted = true; // Informa a IA parceira que a dupla já tomou a decisão
                 showMsg("Você Aceitou!", 'pos'); st.trucoState = 'none'; updateUI(); autoSave();
                 animLock = false; checkAiTurn();
             } else {
@@ -991,29 +1120,32 @@
             if (aiNeedsToAnswer) { animLock = true; setTimeout(() => aiDecideTruco(aiPid), 1800); }
         }
 
+        // --- CÉREBRO DA IA (REFEITO) ---
         function aiDecideTruco(pid) {
             var prob = getHandWinProb(pid); var accept = false; var raise = false;
+            var myTeam = getTeam(pid);
+            var my11 = (st.scores[myTeam] === 11);
             
             if (aiDifficulty === 1) { // FÁCIL
-                if(prob >= 55) accept = true; 
+                if(prob >= 60) accept = true; 
                 if(prob < 30 && Math.random() < 0.15) accept = true; 
             } 
             else if (aiDifficulty === 2) { // NORMAL
                 if(prob >= 45) accept = true; 
-                if(prob >= 85 && st.handVal < 12 && Math.random() > 0.5) raise = true; 
+                if(prob >= 85 && st.handVal < 12 && !my11 && Math.random() > 0.5) raise = true; 
             } 
             else if (aiDifficulty === 3) { // DIFÍCIL
                 if(prob >= 35) accept = true; 
-                if(prob < 35 && Math.random() < 0.20) accept = true; 
-                if(accept && st.handVal < 12 && st.scores[getTeam(pid)] !== 11) { 
-                    if(prob >= 75 || Math.random() < 0.25) raise = true; 
+                if(prob < 35 && Math.random() < 0.15) accept = true; 
+                if(accept && st.handVal < 12 && !my11) { 
+                    if(prob >= 70 || Math.random() < 0.15) raise = true; 
                 }
             }
             else if (aiDifficulty === 4) { // INSANO
                 if(prob >= 25) accept = true; 
-                if(prob < 25 && Math.random() < 0.35) accept = true; 
-                if(accept && st.handVal < 12 && st.scores[getTeam(pid)] !== 11) { 
-                    if(prob >= 65 || Math.random() < 0.45) raise = true; 
+                if(prob < 25 && Math.random() < 0.30) accept = true; 
+                if(accept && st.handVal < 12 && !my11) { 
+                    if(prob >= 60 || Math.random() < 0.25) raise = true; 
                 }
             }
 
@@ -1035,18 +1167,17 @@
         }
 
         function aiPlay(pid) {
-            if(st.turn !== pid || st.trucoState !== 'none') { animLock = false; return; }
+            if(st.turn !== pid || (st.trucoState !== 'none' && st.trucoState !== 'mao11')) { animLock = false; return; }
+            if(st.trucoState === 'mao11') return; // Segurança contra quebra
             
             var myTeam = getTeam(pid); var oppTeam = getOppTeam(myTeam);
             var my11 = (st.scores[myTeam] === 11); var opp11 = (st.scores[oppTeam] === 11); var maoDeFerro = (my11 && opp11);
             var prob = getHandWinProb(pid);
 
-            if(!my11 && !maoDeFerro && st.handVal < 12 && getTeam(st.lastTruco) !== myTeam) {
+            if(!my11 && !maoDeFerro && !st.isMaoDe11 && st.handVal < 12 && getTeam(st.lastTruco) !== myTeam) {
                 var askTruco = false;
-                
-                // Impede parceiro de atropelar o pedido após o humano aceitar de bom grado
-                var isPartner = (getTeam(pid) === getTeam(myPID));
-                var canRaise = !(isPartner && st.humanAccepted);
+                var isPartner = (myTeam === getTeam(myPID));
+                var canRaise = !(isPartner && st.humanAccepted); // Sinergia: não atropela decisão do humano
 
                 if (canRaise) {
                     if (aiDifficulty === 1) { 
@@ -1057,12 +1188,12 @@
                         if (prob >= 65 && Math.random() > 0.3) askTruco = true; 
                     }
                     else if (aiDifficulty === 3) { 
-                        if (prob >= 50) askTruco = true; 
-                        if (prob <= 25 && Math.random() < 0.25) askTruco = true; 
+                        if (prob >= 55) askTruco = true; 
+                        if (prob <= 20 && Math.random() < 0.15) askTruco = true; // Blefe
                     }
                     else if (aiDifficulty === 4) { 
                         if (prob >= 40) askTruco = true; 
-                        if (prob <= 30 && Math.random() < 0.40) askTruco = true; 
+                        if (prob <= 30 && Math.random() < 0.35) askTruco = true; // Blefe Insano
                     }
                 }
 
@@ -1086,7 +1217,8 @@
                 else playedIdx = indexedCards[indexedCards.length - 1].idx; 
             }
 
-            if(st.table.length === 0 && prob < 15 && aiDifficulty < 4 && !my11) {
+            // Folding (Fugir pro baralho)
+            if(st.table.length === 0 && prob < 15 && aiDifficulty < 4 && !my11 && !st.isMaoDe11 && !maoDeFerro) {
                 var shouldFold = false;
                 if (aiDifficulty === 1) shouldFold = (Math.random() < 0.7);
                 else if (aiDifficulty === 2) shouldFold = (Math.random() < 0.4);
