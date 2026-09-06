@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Truco - v0.8.9</title>
+    <title>Truco - v0.8.10</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♣</text></svg>">
     <style>
         /* BASE & THEME */
@@ -280,7 +280,7 @@
             <div id="stadium-text" class="stadium-display">Notificação</div>
             <div class="hud-content">
                 <div class="hud-side">
-                    <div>NÓS: <b id="ui-s0" style="color:var(--prim); font-size: 1.1rem;">0</b></div>
+                    <div><span id="label-s0">NÓS:</span> <b id="ui-s0" style="color:var(--prim); font-size: 1.1rem;">0</b></div>
                     <div id="vazas-my" class="vaza-track"></div>
                 </div>
                 <div class="hud-center">
@@ -291,7 +291,7 @@
                     <div id="ui-deck-indicator" style="font-size: 0.65rem; color: var(--prim); margin-top: 2px; text-transform: uppercase;">BARALHO SUJO</div>
                 </div>
                 <div class="hud-side hud-right">
-                    <div>ELES: <b id="ui-s1" style="color:var(--dang); font-size: 1.1rem;">0</b></div>
+                    <div><span id="label-s1">ELES:</span> <b id="ui-s1" style="color:var(--dang); font-size: 1.1rem;">0</b></div>
                     <div id="vazas-opp" class="vaza-track"></div>
                 </div>
             </div>
@@ -352,8 +352,8 @@
             <!-- MÃO DE 11 -->
             <div id="grp-mao11" class="legend-group">
                 <span class="static-info" style="color: var(--warn); font-weight: bold;">Mão de 11!</span>
-                <button class="action-btn primary" onclick="respondMao11(true)"><span class="key-box highlight" style="color:var(--prim); border-color:var(--prim); background:rgba(255,255,255,0.8);">A</span> JOGAR (VALE 3)</button>
-                <button class="action-btn" onclick="respondMao11(false)"><span class="key-box">C</span> CORRER (PERDE 1)</button>
+                <button class="action-btn primary" onclick="respondMao11(true)"><span class="key-box highlight" style="color:var(--prim); border-color:var(--prim); background:rgba(255,255,255,0.8);">A</span> ACEITAR</button>
+                <button class="action-btn" onclick="respondMao11(false)"><span class="key-box">C</span> CORRER</button>
             </div>
 
             <!-- CONTROLES DE CONFIRMAÇÃO DE SAÍDA -->
@@ -390,12 +390,12 @@
         var st = {
             version: 0, roundId: 0, turn: 1, handVal: 1, 
             trucoBy: 0, trucoState: 'none', lastTruco: 0,
-            needsNewRound: false, nextFirstPlayer: 1, humanAccepted: false,
+            firstPlayerOfRound: 1, humanAccepted: false,
             isMaoDe11: false, maoDe11Team: 0, maoDeFerro: false,
             gameFormat: '1v1',
             scores: { 1: 0, 2: 0 }, vazas: { 1: 0, 2: 0 },
             hands: { 1: [], 2: [], 3: [], 4: [] }, table: [], lastTable: [], trickResults: [],
-            playedCards: [], // NOVO: Inteligência de memória da IA
+            playedCards: [], 
             vira: null, manilha: '', deckMode: 'sujo', viraRevealed: false
         };
 
@@ -404,7 +404,7 @@
         var fileHandle = null; var syncCountdown = 3; var syncInterval = null; var activeTurnCheckTimer = 5;
         var msgTimeout = null; var isSaving = false;
         
-        var aiDifficulty = 3; // Padrão: Difícil
+        var aiDifficulty = 3; 
         var pendingDeckMode = 'sujo';
         var pendingFormat = '1v1';
 
@@ -591,23 +591,19 @@
             var oppTeam = getOppTeam(myTeam);
             var activeVals = getActiveVals();
             
-            // Junta cartas descartadas em vazas passadas + cartas na mesa atual
             var allVisibleCards = (st.playedCards || []).concat(st.table.map(t => t.c));
             var visiblePowers = allVisibleCards.map(c => getPower(c));
             
             var myPowers = myCards.map(c => getPower(c));
             var maxMyPower = myPowers.length > 0 ? Math.max(...myPowers) : -1;
             
-            // IA verifica se tem a "Nuts" (A carta mais forte viva no jogo)
             var isNuts = false;
             if (maxMyPower > -1) {
                 isNuts = true;
-                // Varre manilhas superiores
                 for(var s=0; s<4; s++) {
                     var p = 100 + s;
                     if (p > maxMyPower && !visiblePowers.includes(p)) isNuts = false;
                 }
-                // Se minha maior não for manilha, checo normais
                 if (isNuts && maxMyPower < 100) {
                     for(var v=0; v<activeVals.length; v++) {
                         if (v > maxMyPower && !visiblePowers.includes(v)) isNuts = false;
@@ -652,13 +648,36 @@
             };
         }
 
-        function isAwaitingMyAction() {
-            if (st.trucoState === 'pending') return getTeam(st.trucoBy) !== getTeam(myPID);
-            if (st.trucoState === 'mao11') return st.maoDe11Team === 1;
-            return st.turn === myPID;
+        // --- SISTEMA DE NEON GLOW ---
+        function updateTurnGlow() {
+            document.querySelectorAll('.card').forEach(c => c.classList.remove('active-turn'));
+            if (animLock && st.trucoState !== 'mao11') return; // Bloqueia glow durante animações espaciais
+
+            if (st.trucoState === 'mao11') {
+                for(var p = 1; p <= getNumPlayers(); p++) {
+                    if(getTeam(p) === st.maoDe11Team) {
+                        var tHand = getEl('box-' + getUIPos(p));
+                        if(tHand) tHand.querySelectorAll('.card').forEach(c => c.classList.add('active-turn'));
+                    }
+                }
+            } else if (st.trucoState === 'pending') {
+                var answeringTeam = getOppTeam(getTeam(st.trucoBy));
+                for(var p = 1; p <= getNumPlayers(); p++) {
+                    if(getTeam(p) === answeringTeam) {
+                        var tHand = getEl('box-' + getUIPos(p));
+                        if(tHand) tHand.querySelectorAll('.card').forEach(c => c.classList.add('active-turn'));
+                    }
+                }
+            } else if (st.trucoState === 'none') {
+                var tHand = getEl('box-' + getUIPos(st.turn));
+                if(tHand) tHand.querySelectorAll('.card').forEach(c => c.classList.add('active-turn'));
+            }
         }
 
         function updateUI() {
+            getEl('label-s0').innerText = st.gameFormat === '1v1' ? "EU:" : "NÓS:";
+            getEl('label-s1').innerText = st.gameFormat === '1v1' ? "RIVAL:" : "RIVAIS:";
+
             getEl('ui-s0').innerText = st.scores[getTeam(myPID)]; 
             getEl('ui-s1').innerText = st.scores[getOppTeam(getTeam(myPID))];
             
@@ -765,23 +784,7 @@
                 gmContainer.classList.add('hidden');
             }
 
-            document.querySelectorAll('.card').forEach(c => c.classList.remove('active-turn'));
-            if (!animLock) {
-                if (st.trucoState === 'pending') {
-                    var answeringTeam = getOppTeam(getTeam(st.trucoBy));
-                    for(var p = 1; p <= getNumPlayers(); p++) {
-                        if(getTeam(p) === answeringTeam) {
-                            var tPos = getUIPos(p);
-                            var tHand = getEl('box-' + tPos);
-                            if(tHand) tHand.querySelectorAll('.card').forEach(c => c.classList.add('active-turn'));
-                        }
-                    }
-                } else if (st.trucoState === 'none') {
-                    var turnPos = getUIPos(st.turn);
-                    var turnHand = getEl('box-' + turnPos);
-                    if(turnHand) turnHand.querySelectorAll('.card').forEach(c => c.classList.add('active-turn'));
-                }
-            }
+            updateTurnGlow(); // Garante o neon glow
         }
 
         function renderMesa(customTable, animOriginPID, isDealing, showPartnerMao11) {
@@ -853,6 +856,8 @@
                 lastCard.style.transition = 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
                 lastCard.style.transform = finalTrans; lastCard.style.opacity = '1';
             }
+
+            updateTurnGlow(); // Assegura o neon nas cartas injetadas
         }
 
         function animDeal() {
@@ -935,7 +940,10 @@
             if (myPID === 1) st.deckMode = pendingDeckMode;
             
             nav((modeStr === 'pc' ? 'scr-mode' : 'scr-multi'), 'scr-game');
-            if (myPID === 1) startRound(1); 
+            if (myPID === 1) {
+                st.firstPlayerOfRound = 1; // Round 1 starts with P1
+                startRound(st.firstPlayerOfRound);
+            }
         };
 
         function startRound(firstPlayer) {
@@ -960,9 +968,14 @@
             st.manilha = activeVals[(activeVals.indexOf(st.vira.v) + 1) % activeVals.length];
             
             st.table = []; st.lastTable = []; st.vazas = {1:0, 2:0}; st.trickResults = []; 
-            st.playedCards = []; // NOVO: Reset da memória da IA
+            st.playedCards = []; 
             
-            st.handVal = 1; st.trucoBy = 0; st.trucoState = 'none'; st.turn = firstPlayer;
+            st.handVal = 1; st.trucoBy = 0; st.trucoState = 'none'; 
+            
+            // Controle de Turnos: firstPlayerOfRound governa a Rodada. O current st.turn segue o fluxo.
+            st.firstPlayerOfRound = firstPlayer;
+            st.turn = firstPlayer;
+            
             st.lastTruco = 0; st.needsNewRound = false;
             st.isMaoDe11 = false; st.maoDe11Team = 0; st.maoDeFerro = false;
             
@@ -1009,17 +1022,19 @@
         window.respondMao11 = function(accept) {
             if(animLock || st.trucoState !== 'mao11') return;
             if(accept) {
-                showMsg("Vocês Aceitaram a Mão de 11!", 'pos'); 
+                var msgAcc = st.gameFormat === '1v1' ? "Você Aceitou a Mão de 11!" : "Vocês Aceitaram a Mão de 11!";
+                showMsg(msgAcc, 'pos'); 
                 st.trucoState = 'none'; 
                 renderMesa(); // Esconde as cartas do parceiro de volta
                 updateUI(); autoSave();
                 animLock = false; checkAiTurn();
             } else {
-                showMsg("Vocês Correram da Mão de 11!", 'neg'); 
+                var msgRej = st.gameFormat === '1v1' ? "Você Correu da Mão de 11!" : "Vocês Correram da Mão de 11!";
+                showMsg(msgRej, 'neg'); 
                 st.trucoState = 'none'; 
-                st.scores[2] += 1; // Correr na 11 dá 1 pt
+                st.scores[2] += 1; 
                 if(st.scores[2] >= 12) { autoSave(); triggerEndGame(false); return; }
-                var nxtFirst = getNextTurn(st.nextFirstPlayer || 1);
+                var nxtFirst = getNextTurn(st.firstPlayerOfRound); // Próxima rodada
                 if (myPID === 1 || gameMode === 'pc') { startRound(nxtFirst); } else { st.needsNewRound = true; st.nextFirstPlayer = nxtFirst; autoSave(); }
             }
         };
@@ -1040,7 +1055,7 @@
                 showMsg(msg, 'pos');
                 st.scores[1] += 1;
                 if(st.scores[1] >= 12) { triggerEndGame(true); return; }
-                setTimeout(function(){ startRound(getNextTurn(st.nextFirstPlayer || 1)); }, 2000);
+                setTimeout(function(){ startRound(getNextTurn(st.firstPlayerOfRound)); }, 2000);
             }
         }
 
@@ -1058,7 +1073,7 @@
             if(animLock || st.turn !== myPID || st.trucoState !== 'none') return;
             showMsg("Você correu!", 'neg'); st.scores[getOppTeam(getTeam(myPID))] += st.handVal;
             if(st.scores[getOppTeam(getTeam(myPID))] >= 12) { autoSave(); triggerEndGame(false); return; }
-            var nxtFirst = getNextTurn(st.nextFirstPlayer || 1);
+            var nxtFirst = getNextTurn(st.firstPlayerOfRound);
             if (myPID === 1 || gameMode === 'pc') { startRound(nxtFirst); } else { st.needsNewRound = true; st.nextFirstPlayer = nxtFirst; autoSave(); }
         };
 
@@ -1082,7 +1097,6 @@
                 if(pwr > highestPwr) { highestPwr = pwr; winners = [st.table[i].p]; } 
                 else if (pwr === highestPwr) { winners.push(st.table[i].p); }
                 
-                // NOVO: Adiciona cartas à memória das IAs
                 st.playedCards.push(st.table[i].c);
             }
             
@@ -1096,7 +1110,7 @@
 
             if(trickWinnerTeam === 3) { 
                 showMsg("Canga (Empate)!", 'neu'); st.vazas[1]++; st.vazas[2]++; 
-                nextTurn = st.table[0].p; 
+                nextTurn = st.table[0].p; // Canga = Quem jogou a primeira carta começa a próxima
             } else { 
                 var myTeam = getTeam(myPID);
                 var isMyWin = (myTeam === trickWinnerTeam);
@@ -1107,7 +1121,7 @@
                 
                 showMsg(msg, isMyWin ? 'pos' : 'neg'); 
                 st.vazas[trickWinnerTeam]++; 
-                nextTurn = winners[0];
+                nextTurn = winners[0]; // Vencedor da vaza começa a próxima
             }
 
             st.lastTable = JSON.parse(JSON.stringify(st.table)); 
@@ -1124,7 +1138,7 @@
                 if(st.scores[1] >= 12 || st.scores[2] >= 12) {
                     var iWon = st.scores[getTeam(myPID)] >= 12; autoSave(); triggerEndGame(iWon);
                 } else {
-                    var nxtFirst = getNextTurn(st.nextFirstPlayer || 1);
+                    var nxtFirst = getNextTurn(st.firstPlayerOfRound); // Girar o relógio de inicio de rodada
                     if (myPID === 1 || gameMode === 'pc') { autoSave(); setTimeout(function(){ startRound(nxtFirst); }, 2000); } else { st.needsNewRound = true; st.nextFirstPlayer = nxtFirst; autoSave(); }
                 }
             } else { 
@@ -1135,13 +1149,14 @@
         window.requestTruco = function() {
             if(animLock) return;
             st.handVal = (st.handVal === 1) ? 3 : st.handVal + 3; st.trucoBy = myPID; st.lastTruco = myPID; st.trucoState = 'pending';
-            showMsg("Você pediu " + TRUCO_NAMES[st.handVal] + "!", 'neu'); window.lastAdviceLevel = 0; updateUI(); autoSave(); checkAiTrucoDecision();
+            showMsg("Você pediu " + TRUCO_NAMES[st.handVal] + "!", 'neu'); window.lastAdviceLevel = 0; 
+            updateUI(); updateTurnGlow(); autoSave(); checkAiTrucoDecision();
         };
 
         window.respondTruco = function(accept) {
             if(animLock) return;
             if(accept) {
-                st.humanAccepted = true; // Impede dupla IA de atropelar o parceiro
+                st.humanAccepted = true; 
                 showMsg("Você Aceitou!", 'pos'); st.trucoState = 'none'; updateUI(); autoSave();
                 animLock = false; checkAiTurn();
             } else {
@@ -1149,7 +1164,7 @@
                 var callingTeam = getTeam(st.trucoBy);
                 st.scores[callingTeam] += (st.handVal === 3) ? 1 : (st.handVal - 3);
                 if(st.scores[callingTeam] >= 12) { autoSave(); triggerEndGame(false); return; }
-                var nxtFirst = getNextTurn(st.nextFirstPlayer || 1);
+                var nxtFirst = getNextTurn(st.firstPlayerOfRound);
                 if (myPID === 1 || gameMode === 'pc') { startRound(nxtFirst); } else { st.needsNewRound = true; st.nextFirstPlayer = nxtFirst; autoSave(); }
             }
         };
@@ -1180,29 +1195,26 @@
             var myTeam = getTeam(pid);
             var my11 = (st.scores[myTeam] === 11);
             
-            // Inteligência: Nunca aumentar se o oponente já tem carta dominante na mesa atual
             var isOppDominatingTable = (state.maxOppTablePower > state.maxMyPower);
 
             if (aiDifficulty === 1) { // FÁCIL
                 if(state.prob >= 60) accept = true; 
-                if(state.prob < 30 && Math.random() < 0.1) accept = true; 
             } 
             else if (aiDifficulty === 2) { // NORMAL
                 if(state.prob >= 45) accept = true; 
-                if(state.prob >= 80 && st.handVal < 12 && !my11 && !isOppDominatingTable && Math.random() > 0.5) raise = true; 
+                if(state.prob >= 80 && st.handVal < 12 && !my11 && !isOppDominatingTable) raise = true; 
             } 
             else if (aiDifficulty === 3) { // DIFÍCIL
                 if(state.prob >= 35 || state.isNuts) accept = true; 
                 if(accept && st.handVal < 12 && !my11 && !isOppDominatingTable) { 
-                    if(state.isNuts || state.prob >= 75) raise = true;
-                    else if (st.vazas[myTeam] === 1 && Math.random() < 0.15) raise = true; // Blefe tático
+                    if(state.isNuts || state.prob >= 65) raise = true;
                 }
             }
             else if (aiDifficulty === 4) { // INSANO
-                if(state.prob >= 15 || state.isNuts) accept = true; // Quase nunca corre
+                if(state.prob >= 20 || state.isNuts) accept = true; 
                 if(accept && st.handVal < 12 && !my11 && !isOppDominatingTable) { 
-                    if(state.isNuts || state.prob >= 60) raise = true; 
-                    else if (Math.random() < 0.35) raise = true; // Blefe pesado
+                    if(state.isNuts || state.prob >= 50) raise = true; 
+                    else if (Math.random() < 0.40) raise = true; // Retruco blefe
                 }
             }
 
@@ -1220,7 +1232,7 @@
                 showMsg(msg, 'pos'); 
                 st.trucoState = 'none'; st.scores[getOppTeam(getTeam(pid))] += (st.handVal === 3) ? 1 : (st.handVal - 3); animLock = false; 
                 if(st.scores[getOppTeam(getTeam(pid))] >= 12) { triggerEndGame(getTeam(myPID) === getOppTeam(getTeam(pid))); return; }
-                setTimeout(function(){ startRound(getNextTurn(st.nextFirstPlayer || 1)); }, 2000);
+                setTimeout(function(){ startRound(getNextTurn(st.firstPlayerOfRound)); }, 2000);
             }
         }
 
@@ -1235,29 +1247,34 @@
             if(!my11 && !maoDeFerro && !st.isMaoDe11 && st.handVal < 12 && getTeam(st.lastTruco) !== myTeam) {
                 var askTruco = false;
                 var isPartner = (myTeam === getTeam(myPID));
-                var canRaise = !(isPartner && st.humanAccepted); // Impede dupla de atropelar jogador
+                var canRaise = !(isPartner && st.humanAccepted); 
 
                 if (canRaise) {
+                    var isFirstTurn = st.table.length === 0;
+
                     if (aiDifficulty === 1) { 
                         if (state.prob >= 90) askTruco = true; 
                     }
                     else if (aiDifficulty === 2) { 
-                        if (state.prob >= 70 && Math.random() > 0.3) askTruco = true; 
+                        if (state.prob >= 75) askTruco = true; 
                     }
                     else if (aiDifficulty === 3) { 
                         if (state.prob >= 60 || state.isNuts) askTruco = true; 
-                        if (state.prob <= 20 && st.vazas[myTeam] === 1 && Math.random() < 0.15) askTruco = true; // Blefe
+                        if (isFirstTurn && state.prob >= 45 && Math.random() < 0.25) askTruco = true; // Pressão de turno 1
+                        if (st.vazas[myTeam] === 1 && state.prob < 20 && Math.random() < 0.15) askTruco = true; // Blefe
                     }
                     else if (aiDifficulty === 4) { 
-                        if (state.prob >= 50 || state.isNuts) askTruco = true; 
-                        if (state.prob <= 30 && Math.random() < 0.35) askTruco = true; // Blefe Insano
+                        if (state.prob >= 45 || state.isNuts) askTruco = true; 
+                        if (isFirstTurn && state.prob >= 25 && Math.random() < 0.40) askTruco = true; // Pressão forte de inicio
+                        if (state.prob <= 30 && Math.random() < 0.35) askTruco = true; // Blefe psicológico insano
                     }
                 }
 
                 if (askTruco) {
                     st.handVal = (st.handVal === 1) ? 3 : st.handVal + 3; st.trucoBy = pid; st.lastTruco = pid; st.trucoState = 'pending'; 
                     var tMsg = (st.gameFormat === '2v2' && myTeam === getTeam(myPID)) ? "Parceiro pediu " : (getPlayerName(pid) + " pediu ");
-                    showMsg(tMsg + TRUCO_NAMES[st.handVal] + "!", 'neu'); window.lastAdviceLevel = 0; animLock = false; updateUI(); checkAiTrucoDecision(); return; 
+                    showMsg(tMsg + TRUCO_NAMES[st.handVal] + "!", 'neu'); window.lastAdviceLevel = 0; animLock = false; 
+                    updateUI(); updateTurnGlow(); checkAiTrucoDecision(); return; 
                 }
             }
 
@@ -1268,24 +1285,24 @@
                 var winningCards = indexedCards.filter(x => x.p > state.maxOppTablePower);
                 
                 if (aiDifficulty <= 2) {
-                    if (state.maxPartnerTablePower > state.maxOppTablePower) playedIdx = indexedCards[0].idx; // Parceiro ganhando
+                    if (state.maxPartnerTablePower > state.maxOppTablePower) playedIdx = indexedCards[0].idx; 
                     else if (winningCards.length > 0) playedIdx = winningCards[0].idx; 
                     else playedIdx = indexedCards[0].idx;
                     
-                    if (aiDifficulty === 1 && Math.random() < 0.2) playedIdx = indexedCards[indexedCards.length - 1].idx; // Erro bobo Fácil
+                    if (aiDifficulty === 1 && Math.random() < 0.2) playedIdx = indexedCards[indexedCards.length - 1].idx; 
                 } else {
                     if (state.maxPartnerTablePower > state.maxOppTablePower) playedIdx = indexedCards[0].idx;
-                    else if (winningCards.length > 0) playedIdx = winningCards[0].idx; // Economia estratégica
+                    else if (winningCards.length > 0) playedIdx = winningCards[0].idx; 
                     else playedIdx = indexedCards[0].idx;
                 }
             } else { 
                 if (aiDifficulty === 1) playedIdx = (Math.random() > 0.5) ? indexedCards[0].idx : indexedCards[indexedCards.length - 1].idx;
                 else if (aiDifficulty === 2) playedIdx = indexedCards[indexedCards.length - 1].idx;
                 else if (aiDifficulty === 3) {
-                    if (state.manilhas === 1 && state.fortes === 0 && cards.length === 3) playedIdx = indexedCards[0].idx; // Segura manilha
+                    if (state.manilhas === 1 && state.fortes === 0 && cards.length === 3) playedIdx = indexedCards[0].idx; 
                     else playedIdx = indexedCards[indexedCards.length - 1].idx;
                 } else {
-                    playedIdx = indexedCards[indexedCards.length - 1].idx; // Insano sempre força a 1ª vaza
+                    playedIdx = indexedCards[indexedCards.length - 1].idx; 
                 }
             }
 
@@ -1299,7 +1316,7 @@
                     var msg = st.gameFormat === '1v1' ? "O Rival foi ao baralho!" : (getPlayerName(pid) + " foi ao baralho!");
                     showMsg(msg, 'pos'); st.scores[oppTeam] += st.handVal;
                     if(st.scores[oppTeam] >= 12) { animLock = false; triggerEndGame(getTeam(myPID) === oppTeam); return; }
-                    animLock = false; setTimeout(function(){ startRound(getNextTurn(st.nextFirstPlayer || 1)); }, 2000); return;
+                    animLock = false; setTimeout(function(){ startRound(getNextTurn(st.firstPlayerOfRound)); }, 2000); return;
                 }
             }
             
