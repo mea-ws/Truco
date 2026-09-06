@@ -101,7 +101,7 @@
             width: 70px; height: 105px; background: var(--card-f); border-radius: 8px; box-shadow: 0 6px 15px rgba(0,0,0,0.5);
             display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 900; font-size: 1.4rem; color: #1e293b;
             position: relative; user-select: none; transform-style: preserve-3d;
-            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-sizing: border-box;
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease, border-color 0.3s ease; box-sizing: border-box;
         }
         .card.red { color: var(--dang); }
         .card.back { background: var(--card-b); border: 3px solid #475569; color: transparent !important; cursor: default; }
@@ -113,12 +113,13 @@
         }
 
         /* ANIMAÇÃO DA CARTA VENCEDORA */
-        @keyframes winnerPulse {
-            0% { transform: scale(1) translateY(0); box-shadow: 0 6px 15px rgba(0,0,0,0.5); }
-            30% { transform: scale(1.1) translateY(-10px); box-shadow: 0 0 25px var(--warn); border: 3px solid var(--warn); }
-            100% { transform: scale(1.1) translateY(-10px); box-shadow: 0 0 25px var(--warn); border: 3px solid var(--warn); }
+        .card.winner-anim {
+            border: 4px solid var(--warn) !important;
+            box-shadow: 0 0 30px var(--warn) !important;
+            transform: scale(1.15) translateY(-15px) !important;
+            z-index: 50 !important;
+            transition: all 0.3s ease !important;
         }
-        .winner-anim { animation: winnerPulse 2.2s forwards; z-index: 50 !important; }
 
         .card-wrapper { position: relative; cursor: pointer; transition: var(--trans); }
         .card-wrapper.interactive:hover { transform: translateY(-10px); z-index: 15; }
@@ -157,7 +158,7 @@
             color: white; display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
 
-        /* BOTÃO DE ESCONDER CARTA */
+        /* BOTÃO DE ESCONDER CARTA FIXO */
         #btn-hide-card {
             position: absolute; right: 15px; bottom: 15px; z-index: 25;
             background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
@@ -303,12 +304,14 @@
             </div>
         </div>
 
+        <!-- MODO JSON -->
         <div id="mp-json-area" class="btn-stack">
             <button class="btn-p" onclick="startMultiplayer('host', 'json')">CRIAR MESA (HOST)</button>
             <hr style="border-color: rgba(255,255,255,0.1); margin: 5px 0;">
             <button class="btn-s" onclick="startMultiplayer('guest', 'json')">ENTRAR NA MESA (GUEST)</button>
         </div>
 
+        <!-- MODO WEBRTC -->
         <div id="mp-webrtc-area" class="btn-stack hidden">
             <textarea id="webrtc-data" placeholder="O código de conexão aparecerá ou deverá ser colado aqui..." onclick="this.select()"></textarea>
             <button class="btn-p" onclick="startMultiplayer('host', 'webrtc')" style="background: rgba(59, 130, 246, 0.8);">1. GERAR CONVITE (HOST)</button>
@@ -365,7 +368,7 @@
             
             <div id="box-my" class="hand-my"></div>
             
-            <button id="btn-hide-card" onclick="toggleHide()" class="disabled">ESCONDER <span class="key-box">E</span></button>
+            <button id="btn-hide-card" onclick="toggleHide()" disabled class="disabled">ESCONDER <span class="key-box">E</span></button>
         </div>
 
         <div id="action-bar" class="glass-panel legend-container">
@@ -374,30 +377,35 @@
                 <span id="sync-timer-txt" style="color: var(--txt-d);">Sincronizando...</span>
             </div>
 
+            <!-- CONTROLES NORMAIS -->
             <div id="grp-normal" class="legend-group active">
                 <div class="static-info"><span class="key-box">1</span><span class="key-box">2</span><span class="key-box">3</span> <span class="play-text">JOGAR CARTA</span></div>
                 <button id="cmd-truco" class="action-btn danger hidden" onclick="requestTruco()"><span class="key-box highlight">T</span> PEDIR TRUCO</button>
                 <button id="cmd-fold" class="action-btn hidden" onclick="requestFold()"><span class="key-box">D</span> DESCARTAR</button>
             </div>
             
+            <!-- CONTROLES DE RESPOSTA A TRUCO -->
             <div id="grp-respond" class="legend-group">
                 <button class="action-btn primary" onclick="respondTruco(true)"><span class="key-box" style="color: var(--prim); border-color: var(--prim); background: rgba(255,255,255,0.8);">A</span> ACEITAR</button>
                 <button id="cmd-raise" class="action-btn danger hidden" onclick="requestTruco()"><span class="key-box highlight">T</span> SEIS!</button>
                 <button class="action-btn" onclick="respondTruco(false)"><span class="key-box">C</span> CORRER</button>
             </div>
 
+            <!-- CONTROLES DE CONFIRMAÇÃO DE DESCARTE -->
             <div id="grp-confirm-fold" class="legend-group">
                 <span class="static-info" style="color: var(--warn); font-weight: bold;">Tem certeza?</span>
                 <button class="action-btn danger" onclick="executeFold()"><span class="key-box highlight">S</span> SIM</button>
                 <button class="action-btn" onclick="cancelFold()"><span class="key-box">N</span> NÃO</button>
             </div>
 
+            <!-- MÃO DE 11 -->
             <div id="grp-mao11" class="legend-group">
                 <span class="static-info" style="color: var(--warn); font-weight: bold;">Mão de 11!</span>
                 <button class="action-btn primary" onclick="respondMao11(true)"><span class="key-box highlight" style="color:var(--prim); border-color:var(--prim); background:rgba(255,255,255,0.8);">A</span> ACEITAR</button>
                 <button class="action-btn" onclick="respondMao11(false)"><span class="key-box">C</span> CORRER</button>
             </div>
 
+            <!-- CONTROLES DE CONFIRMAÇÃO DE SAÍDA -->
             <div id="grp-confirm-exit" class="legend-group">
                 <span class="static-info" style="color: var(--warn); font-weight: bold;">Sair do Jogo?</span>
                 <button class="action-btn danger" onclick="location.reload()"><span class="key-box highlight">S</span> SIM</button>
@@ -435,7 +443,7 @@
             isMaoDe11: false, maoDe11Team: 0, maoDeFerro: false,
             gameFormat: '1v1',
             scores: { 1: 0, 2: 0 }, trickResults: [],
-            hands: { 1: [], 2: [], 3: [], 4: [] }, table: [], lastTable: [],
+            hands: { 1: [], 2: [], 3: [], 4: [] }, table: [], lastTable: [], trickWinners: [],
             playedCards: [], 
             vira: null, manilha: '', deckMode: 'sujo', viraRevealed: false
         };
@@ -444,10 +452,7 @@
         var gameMode = 'pc'; var mpMethod = 'json';
         var animLock = false; window.isHiding = false;
         
-        // JSON MP
         var fileHandle = null; var syncCountdown = 3; var syncInterval = null; var activeTurnCheckTimer = 5;
-        
-        // WEBRTC MP
         var pc = null; var dc = null; var isHostWebRTC = false;
         
         var msgTimeout = null; var isSaving = false;
@@ -677,7 +682,7 @@
             return w;
         }
 
-        // --- O MOTOR ORIGINAL DA IA (ESTILO V0.7.1) COM BOOST DE INTELIGÊNCIA ---
+        // --- CÉREBRO DA IA: MOTOR AGRESSIVO v0.7.1 C/ MEMÓRIA ---
         function getHandWinProb(pid) {
             var myCards = st.hands[pid];
             var activeVals = getActiveVals();
@@ -689,7 +694,7 @@
                 if(p > 99) manilhas++;
                 else if(p >= activeVals.length - 2) fortes++;
 
-                // Boost tático de inteligência: IA sabe quando tem The Nuts (A carta invencível)
+                // A IA sabe que possui a carta máxima viva na mesa (The Nuts)
                 if (p > -1 && st.trickResults.length > 0) {
                     var isNuts = true;
                     for (var s=0; s<4; s++) {
@@ -701,11 +706,10 @@
                             if (v > p && !playedPowers.includes(v)) isNuts = false;
                         }
                     }
-                    if (isNuts) prob += 40; // Dá a confiança de uma Manilha
+                    if (isNuts) prob += 40; 
                 }
             }
 
-            // O motor bruto da 0.7.1
             if(manilhas >= 2) prob += 95;
             else if(manilhas == 1 && fortes >= 1) prob += 85;
             else if(manilhas == 1) prob += 60;
@@ -715,8 +719,14 @@
 
             var myTeam = getTeam(pid);
             var oppTeam = getOppTeam(myTeam);
-            if(st.vazas[myTeam] == 1 && st.vazas[oppTeam] == 0) prob += 30;
-            if(st.vazas[oppTeam] == 1 && st.vazas[myTeam] == 0) prob -= 30;
+            
+            var t1Wins = st.trickResults.filter(r => r === 1).length;
+            var t2Wins = st.trickResults.filter(r => r === 2).length;
+            var myTeamTrickWins = myTeam === 1 ? t1Wins : t2Wins;
+            var oppTeamTrickWins = myTeam === 1 ? t2Wins : t1Wins;
+
+            if(myTeamTrickWins == 1 && oppTeamTrickWins == 0) prob += 30;
+            if(oppTeamTrickWins == 1 && myTeamTrickWins == 0) prob -= 30;
             if(st.deckMode === 'limpo' && prob > 40 && prob < 90) prob += 10;
 
             return Math.max(0, Math.min(100, prob));
@@ -780,6 +790,7 @@
             if(grpConfirmFold.classList.contains('active') && (!isMyTurn || st.trucoState !== 'none')) cancelFold();
 
             if (st.trucoState === 'mao11') {
+                btnHide.setAttribute('disabled', 'true'); btnHide.classList.add('disabled');
                 if (st.maoDe11Team === 1) {
                     if(!isExiting) { setBottomGroup('grp-mao11'); actionBar.classList.add('danger-zone'); }
                     uiTurn.innerText = "MÃO DE 11: DECIDA!"; uiTurn.style.color = "var(--warn)";
@@ -789,6 +800,7 @@
                 }
             }
             else if (st.trucoState === 'pending') {
+                btnHide.setAttribute('disabled', 'true'); btnHide.classList.add('disabled');
                 if (getTeam(st.trucoBy) !== getTeam(myPID)) {
                     if(!isExiting) { setBottomGroup('grp-respond'); actionBar.classList.add('danger-zone'); }
                     uiTurn.innerText = "⚠️ DECIDA! ⚠️"; uiTurn.style.color = "var(--warn)";
@@ -834,25 +846,24 @@
                 } else { btnTruco.classList.add('hidden'); }
                 
                 if(isMyTurn && !st.maoDeFerro) btnFold.classList.remove('hidden'); else btnFold.classList.add('hidden');
-            }
-            
-            // Controle Lógico Fixo do Botão de Esconder
-            if (st.trucoState === 'none' && !st.maoDeFerro && !st.isMaoDe11 && isMyTurn) {
-                var canHide = (st.trickResults.length > 0);
-                if (canHide) {
-                    btnHide.removeAttribute('disabled');
-                    btnHide.classList.remove('disabled');
+
+                if (isMyTurn && !st.maoDeFerro && !st.isMaoDe11) {
+                    var canHide = (st.trickResults.length > 0);
+                    if (canHide) {
+                        btnHide.removeAttribute('disabled');
+                        btnHide.classList.remove('disabled');
+                    } else {
+                        btnHide.setAttribute('disabled', 'true');
+                        btnHide.classList.add('disabled');
+                        resetHideBtn();
+                    }
                 } else {
                     btnHide.setAttribute('disabled', 'true');
                     btnHide.classList.add('disabled');
                     resetHideBtn();
                 }
-            } else {
-                btnHide.setAttribute('disabled', 'true');
-                btnHide.classList.add('disabled');
-                resetHideBtn();
             }
-
+            
             if (!(st.trucoState === 'mao11' && st.maoDe11Team === 1 && st.gameFormat === '2v2')) {
                 getEl('ui-deck-indicator').innerText = indicatorText;
             }
@@ -926,6 +937,11 @@
                 
                 dom.style.transform = posOffset[tPos];
                 dom.style.zIndex = zIndexMap[tPos] + k;
+                
+                if (st.trickWinners && st.trickWinners.includes(tblCard.p) && st.table.length === 0 && !isDealing) {
+                    dom.firstChild.classList.add('winner-anim');
+                }
+
                 bTb.appendChild(dom);
             }
 
@@ -1066,7 +1082,7 @@
             st.vira = deck.pop(); st.viraRevealed = false;
             st.manilha = activeVals[(activeVals.indexOf(st.vira.v) + 1) % activeVals.length];
             
-            st.table = []; st.lastTable = []; st.trickResults = []; 
+            st.table = []; st.lastTable = []; st.trickResults = []; st.trickWinners = [];
             st.playedCards = []; 
             
             st.handVal = 1; st.trucoBy = 0; st.trucoState = 'none'; 
@@ -1197,7 +1213,9 @@
                 if (!st.table[i].hidden) { st.playedCards.push(st.table[i].c); }
             }
             
-            // Sincronia de Animação - Marca quem ganhou
+            st.trickWinners = winners;
+            animLock = true;
+            
             var bTb = getEl('box-table').children;
             for(var i=0; i<st.table.length; i++) {
                 if(winners.includes(st.table[i].p)) {
@@ -1206,7 +1224,6 @@
                 }
             }
 
-            animLock = true;
             var team1Wins = winners.some(p => getTeam(p) === 1);
             var team2Wins = winners.some(p => getTeam(p) === 2);
             var trickWinnerTeam = 0;
@@ -1226,11 +1243,11 @@
                 nextTurn = winners[0]; 
             }
 
-            // O Guest precisa ver a mesa inteira para animar
             st.lastTable = JSON.parse(JSON.stringify(st.table)); 
-            autoSave(); 
+            autoSave(); // Manda a animação inteira com os vencedores já marcados pro Guest
 
             setTimeout(function() {
+                st.trickWinners = [];
                 st.table = []; renderMesa(); updateUI();
 
                 var t1 = st.trickResults.filter(r => r === 1).length;
@@ -1311,31 +1328,30 @@
             if (aiNeedsToAnswer) { animLock = true; setTimeout(() => aiDecideTruco(aiPid), 1800); }
         }
 
-        // --- SISTEMA ORIGINAL DA v0.7.1 DE VOLTA COM MAIS PRESSÃO ---
         function aiDecideTruco(pid) {
             var prob = getHandWinProb(pid);
             var accept = false; var raise = false;
             var myTeam = getTeam(pid);
             var my11 = (st.scores[myTeam] === 11);
 
-            if (aiDifficulty === 1) { // FÁCIL
+            if (aiDifficulty === 1) { 
                 if(prob >= 75) accept = true; 
             } 
-            else if (aiDifficulty === 2) { // NORMAL
+            else if (aiDifficulty === 2) { 
                 if(prob >= 45) accept = true; 
                 if(prob >= 85 && st.handVal < 12 && !my11 && Math.random() > 0.5) raise = true; 
             } 
-            else if (aiDifficulty === 3) { // DIFÍCIL
+            else if (aiDifficulty === 3) { 
                 if(prob >= 30) accept = true; 
                 if(prob < 30 && Math.random() < 0.25) accept = true; 
                 if(accept && st.handVal < 12 && !my11) { 
                     if(prob >= 70 || Math.random() < 0.3) raise = true;
                 }
             }
-            else if (aiDifficulty === 4) { // INSANO (MUITO MAIS AGRESSIVO)
+            else if (aiDifficulty === 4) { 
                 if(prob >= 20 || Math.random() < 0.3) accept = true; 
                 if(accept && st.handVal < 12 && !my11) { 
-                    if(prob >= 50 || Math.random() < 0.50) raise = true; // 50% Blefe Retruco
+                    if(prob >= 50 || Math.random() < 0.50) raise = true; 
                 }
             }
 
@@ -1359,7 +1375,7 @@
 
         function aiPlay(pid) {
             if(st.turn !== pid || (st.trucoState !== 'none' && st.trucoState !== 'mao11')) { animLock = false; return; }
-            if(st.trucoState === 'mao11') return;
+            if(st.trucoState === 'mao11') { animLock = false; return; }
             
             var myTeam = getTeam(pid); var oppTeam = getOppTeam(myTeam);
             var my11 = (st.scores[myTeam] === 11); var opp11 = (st.scores[oppTeam] === 11); var maoDeFerro = (my11 && opp11);
@@ -1379,12 +1395,12 @@
                     }
                     else if (aiDifficulty === 3) { 
                         if (prob >= 50) askTruco = true; 
-                        if (prob <= 20 && Math.random() < 0.40) askTruco = true; // Blefe
+                        if (prob <= 20 && Math.random() < 0.40) askTruco = true; 
                     }
                     else if (aiDifficulty === 4) { 
                         if (prob >= 40) askTruco = true; 
-                        if (prob <= 30 && Math.random() < 0.50) askTruco = true; // 50% de Blefe Absoluto
-                        if (Math.random() < 0.15) askTruco = true; // 15% Caótico incondicional
+                        if (prob <= 30 && Math.random() < 0.50) askTruco = true; 
+                        if (Math.random() < 0.15) askTruco = true; 
                     }
                 }
 
@@ -1396,7 +1412,10 @@
                 }
             }
 
-            var cards = st.hands[pid]; var playedIdx = 0;
+            var cards = st.hands[pid]; 
+            if (!cards || cards.length === 0) { animLock = false; return; }
+
+            var playedIdx = 0;
             var indexedCards = cards.map((c, i) => ({c: c, idx: i, p: getPower(c)})).sort((a,b) => a.p - b.p);
             
             var hideThisCard = false;
@@ -1556,11 +1575,9 @@
                     
                     renderMesa(st.lastTable);
                     
-                    // Reproduzir animação no guest
                     var bTb = getEl('box-table').children;
-                    var winPIDs = st.lastTable.filter(t => (t.hidden ? -1 : getPower(t.c)) === Math.max(...st.lastTable.map(x => x.hidden ? -1 : getPower(x.c)))).map(t => t.p);
                     for(var i=0; i<st.lastTable.length; i++) {
-                        if(winPIDs.includes(st.lastTable[i].p)) {
+                        if(st.trickWinners && st.trickWinners.includes(st.lastTable[i].p)) {
                             var innerCard = bTb[i].querySelector('.card');
                             if(innerCard) innerCard.classList.add('winner-anim');
                         }
