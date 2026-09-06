@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Truco - v0.10.2</title>
+    <title>Truco - v0.10.3</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♣</text></svg>">
     <style>
         /* THEME VARIABLES */
@@ -63,7 +63,7 @@
         body.theme-light .light-bg { opacity: 1; }
         body.theme-light .dark-bg { opacity: 0; }
 
-        .panel, .glass-panel, .btn-s, .btn-p, .action-btn, #ui-val, .stadium-display, .key-box, .card, .card-wrapper {
+        .panel, .glass-panel, .btn-s, .btn-p, .action-btn, .choice-card, #ui-val, .stadium-display, .key-box, .card, .card-wrapper {
             transition: background 0.6s ease, background-color 0.6s ease, border-color 0.6s ease, color 0.6s ease, box-shadow 0.6s ease, transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
         
@@ -669,6 +669,7 @@
                 body.classList.add('theme-dark');
                 btn.innerText = "☀️ MODO CLARO";
             }
+            try { localStorage.setItem('trucoTheme', currentTheme); } catch(e) {}
         };
 
         function updateBodyDiffClass() {
@@ -789,7 +790,7 @@
 
         function getPlayerName(pid) {
             if (window.wsPlayers && window.wsPlayers[pid]) return window.wsPlayers[pid];
-            if (st.nicks && st.nicks[pid]) return st.nicks[pid];
+            if (gameMode !== 'pc' && st.nicks && st.nicks[pid]) return st.nicks[pid];
             if (pid === myPID) return "Você";
             if (st.gameFormat === '1v1') return "O Rival";
             if (getTeam(pid) === getTeam(myPID)) return "Seu Parceiro";
@@ -1444,8 +1445,8 @@
                 });
 
                 setTimeout(() => { 
-                    updateUI(); 
                     animLock = false; 
+                    updateUI(); 
                     
                     if (st.trucoState === 'mao11') {
                         handleMao11();
@@ -1462,6 +1463,7 @@
             st.gameFormat = pendingFormat;
             st.rules = pendingRules;
             st.scores = {1:0, 2:0}; window.lastAdviceLevel = 0; st.humanAccepted = false;
+            if (modeStr === 'pc') { st.nicks = {1:'',2:'',3:'',4:''}; window.wsPlayers = {}; }
             
             if (myPID === 1) st.deckMode = pendingDeckMode;
             
@@ -1568,9 +1570,10 @@
                 var msgAcc = st.gameFormat === '1v1' ? "Você Aceitou a Mão de "+txt+"!" : "Vocês Aceitaram a Mão de "+txt+"!";
                 showMsg(msgAcc, 'pos'); 
                 st.trucoState = 'none'; 
+                animLock = false;
                 renderMesa(); 
                 updateUI(); autoSave();
-                animLock = false; checkAiTurn();
+                checkAiTurn();
             } else {
                 var msgRej = st.gameFormat === '1v1' ? "Você Correu da Mão de "+txt+"!" : "Vocês Correram da Mão de "+txt+"!";
                 showMsg(msgRej, 'neg'); 
@@ -1901,7 +1904,7 @@
                     var tMsg = (st.gameFormat === '2v2' && !isRival) ? "Parceiro pediu " : (getPlayerName(pid) + " pediu ");
                     showMsg(tMsg + getTrucoName(st.proposedVal) + "!", 'neu');
                     window.lastAdviceLevel = 0; animLock = false;
-                    updateUI(); updateTurnGlow(); checkAiTrucoDecision(); return;
+                    updateUI(); updateTurnGlow(); autoSave(); checkAiTrucoDecision(); return;
                 }
             }
 
@@ -1996,7 +1999,7 @@
             if(st.table.length === getNumPlayers()) {
                 updateUI(); animLock = true; autoSave(); setTimeout(resolveTrick, 1500);
             } else {
-                st.turn = getNextTurn(st.turn); updateUI(); animLock = false; autoSave(); checkAiTurn();
+                st.turn = getNextTurn(st.turn); animLock = false; updateUI(); autoSave(); checkAiTurn();
             }
         }
 
@@ -2419,7 +2422,7 @@
                     animLock = true;
 
                     setTimeout(function() {
-                        st.table = []; renderMesa(); updateUI(); animLock = false; checkAiTurn();
+                        st.table = []; animLock = false; renderMesa(); updateUI(); checkAiTurn();
                     }, 1300);
                 } 
                 else { 
@@ -2445,6 +2448,17 @@
                 if(syncCountdown <= 0) { syncCountdown = 3; uiText.innerText = "Sincronizando..."; autoLoad(); }
             }, 1000);
         }
+
+        try {
+            var savedTheme = localStorage.getItem('trucoTheme');
+            if (savedTheme === 'light' && currentTheme === 'dark') {
+                document.body.classList.remove('theme-dark');
+                document.body.classList.add('theme-light');
+                currentTheme = 'light';
+                var themeBtn = document.querySelector('.btn-theme');
+                if (themeBtn) themeBtn.innerText = "🌙 MODO ESCURO";
+            }
+        } catch(e) {}
 
         try {
             var savedNick = localStorage.getItem('trucoNick');
