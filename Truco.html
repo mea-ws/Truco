@@ -112,11 +112,11 @@
             box-shadow: 0 0 10px rgba(59, 130, 246, 0.5), inset 0 0 5px rgba(59, 130, 246, 0.2), 0 6px 15px rgba(0,0,0,0.5); 
         }
 
-        /* ANIMAÇÃO DA CARTA VENCEDORA - Rápida e elegante (1.3s) */
+        /* ANIMAÇÃO DA CARTA VENCEDORA - Ágil (1.3s) e Elegante */
         @keyframes winnerPulse {
-            0% { transform: scale(1) translateY(0); box-shadow: 0 6px 15px rgba(0,0,0,0.5); }
-            50% { transform: scale(1.1) translateY(-10px); box-shadow: 0 0 20px var(--warn); border: 2px solid var(--warn); }
-            100% { transform: scale(1.1) translateY(-10px); box-shadow: 0 0 20px var(--warn); border: 2px solid var(--warn); }
+            0% { transform: scale(1) translateY(0); box-shadow: 0 6px 15px rgba(0,0,0,0.5); border: 2px solid transparent; }
+            20% { transform: scale(1.05) translateY(-5px); box-shadow: 0 0 15px var(--warn); border: 2px solid var(--warn); }
+            100% { transform: scale(1.05) translateY(-5px); box-shadow: 0 0 15px var(--warn); border: 2px solid var(--warn); }
         }
         .card.winner-anim { animation: winnerPulse 1.3s forwards !important; z-index: 50 !important; }
 
@@ -494,7 +494,8 @@
         };
 
         function getActiveVals() { return st.deckMode === 'limpo' ? VALS_LIMPO : VALS_SUJO; }
-        function getTeam(pid) { return (pid === 1 || pid === 3) ? 1 : 2; }
+        // FIX GIGANTE DA IA: O getTeam falhava ao checar st.lastTruco == 0.
+        function getTeam(pid) { if(!pid || pid === 0) return 0; return (pid === 1 || pid === 3) ? 1 : 2; }
         function getOppTeam(team) { return team === 1 ? 2 : 1; }
         function getNextTurn(curr) { return st.gameFormat === '2v2' ? (curr % 4) + 1 : (curr === 1 ? 2 : 1); }
         function getNumPlayers() { return st.gameFormat === '2v2' ? 4 : 2; }
@@ -610,6 +611,7 @@
             }
         });
 
+        // NOVO PADRÃO: 1.3s para fluidez
         function showMsg(m, type, durOverride) {
             var hud = getEl('main-hud'); var display = getEl('stadium-text');
             clearTimeout(msgTimeout);
@@ -621,7 +623,7 @@
             else { hud.classList.add('notify-neu'); display.style.color = 'var(--warn)'; }
             hud.classList.add('show-msg');
             
-            var duration = durOverride || 2200;
+            var duration = durOverride || 1300;
             msgTimeout = setTimeout(function() { hud.classList.remove('show-msg', 'notify-pos', 'notify-neg', 'notify-neu'); }, duration); 
         }
 
@@ -681,24 +683,38 @@
             return w;
         }
 
-        // --- CÉREBRO DA IA: MOTOR AGRESSIVO v0.7.1 C/ MEMÓRIA ---
         function getHandWinProb(pid) {
             var myCards = st.hands[pid];
             var activeVals = getActiveVals();
             var prob = 0; var manilhas = 0; var fortes = 0;
-            
+            var playedPowers = st.playedCards ? st.playedCards.map(c => getPower(c)) : [];
+
             for(var i=0; i<myCards.length; i++) {
                 var p = getPower(myCards[i]);
                 if(p > 99) manilhas++;
-                else if(p >= activeVals.length - 3) fortes++; // Aumentei a range de cartas fortes
+                else if(p >= activeVals.length - 2) fortes++;
+
+                if (p > -1 && st.trickResults.length > 0) {
+                    var isNuts = true;
+                    for (var s=0; s<4; s++) {
+                        var mp = 100 + s;
+                        if (mp > p && !playedPowers.includes(mp)) isNuts = false;
+                    }
+                    if (isNuts && p < 100) {
+                        for (var v=0; v<activeVals.length; v++) {
+                            if (v > p && !playedPowers.includes(v)) isNuts = false;
+                        }
+                    }
+                    if (isNuts) prob += 40; 
+                }
             }
 
-            if(manilhas >= 2) prob = 95;
-            else if(manilhas == 1 && fortes >= 1) prob = 85;
-            else if(manilhas == 1) prob = 65;
-            else if(fortes >= 2) prob = 50;
-            else if(fortes == 1) prob = 30;
-            else prob = 10;
+            if(manilhas >= 2) prob += 95;
+            else if(manilhas == 1 && fortes >= 1) prob += 85;
+            else if(manilhas == 1) prob += 60;
+            else if(fortes >= 2) prob += 50;
+            else if(fortes == 1) prob += 30;
+            else prob += 10;
 
             var myTeam = getTeam(pid);
             var oppTeam = getOppTeam(myTeam);
@@ -710,7 +726,8 @@
 
             if(myTeamTrickWins == 1 && oppTeamTrickWins == 0) prob += 30;
             if(oppTeamTrickWins == 1 && myTeamTrickWins == 0) prob -= 30;
-            
+            if(st.deckMode === 'limpo' && prob > 40 && prob < 90) prob += 10;
+
             return Math.max(0, Math.min(100, prob));
         }
 
@@ -801,8 +818,8 @@
                         if(window.lastAdviceLevel !== st.handVal) {
                             window.lastAdviceLevel = st.handVal;
                             setTimeout(function() {
-                                if (st.trucoState === 'pending') { showMsg(advice, 'pos', 2300); }
-                            }, 1500);
+                                if (st.trucoState === 'pending') { showMsg(advice, 'pos', 1300); }
+                            }, 1000);
                         }
                     }
 
@@ -830,7 +847,7 @@
                 if(isMyTurn && !st.maoDeFerro) btnFold.classList.remove('hidden'); else btnFold.classList.add('hidden');
 
                 if (isMyTurn && !st.maoDeFerro && !st.isMaoDe11) {
-                    var canHide = (st.trickResults.length > 0); // Só pode esconder se vazas > 0
+                    var canHide = (st.trickResults.length > 0); 
                     if (canHide) {
                         btnHide.removeAttribute('disabled');
                         btnHide.classList.remove('disabled');
@@ -920,7 +937,6 @@
                 dom.style.transform = posOffset[tPos];
                 dom.style.zIndex = zIndexMap[tPos] + k;
                 
-                // Animação da carta vencedora sincronizada com o JSON MP (onde table.length == 0 e não é dealing)
                 if (st.trickWinners && st.trickWinners.includes(tblCard.p) && st.table.length === 0 && !isDealing) {
                     dom.firstChild.classList.add('winner-anim');
                 }
@@ -1092,11 +1108,12 @@
             if (st.maoDe11Team === 1) {
                 if (st.gameFormat === '2v2') {
                     renderMesa(null, null, false, true); 
-                    var probComb = getHandWinProb(3); // Somente a chance da própria mão parceira
+                    var probComb = getHandWinProb(3); 
                     var advice = "";
-                    if (probComb < 30) advice = "Parceiro: Sugiro correr";
-                    else if (probComb < 65) advice = "Parceiro: Sugiro aceitar";
-                    else advice = "Parceiro: Bora!";
+                    if (probComb < 40) advice = "Parceiro: Melhor correr";
+                    else if (probComb < 60) advice = "Parceiro: Não tô confiante...";
+                    else if (probComb < 80) advice = "Parceiro: Acho que dá pra ganhar";
+                    else advice = "Parceiro: Bora?";
                     
                     getEl('ui-deck-indicator').innerText = advice.toUpperCase();
                     showMsg("Mão de 11! Analise as cartas.", 'warn', 3000);
@@ -1132,6 +1149,8 @@
 
         function aiDecideMao11() {
             var prob = getHandWinProb(2);
+            if (st.gameFormat === '2v2') prob = Math.max(prob, getHandWinProb(4));
+            
             var accept = (prob >= 45); 
             
             if (accept) {
@@ -1200,7 +1219,7 @@
             for(var i=0; i<st.table.length; i++) {
                 if(winners.includes(st.table[i].p)) {
                     var innerCard = bTb[i].querySelector('.card');
-                    if(innerCard) innerCard.classList.add('winner-anim'); // Roda 1.3s
+                    if(innerCard) innerCard.classList.add('winner-anim'); 
                 }
             }
 
@@ -1213,7 +1232,7 @@
             var nextTurn = 1;
 
             if(trickWinnerTeam === 3) { 
-                showMsg("Canga (Empate)!", 'neu', 1300); // Exato tempo da animação
+                showMsg("Canga (Empate)!", 'neu', 1300); 
                 nextTurn = st.table[0].p; 
             } else { 
                 var myTeam = getTeam(myPID);
@@ -1224,9 +1243,8 @@
             }
 
             st.lastTable = JSON.parse(JSON.stringify(st.table)); 
-            autoSave(); // Manda pacote full pro Guest animar no mesmo timer
+            autoSave(); 
 
-            // Fecha a rodada logo após a animação de 1.3s acabar
             setTimeout(function() {
                 st.trickWinners = [];
                 st.table = []; renderMesa(); updateUI();
@@ -1254,7 +1272,7 @@
                         var iWon = st.scores[getTeam(myPID)] >= 12; autoSave(); triggerEndGame(iWon);
                     } else {
                         var nxtFirst = getNextTurn(st.firstPlayerOfRound); 
-                        if (myPID === 1 || gameMode !== 'json') { autoSave(); setTimeout(function(){ startRound(nxtFirst); }, 800); } // Fast start
+                        if (myPID === 1 || gameMode !== 'json') { autoSave(); setTimeout(function(){ startRound(nxtFirst); }, 800); } 
                         else { st.needsNewRound = true; st.nextFirstPlayer = nxtFirst; autoSave(); }
                     }
                 } else { 
@@ -1309,7 +1327,6 @@
             if (aiNeedsToAnswer) { animLock = true; setTimeout(() => aiDecideTruco(aiPid), 1800); }
         }
 
-        // --- SISTEMA DE DECISÃO PURA E AGRESSIVA (BASE V0.7.1) ---
         function aiDecideTruco(pid) {
             var prob = getHandWinProb(pid);
             var accept = false; var raise = false;
@@ -1323,17 +1340,17 @@
                 if(prob >= 45) accept = true; 
                 if(prob >= 85 && st.handVal < 12 && !my11 && Math.random() > 0.5) raise = true; 
             } 
-            else if (aiDifficulty === 3) { 
+            else if (aiDifficulty === 3) { // DIFÍCIL 
                 if(prob >= 30) accept = true; 
                 if(prob < 30 && Math.random() < 0.25) accept = true; 
                 if(accept && st.handVal < 12 && !my11) { 
-                    if(prob >= 70 || Math.random() < 0.20) raise = true;
+                    if(prob >= 70 || Math.random() < 0.3) raise = true;
                 }
             }
-            else if (aiDifficulty === 4) { // INSANO PURA PRESSÃO
-                if(prob >= 15 || Math.random() < 0.40) accept = true; // Quase nunca corre
+            else if (aiDifficulty === 4) { // INSANO - NUNCA CORRE FACIL, RETRUCA MTO
+                if(prob >= 20 || Math.random() < 0.35) accept = true; 
                 if(accept && st.handVal < 12 && !my11) { 
-                    if(prob >= 45 || Math.random() < 0.50) raise = true; // 50% de Retrucar na cara
+                    if(prob >= 50 || Math.random() < 0.50) raise = true; 
                 }
             }
 
@@ -1357,7 +1374,7 @@
 
         function aiPlay(pid) {
             if(st.turn !== pid || (st.trucoState !== 'none' && st.trucoState !== 'mao11')) { animLock = false; return; }
-            if(st.trucoState === 'mao11') { animLock = false; return; } // Segurança
+            if(st.trucoState === 'mao11') { animLock = false; return; } 
             
             var myTeam = getTeam(pid); var oppTeam = getOppTeam(myTeam);
             var my11 = (st.scores[myTeam] === 11); var opp11 = (st.scores[oppTeam] === 11); var maoDeFerro = (my11 && opp11);
@@ -1377,11 +1394,11 @@
                     }
                     else if (aiDifficulty === 3) { 
                         if (prob >= 50) askTruco = true; 
-                        if (prob <= 25 && Math.random() < 0.25) askTruco = true; // 25% blefe em qualquer momento
+                        if (prob <= 20 && Math.random() < 0.25) askTruco = true; // 25% blefe
                     }
-                    else if (aiDifficulty === 4) { 
-                        if (prob >= 35) askTruco = true; 
-                        if (Math.random() < 0.40) askTruco = true; // 40% de chance de TRUCAR DO NADA
+                    else if (aiDifficulty === 4) { // INSANO: Blefa a qualquer momento
+                        if (prob >= 40) askTruco = true; 
+                        if (Math.random() < 0.50) askTruco = true; // 50% Blefe Insano Absoluto
                     }
                 }
 
@@ -1401,38 +1418,20 @@
             
             var hideThisCard = false;
             var canHide = (st.trickResults.length > 0) && !st.isMaoDe11 && !maoDeFerro;
+            var isRival = (myTeam !== getTeam(myPID));
 
-            // Encontra a maior carta da mesa atual que não esteja escondida
-            var maxTablePower = -1;
-            for(var t=0; t<st.table.length; t++) {
-                if(!st.table[t].hidden) {
-                    var tp = getPower(st.table[t].c);
-                    if (tp > maxTablePower) maxTablePower = tp;
-                }
+            // IA Insano NUNCA esconde. IA Difícil pode esconder
+            if (canHide && isRival) {
+                if (aiDifficulty === 3 && Math.random() < 0.15) hideThisCard = true; 
+                else if (aiDifficulty === 4) hideThisCard = false; 
+            } else if (canHide && !isRival) {
+                if (Math.random() < 0.10) hideThisCard = true; 
             }
-            var winningCards = indexedCards.filter(x => x.p > maxTablePower);
 
-            if (st.table.length > 0) { 
-                if (aiDifficulty <= 2) {
-                    if (winningCards.length > 0) playedIdx = winningCards[0].idx; 
-                    else playedIdx = indexedCards[0].idx;
-                    
-                    if (aiDifficulty === 1 && Math.random() < 0.2) playedIdx = indexedCards[indexedCards.length - 1].idx; 
-                } else {
-                    if (winningCards.length > 0) playedIdx = winningCards[0].idx; 
-                    else {
-                        playedIdx = indexedCards[0].idx;
-                        // IA Dificil tenta esconder a carta fraca
-                        if (canHide && Math.random() < 0.25) hideThisCard = true;
-                    }
-                }
-            } else { 
-                // Primeiro a jogar na mesa
-                if (aiDifficulty === 1) playedIdx = indexedCards[0].idx;
-                else if (aiDifficulty === 2) playedIdx = (Math.random() > 0.5) ? indexedCards[0].idx : indexedCards[indexedCards.length - 1].idx;
-                else {
-                    playedIdx = indexedCards[indexedCards.length - 1].idx; // Hard/Insane larga a mais forte pra dominar
-                }
+            if (aiDifficulty <= 2) {
+                playedIdx = (Math.random() > 0.5) ? indexedCards[0].idx : indexedCards[indexedCards.length - 1].idx;
+            } else {
+                playedIdx = indexedCards[indexedCards.length - 1].idx; 
             }
 
             if(st.table.length === 0 && prob < 10 && aiDifficulty < 3 && !my11 && !st.isMaoDe11 && !maoDeFerro) {
