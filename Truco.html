@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Truco - v0.9.11</title>
+    <title>Truco - v0.9.12</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♣</text></svg>">
     <style>
         /* THEME VARIABLES */
@@ -946,7 +946,7 @@
             return { prob: base, manilhas: manilhas, fortes: fortes, isNuts: hasNuts };
         }
 
-        function aiContextProb(pid) {
+		function aiContextProb(pid) {
             var h = aiHandStrength(pid);
             var prob = h.prob;
             var myTeam = getTeam(pid);
@@ -958,6 +958,37 @@
             if(myW === 1 && opW === 0) prob += 30;
             if(opW === 1 && myW === 0) prob -= 30;
             if(st.deckMode === 'limpo' && prob > 40 && prob < 90) prob += 10;
+
+            // --- CORREÇÃO: Visão de Mesa Ativa (Impede Truco Suicida) ---
+            var highestEnemyPwr = -1;
+            var highestPartnerPwr = -1;
+            for(var t = 0; t < st.table.length; t++) {
+                var tp = st.table[t].hidden ? -1 : getPower(st.table[t].c);
+                if(getTeam(st.table[t].p) === oppTeam) {
+                    if(tp > highestEnemyPwr) highestEnemyPwr = tp;
+                } else {
+                    if(tp > highestPartnerPwr) highestPartnerPwr = tp;
+                }
+            }
+
+            var myBestCardPwr = -1;
+            if(st.hands[pid] && st.hands[pid].length > 0) {
+                myBestCardPwr = Math.max.apply(null, st.hands[pid].map(c => getPower(c)));
+            }
+
+            // Se o inimigo já jogou uma carta na mesa imbatível neste turno...
+            if(highestEnemyPwr > myBestCardPwr && highestEnemyPwr > highestPartnerPwr) {
+                prob -= 50; 
+                // Se a dupla inimiga já tem 1 vaza, ou é a última vaza, a rodada acabou.
+                if(opW === 1 || st.trickResults.length === 2) {
+                    prob = 0; 
+                }
+            }
+            
+            // Bônus: Se o meu parceiro já garantiu a mão com a carta suprema da mesa
+            if(highestPartnerPwr > highestEnemyPwr && highestPartnerPwr > myBestCardPwr) {
+                prob += 20;
+            }
 
             return Math.max(0, Math.min(100, prob));
         }
@@ -1409,8 +1440,9 @@
             st.firstPlayerOfRound = firstPlayer;
             st.turn = firstPlayer;
             
-            st.lastTruco = 0; st.needsNewRound = false;
+			st.lastTruco = 0; st.needsNewRound = false;
             st.isMaoDeX = false; st.maoDeXTeam = 0; st.maoDeFerro = false;
+            st.aiJustAccepted = false;
             
             var thres = st.rules === 'mineiro' ? 10 : 11;
 
@@ -1529,11 +1561,12 @@
             }
         };
 
-        window.playCard = function(idx) {
+		window.playCard = function(idx) {
             if(animLock || st.turn !== myPID || (st.trucoState !== 'none' && st.trucoState !== 'pending')) return;
             
             var isHid = window.isHiding;
             var c = st.hands[myPID].splice(idx, 1)[0];
+            st.aiJustAccepted = false; // Reset da trava de truco
             st.table.push({c: c, p: myPID, hidden: isHid});
             
             resetHideBtn();
@@ -1636,7 +1669,7 @@
             updateUI(); updateTurnGlow(); autoSave(); checkAiTrucoDecision();
         };
 
-        window.respondTruco = function(accept) {
+		window.respondTruco = function(accept) {
             if(animLock) return;
             if(accept) {
                 st.humanAccepted = true; 
@@ -1677,7 +1710,7 @@
             if (aiNeedsToAnswer) { animLock = true; setTimeout(() => aiDecideTruco(aiPid), 1800); }
         }
 
-        function aiDecideTruco(pid) {
+		function aiDecideTruco(pid) {
             var myTeam = getTeam(pid);
             var thres = st.rules === 'mineiro' ? 10 : 11;
             var myX   = (st.scores[myTeam] === thres);
@@ -1692,17 +1725,21 @@
                 if(accept && prob >= 82 && st.handVal < 12 && !myX) raise = true;
             }
             else if(aiDifficulty === 3) {
-                accept = (prob >= 32) || (Math.random() < 0.10);
+                accept = (prob >= 32);
+                if(!accept && prob >= 15 && Math.random() < 0.10) accept = true; 
                 if(accept && st.handVal < 12 && !myX) {
                     if(prob >= 60) raise = true;
-                    else if(Math.random() < 0.22) raise = true; 
+                    else if(prob >= 30 && Math.random() < 0.22) raise = true; 
                 }
             }
             else if(aiDifficulty === 4) {
-                accept = (prob >= 15) || (Math.random() < 0.40);
+                accept = (prob >= 15);
+                if(!accept && prob >= 10 && Math.random() < 0.40) accept = true; 
+                
                 if(accept && st.handVal < 12 && !myX) {
                     if(prob >= 45) raise = true;
-                    else if(prob >= 20 && Math.random() < 0.50) raise = true; 
+                    // IA Insana SÓ retruca com blefe se a mão tiver um pingo de chance (prob >= 25)
+                    else if(prob >= 25 && Math.random() < 0.50) raise = true; 
                 }
             }
 
@@ -1715,6 +1752,7 @@
             }
             if(accept) {
                 st.handVal = st.proposedVal; st.proposedVal = 0;
+                st.aiJustAccepted = true; 
                 showMsg(getPlayerName(pid) + " ACEITOU!", 'neg');
                 st.trucoState = 'none'; animLock = false; updateUI(); checkAiTurn();
             } else {
@@ -1746,30 +1784,36 @@
             var myW     = st.trickResults.filter(r => r === myTeam).length;
             var opW     = st.trickResults.filter(r => r === oppTeam).length;
 
-            if(!myX && !maoDeFerro && !st.isMaoDeX && st.handVal < 12 && (st.lastTruco === 0 || getTeam(st.lastTruco) !== myTeam)) {
+			if(!myX && !maoDeFerro && !st.isMaoDeX && st.handVal < 12 && (st.lastTruco === 0 || getTeam(st.lastTruco) !== myTeam)) {
 
                 var askTruco = false;
                 var canRaise = isRival ? true : !st.humanAccepted;
                 var isFirstPlay = (nTricks === 0 && st.table.length === 0);
 
-                if(canRaise) {
+                // Só permite pedir Truco se a IA não tiver acabado de aceitar um
+				if(canRaise && !st.aiJustAccepted) {
                     if(aiDifficulty === 1) { if(prob >= 85) askTruco = true; }
                     else if(aiDifficulty === 2) {
                         if(prob >= 70) askTruco = true;
-                        if(!askTruco && Math.random() < 0.10) askTruco = true; 
+                        if(!askTruco && prob >= 40 && Math.random() < 0.10) askTruco = true; 
                     }
                     else if(aiDifficulty === 3) {
                         if(prob >= 55) askTruco = true;
-                        if(isFirstPlay && prob >= 20 && Math.random() < 0.20) askTruco = true;      
-                        if(myW === 1 && opW === 0 && Math.random() < 0.40) askTruco = true; 
-                        if(nTricks > 0 && prob >= 40 && Math.random() < 0.20) askTruco = true;        
+                        if(prob >= 20) {
+                            if(isFirstPlay && Math.random() < 0.20) askTruco = true;      
+                            if(myW === 1 && opW === 0 && Math.random() < 0.40) askTruco = true; 
+                            if(!askTruco && Math.random() < 0.10) askTruco = true;        
+                        }
                     }
                     else if(aiDifficulty === 4) {
-                        if(prob >= 45) askTruco = true;
-                        if(isFirstPlay && prob >= 20 && Math.random() < 0.50) askTruco = true;       
-                        if(myW === 1 && Math.random() < 0.60) askTruco = true;         
-                        if(opW === 1 && myW === 0 && prob >= 30 && Math.random() < 0.40) askTruco = true; 
-                        if(nTricks > 0 && Math.random() < 0.25) askTruco = true;                      
+                        if(prob >= 40) askTruco = true;
+                        // A Trava do Insano: Ele NÃO PODE pedir Truco se a mão for um lixo (prob < 20)
+                        if(prob >= 20) {
+                            if(isFirstPlay && Math.random() < 0.65) askTruco = true;       
+                            if(myW === 1 && Math.random() < 0.72) askTruco = true;         
+                            if(opW === 1 && myW === 0 && prob >= 30 && Math.random() < 0.40) askTruco = true; 
+                            if(!askTruco && nTricks > 0 && Math.random() < 0.30) askTruco = true;                      
+                        }
                     }
                 }
 
@@ -1866,7 +1910,8 @@
                 }
             }
 
-            var c = st.hands[pid].splice(playedIdx, 1)[0];
+			var c = st.hands[pid].splice(playedIdx, 1)[0];
+            st.aiJustAccepted = false; // Limpa a trava pois ela finalmente jogou uma carta
             st.table.push({c: c, p: pid, hidden: hideThisCard});
             renderMesa(null, pid);
 
