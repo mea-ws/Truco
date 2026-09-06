@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Truco - v0.8.1</title>
+    <title>Truco - v0.8.3</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♣</text></svg>">
     <style>
         /* BASE & THEME */
@@ -49,8 +49,8 @@
         .glass-panel { background: rgba(15, 23, 42, 0.45); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-radius: 14px; border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); transition: var(--trans); }
 
         /* TOP HUD */
-        .hud-container { position: relative; overflow: hidden; margin-bottom: 10px; z-index: 30; flex-shrink: 0; }
-        .hud-content { display: flex; justify-content: space-between; align-items: center; padding: 8px 16px; transition: opacity 0.3s ease, transform 0.3s ease; }
+        .hud-container { position: relative; overflow: hidden; margin-bottom: 10px; z-index: 30; flex-shrink: 0; min-height: 66px; display: flex; align-items: center; justify-content: center; }
+        .hud-content { display: flex; justify-content: space-between; align-items: center; padding: 8px 16px; width: 100%; transition: opacity 0.3s ease, transform 0.3s ease; }
         
         .stadium-display { position: absolute; top: -100%; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 1.1rem; letter-spacing: 1px; text-transform: uppercase; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(8px); transition: top 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 21; pointer-events: none; }
         .hud-container.show-msg .stadium-display { top: 0; }
@@ -76,45 +76,54 @@
             width: 70px; height: 105px; background: var(--card-f); border-radius: 8px; box-shadow: 0 6px 15px rgba(0,0,0,0.5);
             display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 900; font-size: 1.4rem; color: #1e293b;
             position: relative; user-select: none; transform-style: preserve-3d;
-            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease; 
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-sizing: border-box;
         }
         .card.red { color: var(--dang); }
         .card.back { background: var(--card-b); border: 3px solid #475569; color: transparent !important; cursor: default; }
         .card.back::after { content: '♣'; color: rgba(255,255,255,0.05); font-size: 2.5rem; position: absolute; }
         
+        /* Brilho do Turno Ativo */
+        .card.active-turn { box-shadow: 0 0 18px 2px rgba(59, 130, 246, 0.85), inset 0 0 15px rgba(59, 130, 246, 0.3); }
+
         .card-wrapper { position: relative; cursor: pointer; transition: var(--trans); }
         .card-wrapper.interactive:hover { transform: translateY(-10px); z-index: 15; }
         .key-hint { position: absolute; bottom: -22px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.6); color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; border: 1px solid rgba(255,255,255,0.2); pointer-events: none; }
 
-        /* PLAYER POSITIONS */
-        .hand-my { display: flex; justify-content: center; gap: 15px; height: 105px; width: 100%; margin-bottom: 10px; z-index: 15; }
-        .hand-top { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); display: flex; justify-content: center; gap: 8px; z-index: 5; }
-        .hand-left { position: absolute; left: -25px; top: 50%; transform: translateY(-50%) rotate(90deg); display: flex; justify-content: center; gap: 8px; z-index: 5; }
-        .hand-right { position: absolute; right: -25px; top: 50%; transform: translateY(-50%) rotate(-90deg); display: flex; justify-content: center; gap: 8px; z-index: 5; }
+        /* PLAYER POSITIONS (Cortadas propositalmente) */
+        .hand-my { display: flex; justify-content: center; gap: 15px; height: 105px; width: 100%; margin-bottom: 5px; z-index: 15; }
+        .hand-top { position: absolute; top: -35px; left: 50%; transform: translateX(-50%); display: flex; justify-content: center; gap: 8px; z-index: 5; }
+        .hand-left { position: absolute; left: -40px; top: 50%; transform: translateY(-50%) rotate(90deg); display: flex; justify-content: center; gap: 8px; z-index: 5; }
+        .hand-right { position: absolute; right: -40px; top: 50%; transform: translateY(-50%) rotate(-90deg); display: flex; justify-content: center; gap: 8px; z-index: 5; }
         
         .hand-top .card, .hand-left .card, .hand-right .card { width: 50px; height: 75px; }
         .hand-top .card::after, .hand-left .card::after, .hand-right .card::after { font-size: 1.8rem; }
 
         .played-area { display: flex; justify-content: center; align-items: center; width: 100%; height: 100%; position: relative; }
-        #box-table { position: relative; width: 150px; height: 150px; display: flex; align-items: center; justify-content: center; }
+        #box-table { position: relative; width: 180px; height: 180px; display: flex; align-items: center; justify-content: center; }
 
         /* DECK PILE E VIRA */
-        #deck-area { position: absolute; top: 95px; right: 25px; z-index: 10; display: flex; flex-direction: column; align-items: center; }
+        #deck-area { position: absolute; top: 100px; right: 25px; z-index: 10; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+        #deck-area-label { order: 2; font-size: 0.75rem; color: var(--txt-d); font-weight: bold; letter-spacing: 2px; }
         .deck-stack-container { position: relative; width: 50px; height: 75px; }
-        #deck-pile { width: 50px; height: 75px; position: absolute; top: 0; left: 0; box-shadow: -2px 2px 10px rgba(0,0,0,0.5); z-index: 50; }
+        #deck-pile { width: 50px; height: 75px; position: absolute; top: 0; left: 0; box-shadow: -2px 2px 10px rgba(0,0,0,0.5); }
         #deck-pile::after { font-size: 1.8rem; }
         
-        #vira-2v2-container { position: absolute; top: 5px; left: -30px; transform: rotate(-15deg); z-index: 5; }
-        #vira-1v1-container { margin-right: 30px; z-index: 5; }
-        
+        #vira-container { position: absolute; top: 15px; left: -35px; transform: rotate(-15deg); z-index: 5; }
+
         /* GHOST MANILHA */
-        #ghost-manilha { position: absolute; top: 95px; left: 25px; z-index: 10; display: flex; flex-direction: column; align-items: center; transition: opacity 0.5s ease; }
+        #ghost-manilha { position: absolute; top: 100px; left: 25px; z-index: 10; display: flex; flex-direction: column; align-items: center; gap: 8px; transition: opacity 0.5s ease; }
         #ghost-manilha.hidden { opacity: 0; pointer-events: none; }
+        #ghost-m-label { order: 2; font-size: 0.75rem; color: var(--prim); font-weight: bold; letter-spacing: 2px; text-shadow: 0 0 8px rgba(16,185,129,0.4); }
         
-        /* Estilo Glassmorphism e Legendas Rotacionadas */
-        .card-label { position: absolute; bottom: -22px; left: 50%; transform: translateX(-50%) rotate(-4deg); font-size: 0.65rem; color: var(--txt); font-weight: bold; opacity: 0.7; letter-spacing: 1px; text-shadow: 0 2px 4px rgba(0,0,0,0.8); white-space: nowrap; }
-        .card.ghost-style { background: rgba(255,255,255,0.05) !important; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2) !important; color: var(--txt) !important; box-shadow: 0 4px 15px rgba(0,0,0,0.4) !important; width: 50px; height: 75px; }
-        .ghost-suits { font-size: 0.65rem; margin-top: 4px; opacity: 0.8; letter-spacing: 2px; }
+        #ghost-m-card { 
+            width: 50px; height: 75px; 
+            background: rgba(255, 255, 255, 0.05); 
+            backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); 
+            border: 1px solid rgba(255, 255, 255, 0.2); 
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3); 
+            color: white; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
 
         /* BOTTOM HUD ANIMADO */
         .legend-container { position: relative; margin-top: 10px; padding: 10px 16px; min-height: 48px; z-index: 20; overflow: hidden; flex-shrink: 0; display: flex; justify-content: center; align-items: center; }
@@ -168,10 +177,12 @@
             .legend-group { gap: 8px; }
             .play-text { display: none; }
             .btn-esc { right: 8px; opacity: 0.6; padding: 8px 12px; }
-            #ghost-manilha { top: 75px; left: 15px; }
-            #deck-area { top: 75px; right: 15px; }
-            .card.ghost-style, .deck-stack-container, #deck-pile { width: 40px; height: 60px; }
-            #vira-2v2-container { left: -20px; }
+            #ghost-manilha { top: 85px; left: 10px; }
+            #deck-area { top: 85px; right: 10px; }
+            #ghost-m-card, .deck-stack-container, #deck-pile { width: 40px; height: 60px; }
+            #vira-container { left: -25px; top: 10px; }
+            .hand-left { left: -35px; }
+            .hand-right { right: -35px; }
         }
     </style>
 </head>
@@ -255,17 +266,17 @@
             </div>
         </div>
 
-        <div id="ghost-manilha" class="hidden relative-container">
+        <div id="ghost-manilha" class="hidden">
+            <span id="ghost-m-label">MANILHA</span>
             <div id="ghost-m-card" class="card"></div>
-            <span class="card-label">MANILHA</span>
         </div>
 
-        <div id="deck-area" class="relative-container">
+        <div id="deck-area">
             <div class="deck-stack-container">
+                <div id="vira-container"></div>
                 <div id="deck-pile" class="card back"></div>
-                <div id="vira-2v2-container"></div>
             </div>
-            <span class="card-label">BARALHO</span>
+            <span id="deck-area-label">VIRA</span>
         </div>
 
         <div class="table">
@@ -274,7 +285,6 @@
             <div id="box-right" class="hand-right"></div>
             
             <div class="played-area">
-                <div id="vira-1v1-container"></div>
                 <div id="box-table"></div>
             </div>
             
@@ -336,7 +346,7 @@
             version: 0, roundId: 0, turn: 1, handVal: 1, 
             trucoBy: 0, trucoState: 'none', lastTruco: 0,
             needsNewRound: false, nextFirstPlayer: 1,
-            gameFormat: '1v1', adviceGiven: false,
+            gameFormat: '1v1',
             scores: { 1: 0, 2: 0 }, vazas: { 1: 0, 2: 0 },
             hands: { 1: [], 2: [], 3: [], 4: [] }, table: [], lastTable: [], trickResults: [],
             vira: null, manilha: '', deckMode: 'sujo', viraRevealed: false
@@ -345,39 +355,11 @@
         var myPID = 1; 
         var gameMode = 'pc'; var animLock = false;
         var fileHandle = null; var syncCountdown = 3; var syncInterval = null; var activeTurnCheckTimer = 5;
-        var isSaving = false;
+        var msgTimeout = null; var isSaving = false;
         
         var aiDifficulty = 2; 
         var pendingDeckMode = 'sujo';
         var pendingFormat = '1v1';
-
-        // --- SISTEMA DE FILA DE NOTIFICAÇÕES (Correção do Parceiro e Sobreposição) ---
-        var notifQueue = [];
-        var isNotifPlaying = false;
-        
-        function showMsg(m, type, extraTime = 0) {
-            notifQueue.push({m: m, type: type, extraTime: extraTime});
-            playNextNotif();
-        }
-
-        function playNextNotif() {
-            if(isNotifPlaying || notifQueue.length === 0) return;
-            isNotifPlaying = true;
-            var notif = notifQueue.shift();
-            var hud = getEl('main-hud'); var display = getEl('stadium-text');
-            hud.classList.remove('show-msg', 'notify-pos', 'notify-neg', 'notify-neu');
-            void hud.offsetWidth; 
-            display.innerText = notif.m;
-            if (notif.type === 'pos') { hud.classList.add('notify-pos'); display.style.color = 'var(--prim)'; } 
-            else if (notif.type === 'neg') { hud.classList.add('notify-neg'); display.style.color = 'var(--dang)'; } 
-            else { hud.classList.add('notify-neu'); display.style.color = 'var(--warn)'; }
-            hud.classList.add('show-msg');
-            
-            setTimeout(function() { 
-                hud.classList.remove('show-msg', 'notify-pos', 'notify-neg', 'notify-neu'); 
-                setTimeout(function() { isNotifPlaying = false; playNextNotif(); }, 300); // Pausa entre mensagens
-            }, 2200 + notif.extraTime); 
-        }
 
         window.nav = function(f, t) { document.getElementById(f).classList.add('hidden'); document.getElementById(t).classList.remove('hidden'); };
         function getEl(id) { return document.getElementById(id); }
@@ -420,8 +402,8 @@
         function getPlayerName(pid) {
             if (pid === myPID) return "Você";
             if (st.gameFormat === '1v1') return "O Rival";
-            if (getTeam(pid) === getTeam(myPID)) return "Parceiro";
-            return "O Rival";
+            if (getTeam(pid) === getTeam(myPID)) return "Seu Parceiro";
+            return "O Rival"; 
         }
 
         function setBottomGroup(id) {
@@ -458,6 +440,21 @@
                 else if (key === 'D' && !getEl('cmd-fold').classList.contains('hidden')) requestFold();
             }
         });
+
+        function showMsg(m, type, durOverride) {
+            var hud = getEl('main-hud'); var display = getEl('stadium-text');
+            clearTimeout(msgTimeout);
+            hud.classList.remove('show-msg', 'notify-pos', 'notify-neg', 'notify-neu');
+            void hud.offsetWidth; 
+            display.innerText = m;
+            if (type === 'pos') { hud.classList.add('notify-pos'); display.style.color = 'var(--prim)'; } 
+            else if (type === 'neg') { hud.classList.add('notify-neg'); display.style.color = 'var(--dang)'; } 
+            else { hud.classList.add('notify-neu'); display.style.color = 'var(--warn)'; }
+            hud.classList.add('show-msg');
+            
+            var duration = durOverride || 2200;
+            msgTimeout = setTimeout(function() { hud.classList.remove('show-msg', 'notify-pos', 'notify-neg', 'notify-neu'); }, duration); 
+        }
 
         function triggerEndGame(isWin) {
             setTimeout(function() {
@@ -520,7 +517,9 @@
             getEl('ui-s0').innerText = st.scores[getTeam(myPID)]; 
             getEl('ui-s1').innerText = st.scores[getOppTeam(getTeam(myPID))];
             getEl('ui-val').innerText = TRUCO_NAMES[st.handVal] + (st.handVal > 1 ? " ("+st.handVal+")" : "");
-            getEl('ui-deck-indicator').innerText = st.deckMode === 'limpo' ? "BARALHO LIMPO" : "BARALHO SUJO";
+            
+            var baseDeckText = st.deckMode === 'limpo' ? "BARALHO LIMPO" : "BARALHO SUJO";
+            getEl('ui-deck-indicator').innerText = baseDeckText;
 
             var myTeamScore = st.scores[getTeam(myPID)]; var oppTeamScore = st.scores[getOppTeam(getTeam(myPID))];
             var me11 = (myTeamScore === 11); var opp11 = (oppTeamScore === 11); var maoDeFerro = (me11 && opp11);
@@ -537,11 +536,12 @@
                     setBottomGroup('grp-respond'); actionBar.classList.add('danger-zone');
                     uiTurn.innerText = "⚠️ DECIDA! ⚠️"; uiTurn.style.color = "var(--warn)";
                     
-                    // Mostra o conselho do parceiro como Notificação com duração extra
                     var advice = getPartnerAdvice();
-                    if(advice && !st.adviceGiven) {
-                        showMsg(advice, 'pos', 100);
-                        st.adviceGiven = true;
+                    if(advice && window.lastAdviceLevel !== st.handVal) {
+                        window.lastAdviceLevel = st.handVal;
+                        setTimeout(function() {
+                            if (st.trucoState === 'pending') { showMsg(advice, 'pos', 2300); }
+                        }, 1500);
                     }
 
                     if(st.handVal < 12 && !me11 && getTeam(st.lastTruco) !== getTeam(myPID)) { 
@@ -553,7 +553,6 @@
                     uiTurn.innerText = "AGUARDANDO RIVAL..."; uiTurn.style.color = "var(--warn)";
                 }
             } else {
-                st.adviceGiven = false; // Reseta a notificação de conselho para o próximo pedido
                 if (!grpConfirm.classList.contains('active')) { setBottomGroup('grp-normal'); actionBar.classList.remove('danger-zone'); }
                 uiTurn.innerText = isMyTurn ? "SUA VEZ JOGAR" : ("VEZ DE: " + getPlayerName(st.turn).toUpperCase()); 
                 uiTurn.style.color = isMyTurn ? "var(--prim)" : "var(--txt-d)";
@@ -577,15 +576,30 @@
                 oppVazas.appendChild(pipOpp);
             }
 
-            // Update Ghost Manilha (Glassmorphism e Naipes Fixos)
+            // Update Ghost Manilha Glassmorphism
             var gmContainer = getEl('ghost-manilha');
             if (st.viraRevealed && st.manilha) {
                 gmContainer.classList.remove('hidden');
                 var mCard = getEl('ghost-m-card');
-                mCard.className = 'card ghost-style'; // Aplica o estilo fantasma
-                mCard.innerHTML = '<span style="font-size: 1.4rem;">'+st.manilha+'</span><div class="ghost-suits">♣ ♥ ♠ ♦</div>';
+                mCard.innerHTML = '<span style="font-size: 1.3rem; font-weight: 900; line-height: 1;">'+st.manilha+'</span>' +
+                                  '<div style="display:flex; gap:3px; font-size:0.6rem; margin-top:4px; white-space:nowrap;">' +
+                                  '<span style="color:#f8fafc">♣</span>' +
+                                  '<span style="color:#ef4444">♥</span>' +
+                                  '<span style="color:#f8fafc">♠</span>' +
+                                  '<span style="color:#ef4444">♦</span>' +
+                                  '</div>';
             } else {
                 gmContainer.classList.add('hidden');
+            }
+
+            // Indicador dinâmico de Turno Ativo (Neon Glow)
+            document.querySelectorAll('.card').forEach(c => c.classList.remove('active-turn'));
+            if (st.trucoState === 'none' && !animLock) {
+                var turnPos = getUIPos(st.turn);
+                var turnHand = getEl('box-' + turnPos);
+                if(turnHand) {
+                    turnHand.querySelectorAll('.card').forEach(c => c.classList.add('active-turn'));
+                }
             }
         }
 
@@ -612,21 +626,19 @@
                 var tPos = getUIPos(tblCard.p);
                 var dom = createCardDOM(tblCard.c, false, false, 0, false, 'table');
                 dom.style.position = 'absolute';
-                if(tPos === 'left') { dom.style.transform = 'translate(-30px, 0) rotate(15deg)'; }
-                else if(tPos === 'right') { dom.style.transform = 'translate(30px, 0) rotate(-15deg)'; }
-                else if(tPos === 'top') { dom.style.transform = 'translate(0, -20px)'; }
-                else { dom.style.transform = 'translate(0, 20px)'; }
+                if(tPos === 'left') { dom.style.transform = 'translate(-45px, 0) rotate(15deg)'; }
+                else if(tPos === 'right') { dom.style.transform = 'translate(45px, 0) rotate(-15deg)'; }
+                else if(tPos === 'top') { dom.style.transform = 'translate(0, -35px)'; }
+                else { dom.style.transform = 'translate(0, 35px)'; }
                 bTb.appendChild(dom);
             }
 
-            var viraDest = st.gameFormat === '2v2' ? getEl('vira-2v2-container') : getEl('vira-1v1-container');
+            var viraDest = getEl('vira-container');
             viraDest.innerHTML = '';
             if(st.vira) {
                 var viraDOM = createCardDOM(st.vira, false, false, 0, true, 'vira');
-                if(st.gameFormat === '2v2') {
-                    viraDOM.firstChild.style.width = '50px'; viraDOM.firstChild.style.height = '75px'; viraDOM.firstChild.style.fontSize = '1.1rem';
-                    if(window.innerWidth <= 768) { viraDOM.firstChild.style.width = '40px'; viraDOM.firstChild.style.height = '60px'; }
-                }
+                viraDOM.firstChild.style.width = '50px'; viraDOM.firstChild.style.height = '75px'; viraDOM.firstChild.style.fontSize = '1.1rem';
+                if(window.innerWidth <= 768) { viraDOM.firstChild.style.width = '40px'; viraDOM.firstChild.style.height = '60px'; }
                 viraDOM.firstChild.id = 'vira-anim-target';
                 viraDest.appendChild(viraDOM);
             }
@@ -649,60 +661,70 @@
             }
         }
 
-        // --- CORREÇÃO DA ANIMAÇÃO DE DISTRIBUIÇÃO ---
         function animDeal() {
             animLock = true; renderMesa(); 
-            var allCards = document.querySelectorAll('.table .card:not(#deck-pile):not(.back.hidden)');
+            var allWrappers = document.querySelectorAll('.table .card-wrapper, #vira-container .card-wrapper');
             var deckRect = getEl('deck-pile').getBoundingClientRect();
 
-            // Eleva o z-index da área do deck para esconder a saída das cartas
-            getEl('deck-area').style.zIndex = '50';
-
-            for(var i=0; i<allCards.length; i++) {
-                var card = allCards[i]; 
-                if(card.id === 'vira-anim-target') continue;
-                var cardRect = card.getBoundingClientRect();
-                if(cardRect.top === 0) continue; 
-                
-                card.style.transition = 'none';
-                card.style.zIndex = '5'; // Fica abaixo do #deck-pile (z-index 50)
-                card.style.transform = 'translate(' + (deckRect.left - cardRect.left) + 'px, ' + (deckRect.top - cardRect.top) + 'px)';
-            }
-            void getEl('deck-pile').offsetWidth;
+            allWrappers.forEach(w => {
+                w.style.transition = 'none';
+                w.style.opacity = '0';
+            });
 
             var delay = 0;
-            for(var j=0; j<allCards.length; j++) {
-                if(allCards[j].id === 'vira-anim-target') continue;
-                (function(c, d) { 
-                    setTimeout(function() { 
-                        c.style.transition = 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)'; 
-                        c.style.transform = 'translate(0px, 0px)'; 
-                        setTimeout(function(){ c.style.zIndex = ''; }, 400); // Restaura após mover
-                    }, d); 
-                })(allCards[j], delay);
+            allWrappers.forEach(w => {
+                var c = w.querySelector('.card');
+                var isVira = c && c.id === 'vira-anim-target';
+
+                var flyCard = document.createElement('div');
+                flyCard.className = 'card back';
+                flyCard.style.position = 'fixed';
+                flyCard.style.left = deckRect.left + 'px';
+                flyCard.style.top = deckRect.top + 'px';
+                flyCard.style.zIndex = '999'; 
+                flyCard.style.margin = '0';
+                flyCard.style.transition = 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+                document.body.appendChild(flyCard);
+
+                var targetRect = w.getBoundingClientRect();
+                flyCard.style.width = targetRect.width + 'px';
+                flyCard.style.height = targetRect.height + 'px';
+
+                void flyCard.offsetWidth;
+
+                setTimeout(() => {
+                    flyCard.style.left = targetRect.left + 'px';
+                    flyCard.style.top = targetRect.top + 'px';
+                    
+                    setTimeout(() => {
+                        flyCard.remove();
+                        w.style.transition = 'none';
+                        w.style.opacity = '1';
+                        
+                        if(isVira) {
+                            st.viraRevealed = true;
+                            renderMesa();
+                            var vCard = document.getElementById('vira-anim-target');
+                            if(vCard) {
+                                vCard.style.transition = 'none';
+                                vCard.style.transform = 'rotateY(180deg)';
+                                void vCard.offsetWidth;
+                                vCard.style.transition = 'transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+                                vCard.style.transform = 'rotateY(0deg)';
+                            }
+                        }
+                    }, 400); // Exato tempo de transição da viagem
+                }, delay);
                 delay += 60;
-            }
-            
-            setTimeout(function() { 
-                st.viraRevealed = true;
-                renderMesa(); // Aplica card aberto
-                getEl('deck-area').style.zIndex = '10'; // Restaura z-index normal
-                var vCardTarget = document.getElementById('vira-anim-target');
-                if(vCardTarget) {
-                    vCardTarget.style.transition = 'none';
-                    vCardTarget.style.transform = 'rotateY(180deg)';
-                    void vCardTarget.offsetWidth;
-                    vCardTarget.style.transition = 'transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
-                    vCardTarget.style.transform = 'rotateY(0deg)';
-                }
-                setTimeout(function(){ animLock = false; updateUI(); checkAiTurn(); }, 600);
-            }, delay + 150);
+            });
+
+            setTimeout(() => { animLock = false; updateUI(); checkAiTurn(); }, delay + 500);
         }
 
         window.startGame = function(modeStr, playerID) {
             gameMode = modeStr; myPID = playerID; 
             st.gameFormat = pendingFormat;
-            st.scores = {1:0, 2:0}; 
+            st.scores = {1:0, 2:0}; window.lastAdviceLevel = 0;
             
             if (myPID === 1) st.deckMode = pendingDeckMode;
             
@@ -711,7 +733,7 @@
         };
 
         function startRound(firstPlayer) {
-            var deck = []; 
+            var deck = []; window.lastAdviceLevel = 0;
             var activeVals = getActiveVals();
             for(var s=0; s<4; s++) { for(var v=0; v<activeVals.length; v++) { deck.push({s: SUITS[s], v: activeVals[v]}); } }
             deck.sort(function() { return 0.5 - Math.random(); });
@@ -728,7 +750,7 @@
             
             st.table = []; st.lastTable = []; st.vazas = {1:0, 2:0}; st.trickResults = []; 
             st.handVal = 1; st.trucoBy = 0; st.trucoState = 'none'; st.turn = firstPlayer;
-            st.lastTruco = 0; st.needsNewRound = false; st.adviceGiven = false;
+            st.lastTruco = 0; st.needsNewRound = false;
             
             getEl('box-table').innerHTML = '';
             updateUI(); animDeal(); autoSave(); 
@@ -783,7 +805,7 @@
 
             if(trickWinnerTeam === 3) { 
                 showMsg("Canga (Empate)!", 'neu'); st.vazas[1]++; st.vazas[2]++; 
-                nextTurn = st.trickResults.length === 1 ? st.turn : st.turn;
+                nextTurn = st.table[0].p; // O jogador que jogou a primeira carta nesta vaza volta a jogar
             } else { 
                 var myTeam = getTeam(myPID);
                 showMsg((myTeam === trickWinnerTeam) ? "A mão é de vocês!" : "Os rivais fizeram a mão!", (myTeam === trickWinnerTeam) ? 'pos' : 'neg'); 
@@ -816,7 +838,7 @@
         window.requestTruco = function() {
             if(animLock) return;
             st.handVal = (st.handVal === 1) ? 3 : st.handVal + 3; st.trucoBy = myPID; st.lastTruco = myPID; st.trucoState = 'pending';
-            showMsg("Você pediu " + TRUCO_NAMES[st.handVal] + "!", 'neu'); updateUI(); autoSave(); checkAiTrucoDecision();
+            showMsg("Você pediu " + TRUCO_NAMES[st.handVal] + "!", 'neu'); window.lastAdviceLevel = 0; updateUI(); autoSave(); checkAiTrucoDecision();
         };
 
         window.respondTruco = function(accept) {
@@ -836,7 +858,6 @@
 
         function getHandWinProb(pid) {
             var myCards = st.hands[pid]; var prob = 0; var manilhas = 0; var fortes = 0;
-            if(!myCards || myCards.length === 0) return 0;
             var activeVals = getActiveVals();
             for(var i=0; i<myCards.length; i++) {
                 var p = getPower(myCards[i]);
@@ -851,7 +872,6 @@
             return Math.max(0, Math.min(100, prob));
         }
 
-        // --- CORREÇÃO DO BLOQUEIO DA IA ---
         function checkAiTurn() {
             if(animLock || st.trucoState !== 'none') return;
             var t = st.turn; var isAi = false;
@@ -899,6 +919,7 @@
 
         function aiPlay(pid) {
             if(st.turn !== pid || st.trucoState !== 'none') { animLock = false; return; }
+            
             var myTeam = getTeam(pid); var oppTeam = getOppTeam(myTeam);
             var my11 = (st.scores[myTeam] === 11); var opp11 = (st.scores[oppTeam] === 11); var maoDeFerro = (my11 && opp11);
             var prob = getHandWinProb(pid);
@@ -912,13 +933,11 @@
                 if (askTruco) {
                     st.handVal = (st.handVal === 1) ? 3 : st.handVal + 3; st.trucoBy = pid; st.lastTruco = pid; st.trucoState = 'pending'; 
                     var tMsg = (st.gameFormat === '2v2' && myTeam === getTeam(myPID)) ? "Parceiro pediu " : (getPlayerName(pid) + " pediu ");
-                    showMsg(tMsg + TRUCO_NAMES[st.handVal] + "!", 'neu'); updateUI(); checkAiTrucoDecision(); return; 
+                    showMsg(tMsg + TRUCO_NAMES[st.handVal] + "!", 'neu'); window.lastAdviceLevel = 0; animLock = false; updateUI(); checkAiTrucoDecision(); return; 
                 }
             }
 
             var cards = st.hands[pid]; var playedIdx = 0;
-            if (!cards || cards.length === 0) { st.turn = getNextTurn(st.turn); animLock = false; updateUI(); checkAiTurn(); return; }
-
             var indexedCards = cards.map((c, i) => ({c: c, idx: i, p: getPower(c)})).sort((a,b) => a.p - b.p);
 
             if (st.table.length > 0) { 
@@ -936,7 +955,7 @@
                 var shouldFold = (aiDifficulty === 1) ? true : (Math.random() < 0.4);
                 if(shouldFold) {
                     showMsg(getPlayerName(pid) + " foi ao baralho!", 'pos'); st.scores[oppTeam] += st.handVal;
-                    if(st.scores[oppTeam] >= 12) { triggerEndGame(getTeam(myPID) === oppTeam); return; }
+                    if(st.scores[oppTeam] >= 12) { animLock = false; triggerEndGame(getTeam(myPID) === oppTeam); return; }
                     animLock = false; setTimeout(function(){ startRound(getNextTurn(st.nextFirstPlayer || 1)); }, 2000); return;
                 }
             }
@@ -946,7 +965,7 @@
             renderMesa(null, pid); 
             
             if(st.table.length === getNumPlayers()) { updateUI(); animLock = true; setTimeout(resolveTrick, 1500); } 
-            else { st.turn = getNextTurn(st.turn); updateUI(); checkAiTurn(); }
+            else { st.turn = getNextTurn(st.turn); updateUI(); animLock = false; checkAiTurn(); }
         }
 
         // --- MULTIPLAYER SYNC ---
