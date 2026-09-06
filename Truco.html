@@ -268,6 +268,27 @@
         .mp-tab.active { background: rgba(59, 130, 246, 0.2); border-color: rgba(59, 130, 246, 0.5); color: var(--txt); }
         #webrtc-data { width: 100%; height: 50px; font-size: 0.7rem; background: var(--btn-s-bg); color: var(--prim); border: 1px solid var(--glass-border); border-radius: 8px; padding: 8px; margin-bottom: 10px; box-sizing: border-box; resize: none; outline: none; }
 
+        /* NICK TOOLTIPS */
+        .nick-tooltip {
+            position: absolute;
+            background: rgba(0,0,0,0.75);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            pointer-events: none;
+            white-space: nowrap;
+            border: 1px solid var(--glass-border);
+            z-index: 20;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            text-transform: uppercase;
+        }
+        .hand-my .nick-tooltip { top: -25px; left: 50%; transform: translateX(-50%); }
+        .hand-top .nick-tooltip { bottom: -25px; left: 50%; transform: translateX(-50%); }
+        .hand-left .nick-tooltip { left: 40px; top: 50%; transform: translateY(-50%); }
+        .hand-right .nick-tooltip { right: 40px; top: 50%; transform: translateY(-50%); }
+
         /* MOBILE ADJUSTMENTS */
         @media (max-width: 768px), (pointer: coarse) {
             .key-box, .key-hint { display: none !important; }
@@ -303,6 +324,7 @@
         <h1>TRUCO<span style="color:var(--prim)">.</span></h1>
         <div class="btn-stack">
             <button class="btn-p" onclick="nav('scr-start', 'scr-mode')">SINGLE PLAYER</button>
+            <button class="btn-p" style="background: rgba(147, 51, 234, 0.6);" onclick="nav('scr-start', 'scr-online')">MULTIPLAYER ONLINE</button>
             <button class="btn-p" style="background: rgba(59, 130, 246, 0.6);" onclick="nav('scr-start', 'scr-multi')">MULTIPLAYER LOCAL</button>
         </div>
         <div class="theme-toggle-container">
@@ -317,6 +339,7 @@
         <div class="diff-selector">
             <button class="diff-btn active" id="btn-rules-paulista-sp" onclick="setRules('paulista', 'sp')">PAULISTA</button>
             <button class="diff-btn" id="btn-rules-mineiro-sp" onclick="setRules('mineiro', 'sp')">MINEIRO</button>
+            <button class="diff-btn" id="btn-rules-goiano-sp" onclick="setRules('goiano', 'sp')">GOIANO</button>
         </div>
 
         <div class="section-label">Formato de Mesa:</div>
@@ -357,6 +380,7 @@
             <div class="diff-selector">
                 <button class="diff-btn active" id="btn-rules-paulista-mp" onclick="setRules('paulista', 'mp')">PAULISTA</button>
                 <button class="diff-btn" id="btn-rules-mineiro-mp" onclick="setRules('mineiro', 'mp')">MINEIRO</button>
+                <button class="diff-btn" id="btn-rules-goiano-mp" onclick="setRules('goiano', 'mp')">GOIANO</button>
             </div>
 
             <div class="section-label">Formato de Mesa:</div>
@@ -386,6 +410,51 @@
         </div>
 
         <button class="btn-s" style="width: 100%; margin-top: 15px;" onclick="nav('scr-multi', 'scr-start')">VOLTAR</button>
+    </div>
+
+    <div id="scr-online" class="panel hidden">
+        <h2>MULTIPLAYER ONLINE</h2>
+        
+        <div class="section-label">Regras do Jogo:</div>
+        <div class="diff-selector">
+            <button class="diff-btn active" id="btn-rules-paulista-on" onclick="setRules('paulista', 'on')">PAULISTA</button>
+            <button class="diff-btn" id="btn-rules-mineiro-on" onclick="setRules('mineiro', 'on')">MINEIRO</button>
+            <button class="diff-btn" id="btn-rules-goiano-on" onclick="setRules('goiano', 'on')">GOIANO</button>
+        </div>
+
+        <div class="section-label">Formato de Mesa:</div>
+        <div class="diff-selector">
+            <button class="diff-btn active" id="btn-fmt-1v1-on" onclick="setPendingFormat('1v1', 'on')">1 X 1</button>
+            <button class="diff-btn" id="btn-fmt-2v2-on" onclick="setPendingFormat('2v2', 'on')">DUPLAS (2 X 2)</button>
+        </div>
+
+        <div class="section-label">Selecione o Baralho:</div>
+        <div class="diff-selector">
+            <button class="diff-btn active" id="btn-deck-sujo-on" onclick="setPendingDeck('sujo', 'on')">BARALHO SUJO</button>
+            <button class="diff-btn" id="btn-deck-limpo-on" onclick="setPendingDeck('limpo', 'on')">BARALHO LIMPO</button>
+        </div>
+
+        <div class="btn-stack" style="margin-top:15px;">
+            <input type="text" id="ws-nick" placeholder="Seu Nickname" style="padding: 8px; border-radius: 8px; border: 1px solid var(--glass-border); background: var(--btn-s-bg); color: var(--txt); width: 100%; box-sizing: border-box; text-align: center; font-weight: bold;">
+            <input type="text" id="ws-room" placeholder="ID da Sala (Opcional p/ Criar)" style="padding: 8px; border-radius: 8px; border: 1px solid var(--glass-border); background: var(--btn-s-bg); color: var(--txt); width: 100%; box-sizing: border-box; text-align: center; font-size: 0.9rem;">
+            
+            <div style="display: flex; gap: 8px;">
+                <button class="btn-p" style="flex:1;" onclick="startMultiplayer('host', 'ws')">CRIAR SALA</button>
+                <button class="btn-s" style="flex:1;" onclick="startMultiplayer('guest', 'ws')">ENTRAR</button>
+            </div>
+            <button class="btn-s" style="width: 100%;" onclick="startMultiplayer('spectator', 'ws')">ENTRAR COMO ESPECTADOR</button>
+        </div>
+
+        <button class="btn-s" style="width: 100%; margin-top: 15px;" onclick="nav('scr-online', 'scr-start')">VOLTAR</button>
+    </div>
+
+    <div id="scr-lobby" class="panel hidden">
+        <h2>LOBBY DA SALA</h2>
+        <div class="section-label">Sala: <span id="lobby-room-id" style="color:var(--prim)">-</span></div>
+        <div id="lobby-logs" style="height: 150px; overflow-y: auto; background: var(--btn-s-bg); border-radius: 8px; border: 1px solid var(--glass-border); padding: 10px; font-size: 0.8rem; text-align: left; margin-bottom: 15px; color: var(--txt-d); display: flex; flex-direction: column; gap: 4px;">
+            <!-- Logs appear here -->
+        </div>
+        <button class="btn-s" style="width: 100%;" onclick="nav('scr-lobby', 'scr-start'); if(window.wsConn) window.wsConn.close();">SAIR DA SALA</button>
     </div>
 
     <div id="scr-game" class="game-area hidden">
@@ -554,10 +623,12 @@
 
         window.switchMpTab = function(method) {
             mpMethod = method;
+            if(getEl('tab-ws')) getEl('tab-ws').classList.remove('active');
             getEl('tab-json').classList.remove('active');
             getEl('tab-webrtc').classList.remove('active');
             getEl('tab-' + method).classList.add('active');
             
+            if(getEl('mp-ws-area')) getEl('mp-ws-area').classList.add('hidden');
             getEl('mp-json-area').classList.add('hidden');
             getEl('mp-webrtc-area').classList.add('hidden');
             getEl('mp-' + method + '-area').classList.remove('hidden');
@@ -572,23 +643,31 @@
 
         window.setRules = function(rules, screen) {
             pendingRules = rules;
-            var prefix = screen === 'sp' ? 'sp' : 'mp';
+            var prefix = screen;
             getEl('btn-rules-paulista-' + prefix).classList.remove('active');
             getEl('btn-rules-mineiro-' + prefix).classList.remove('active');
+            if(getEl('btn-rules-goiano-' + prefix)) getEl('btn-rules-goiano-' + prefix).classList.remove('active');
             getEl('btn-rules-' + rules + '-' + prefix).classList.add('active');
 
             if (rules === 'mineiro') {
                 setPendingDeck('sujo', screen);
                 getEl('btn-deck-limpo-' + prefix).setAttribute('disabled', 'true');
+                getEl('btn-deck-sujo-' + prefix).removeAttribute('disabled');
+            } else if (rules === 'goiano') {
+                setPendingDeck('limpo', screen);
+                getEl('btn-deck-sujo-' + prefix).setAttribute('disabled', 'true');
+                getEl('btn-deck-limpo-' + prefix).removeAttribute('disabled');
             } else {
                 getEl('btn-deck-limpo-' + prefix).removeAttribute('disabled');
+                getEl('btn-deck-sujo-' + prefix).removeAttribute('disabled');
             }
         };
 
         window.setPendingDeck = function(mode, screen) {
             if (pendingRules === 'mineiro' && mode === 'limpo') return; 
+            if (pendingRules === 'goiano' && mode === 'sujo') return;
             pendingDeckMode = mode;
-            var prefix = screen === 'sp' ? 'sp' : 'mp';
+            var prefix = screen;
             getEl('btn-deck-sujo-' + prefix).classList.remove('active');
             getEl('btn-deck-limpo-' + prefix).classList.remove('active');
             getEl('btn-deck-' + mode + '-' + prefix).classList.add('active');
@@ -596,7 +675,7 @@
 
         window.setPendingFormat = function(fmt, screen) {
             pendingFormat = fmt;
-            var prefix = screen === 'sp' ? 'sp' : 'mp';
+            var prefix = screen;
             getEl('btn-fmt-1v1-' + prefix).classList.remove('active');
             getEl('btn-fmt-2v2-' + prefix).classList.remove('active');
             getEl('btn-fmt-' + fmt + '-' + prefix).classList.add('active');
@@ -607,11 +686,17 @@
         // --- NUCLEO DE REGRAS E FORÇAS ---
         function getPower(c) {
             if(!c) return -1;
-            if (st.rules === 'mineiro') {
+            if (st.rules === 'mineiro' || st.rules === 'goiano') {
                 if (c.v === '4' && c.s === '♣') return 200;
                 if (c.v === '7' && c.s === '♥') return 199;
-                if (c.v === 'A' && c.s === '♠') return 198;
-                if (c.v === '7' && c.s === '♦') return 197;
+                
+                if (st.rules === 'mineiro') {
+                    if (c.v === 'A' && c.s === '♠') return 198;
+                    if (c.v === '7' && c.s === '♦') return 197;
+                } else {
+                    if (c.v === '7' && c.s === '♦') return 198;
+                    if (c.v === 'A' && c.s === '♠') return 197;
+                }
             } else {
                 if (c.v === st.manilha) return 100 + SUITS.indexOf(c.s);
             }
@@ -619,7 +704,7 @@
         }
 
         function getNextTrucoVal(current) {
-            if (st.rules === 'paulista') {
+            if (st.rules === 'paulista' || st.rules === 'goiano') {
                 if (current === 1) return 3;
                 if (current === 3) return 6;
                 if (current === 6) return 9;
@@ -649,8 +734,12 @@
         function getNumPlayers() { return st.gameFormat === '2v2' ? 4 : 2; }
 
         function getUIPos(pid) {
-            if (st.gameFormat === '1v1') return pid === myPID ? 'my' : 'top';
-            var offset = (pid - myPID + 4) % 4;
+            if (st.gameFormat === '1v1') {
+                if (myPID === 0) return pid === 1 ? 'my' : 'top';
+                return pid === myPID ? 'my' : 'top';
+            }
+            var refPID = myPID === 0 ? 1 : myPID;
+            var offset = (pid - refPID + 4) % 4;
             if (offset === 0) return 'my';
             if (offset === 1) return 'left';
             if (offset === 2) return 'top';
@@ -658,6 +747,7 @@
         }
 
         function getPlayerName(pid) {
+            if (window.wsPlayers && window.wsPlayers[pid]) return window.wsPlayers[pid];
             if (pid === myPID) return "Você";
             if (st.gameFormat === '1v1') return "O Rival";
             if (getTeam(pid) === getTeam(myPID)) return "Seu Parceiro";
@@ -790,6 +880,16 @@
         }
 
         window.playAgain = function() {
+            if (gameMode === 'ws') {
+                var btn = document.querySelector('#scr-end .btn-p');
+                btn.innerText = "AGUARDANDO...";
+                btn.style.opacity = '0.5';
+                btn.style.pointerEvents = 'none';
+                if(window.wsConn && window.wsConn.readyState === WebSocket.OPEN) {
+                    window.wsConn.send(JSON.stringify({ type: 'play_again' }));
+                }
+                return;
+            }
             getEl('scr-end').className = ''; 
             st.scores = { 1: 0, 2: 0 };
             st.vazas = { 1: 0, 2: 0 };
@@ -920,14 +1020,20 @@
             var gmContainer = getEl('ghost-manilha');
             var mCard = getEl('ghost-m-card');
 
-            if (st.rules === 'mineiro') {
+            if (st.rules === 'mineiro' || st.rules === 'goiano') {
                 gmContainer.classList.remove('hidden');
-                mCard.innerHTML = '<div style="display:flex; flex-direction:column; gap:2px; font-size:0.9rem; font-weight:900; line-height:1;">' +
-                                  '<span style="color:var(--suit-black)">4 ♣</span>' +
-                                  '<span style="color:var(--dang)">7 ♥</span>' +
-                                  '<span style="color:var(--suit-black)">A ♠</span>' +
-                                  '<span style="color:var(--dang)">7 ♦</span>' +
-                                  '</div>';
+                var mHtml = '<div style="display:flex; flex-direction:column; gap:2px; font-size:0.9rem; font-weight:900; line-height:1;">';
+                mHtml += '<span style="color:var(--suit-black)">4 ♣</span>';
+                mHtml += '<span style="color:var(--dang)">7 ♥</span>';
+                if (st.rules === 'mineiro') {
+                    mHtml += '<span style="color:var(--suit-black)">A ♠</span>';
+                    mHtml += '<span style="color:var(--dang)">7 ♦</span>';
+                } else {
+                    mHtml += '<span style="color:var(--dang)">7 ♦</span>';
+                    mHtml += '<span style="color:var(--suit-black)">A ♠</span>';
+                }
+                mHtml += '</div>';
+                mCard.innerHTML = mHtml;
             } else {
                 if (st.viraRevealed && st.manilha) {
                     gmContainer.classList.remove('hidden');
@@ -958,7 +1064,7 @@
                 getEl('ui-val').innerText = getTrucoName(st.handVal) + (st.handVal > 2 ? " ("+st.handVal+")" : ""); 
             }
             
-            var indicatorText = (st.rules === 'mineiro') ? "TRUCO MINEIRO" : (st.deckMode === 'limpo' ? "BARALHO LIMPO" : "BARALHO SUJO");
+            var indicatorText = (st.rules === 'mineiro') ? "TRUCO MINEIRO" : (st.rules === 'goiano' ? "TRUCO GOIANO" : (st.deckMode === 'limpo' ? "BARALHO LIMPO" : "BARALHO SUJO"));
             if (st.maoDeFerro) indicatorText = "⚡ MÃO DE FERRO ⚡";
 
             var thres = st.rules === 'mineiro' ? 10 : 11;
@@ -1010,8 +1116,8 @@
                         }
                     }
 
-                    if(st.handVal < 12 && !meX && getTeam(st.lastTruco) !== getTeam(myPID)) { 
-                        var nextVal = getNextTrucoVal(st.handVal);
+                    if(st.proposedVal < 12 && !meX && getTeam(st.lastTruco) !== getTeam(myPID)) { 
+                        var nextVal = getNextTrucoVal(st.proposedVal);
                         btnRaise.classList.remove('hidden'); 
                         btnRaise.innerHTML = '<span class="key-box highlight">T</span> PEDIR ' + getTrucoName(nextVal) + '!'; 
                     } else { btnRaise.classList.add('hidden'); }
@@ -1077,6 +1183,19 @@
             var bTb = getEl('box-table'); 
             bMy.innerHTML = ''; bTop.innerHTML = ''; bLeft.innerHTML = ''; bRight.innerHTML = ''; bTb.innerHTML = '';
 
+            if (gameMode === 'ws') {
+                for (var p = 1; p <= getNumPlayers(); p++) {
+                    var pos = getUIPos(p);
+                    var dest = getEl('box-' + pos);
+                    if (dest) {
+                        var tt = document.createElement('div');
+                        tt.className = 'nick-tooltip';
+                        tt.innerText = getPlayerName(p);
+                        dest.appendChild(tt);
+                    }
+                }
+            }
+
             var numP = getNumPlayers();
             for (var p = 1; p <= numP; p++) {
                 var pos = getUIPos(p);
@@ -1112,8 +1231,8 @@
                 dom.style.transform = posOffset[tPos];
                 dom.style.zIndex = zIndexMap[tPos] + k;
                 
-                if (st.trickWinners && st.trickWinners.includes(tblCard.p) && st.table.length === 0 && !isDealing) {
-                    dom.classList.add('winner-anim');
+		if (st.trickWinners && st.trickWinners.includes(tblCard.p) && st.table.length === 0 && !isDealing) {
+                    dom.firstChild.classList.add('winner-anim');
                 }
 
                 bTb.appendChild(dom);
@@ -1243,7 +1362,15 @@
         function startRound(firstPlayer) {
             var deck = []; window.lastAdviceLevel = 0; st.humanAccepted = false; resetHideBtn();
             var activeVals = getActiveVals();
-            for(var s=0; s<4; s++) { for(var v=0; v<activeVals.length; v++) { deck.push({s: SUITS[s], v: activeVals[v]}); } }
+            
+            if (st.rules === 'goiano') {
+                for(var s=0; s<4; s++) { for(var v=0; v<VALS_LIMPO.length; v++) { deck.push({s: SUITS[s], v: VALS_LIMPO[v]}); } }
+                deck.push({s: '♣', v: '4'});
+                deck.push({s: '♥', v: '7'});
+                deck.push({s: '♦', v: '7'});
+            } else {
+                for(var s=0; s<4; s++) { for(var v=0; v<activeVals.length; v++) { deck.push({s: SUITS[s], v: activeVals[v]}); } }
+            }
             
             for (var r = deck.length - 1; r > 0; r--) {
                 var j = Math.floor(Math.random() * (r + 1));
@@ -1406,10 +1533,11 @@
             st.trickWinners = winners;
             animLock = true;
             
-            var bTb = getEl('box-table').children;
+	    var bTb = getEl('box-table').children;
             for(var i=0; i<st.table.length; i++) {
                 if(winners.includes(st.table[i].p)) {
-                    bTb[i].classList.add('winner-anim'); 
+                    var innerCard = bTb[i].querySelector('.card');
+                    if (innerCard) innerCard.classList.add('winner-anim'); 
                 }
             }
 
@@ -1473,7 +1601,8 @@
 
         window.requestTruco = function() {
             if(animLock) return;
-            st.proposedVal = getNextTrucoVal(st.handVal);
+            var baseVal = (st.trucoState === 'pending') ? st.proposedVal : st.handVal;
+            st.proposedVal = getNextTrucoVal(baseVal);
             st.trucoBy = myPID; st.lastTruco = myPID; st.trucoState = 'pending';
             showMsg("Você pediu " + getTrucoName(st.proposedVal) + "!", 'neu'); window.lastAdviceLevel = 0; 
             updateUI(); updateTurnGlow(); autoSave(); checkAiTrucoDecision();
@@ -1714,10 +1843,26 @@
             }
         }
 
-        // --- MULTIPLAYER (JSON E WEBRTC) ---
+        // --- MULTIPLAYER (JSON E WEBRTC E WS) ---
         window.startMultiplayer = async function(role, method) {
             mpMethod = method;
-            if (method === 'json') {
+            if (method === 'ws') {
+                var nick = getEl('ws-nick').value.trim() || 'Anônimo';
+                var room = getEl('ws-room').value.trim();
+                var protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                var url = protocol + '//' + window.location.host;
+                if(window.location.protocol === 'file:') url = 'ws://localhost:3000'; // Fallback if opened locally as file
+                
+                if(role === 'host' && !room) room = 'SALA-' + Math.floor(Math.random()*10000);
+                if(role === 'guest' && !room) { alert("Informe o ID da Sala para entrar."); return; }
+                if(role === 'spectator' && !room) { alert("Informe o ID da Sala para assistir."); return; }
+                
+                getEl('lobby-room-id').innerText = room;
+                getEl('lobby-logs').innerHTML = '';
+                nav('scr-online', 'scr-lobby');
+                
+                connectWS(url, room, nick, pendingFormat, role === 'spectator');
+            } else if (method === 'json') {
                 if (!window.showSaveFilePicker && !window.showOpenFilePicker) { alert("Navegador não suportado."); return; }
                 try {
                     if(role === 'host') { 
@@ -1740,6 +1885,79 @@
                 }
             }
         };
+
+        window.wsConn = null;
+        window.wsPlayers = {};
+
+        function connectWS(url, roomId, nick, format, isSpectator) {
+            try {
+                window.wsConn = new WebSocket(url);
+            } catch(e) {
+                alert("Erro ao conectar no servidor."); nav('scr-lobby', 'scr-multi'); return;
+            }
+            
+            window.wsConn.onopen = function() {
+                window.wsConn.send(JSON.stringify({ type: 'join_room', roomId: roomId, nick: nick, format: format, isSpectator: isSpectator }));
+            };
+            
+            window.wsConn.onmessage = function(e) {
+                var data = JSON.parse(e.data);
+                if (data.type === 'log') {
+                    addLobbyLog(data.msg);
+                } else if (data.type === 'log_history') {
+                    data.logs.forEach(msg => addLobbyLog(msg));
+                } else if (data.type === 'joined') {
+                    myPID = data.pid; 
+                    st.deckMode = pendingDeckMode;
+                    st.gameFormat = pendingFormat;
+                    st.rules = pendingRules;
+                } else if (data.type === 'players_info') {
+                    window.wsPlayers = data.players;
+                } else if (data.type === 'room_full') {
+                    setTimeout(() => {
+                        nav('scr-lobby', 'scr-game');
+                        gameMode = 'ws';
+                        if (myPID === 1) { 
+                            st.scores = {1:0, 2:0}; window.lastAdviceLevel = 0; st.humanAccepted = false;
+                            st.firstPlayerOfRound = 1;
+                            startRound(st.firstPlayerOfRound);
+                        } else if (myPID === 0) { 
+                            getEl('action-bar').classList.add('hidden');
+                            getEl('btn-hide-card').classList.add('hidden');
+                        }
+                    }, 1500);
+                } else if (data.type === 'state') {
+                    processLoadedState(data.st);
+                } else if (data.type === 'restart_game') {
+                    var btn = document.querySelector('#scr-end .btn-p');
+                    if(btn) {
+                        btn.innerText = "JOGAR NOVAMENTE";
+                        btn.style.opacity = '1';
+                        btn.style.pointerEvents = 'auto';
+                    }
+                    getEl('scr-end').className = '';
+                    if (myPID === 1) {
+                        st.scores = {1:0, 2:0}; window.lastAdviceLevel = 0; st.humanAccepted = false;
+                        st.firstPlayerOfRound = 1;
+                        startRound(st.firstPlayerOfRound);
+                    }
+                }
+            };
+            
+            window.wsConn.onclose = function() {
+                addLobbyLog("Desconectado do servidor.");
+            };
+        }
+        
+        function addLobbyLog(msg) {
+            var div = document.createElement('div');
+            div.innerText = msg;
+            var container = getEl('lobby-logs');
+            if(container) {
+                container.appendChild(div);
+                container.scrollTop = container.scrollHeight;
+            }
+        }
 
         // --- WEBRTC CORE ---
         function setupWebRTC() {
@@ -1801,7 +2019,7 @@
             }
         };
 
-        // --- SISTEMA DE SYNC E PROCESSAMENTO DE ESTADO (COMUM PARA JSON E WEBRTC) ---
+        // --- SISTEMA DE SYNC E PROCESSAMENTO DE ESTADO (COMUM PARA JSON E WEBRTC E WS) ---
         async function autoSave() {
             if(gameMode === 'pc' || isSaving) return;
             isSaving = true; st.version++; 
@@ -1810,6 +2028,8 @@
                 try { const writable = await fileHandle.createWritable(); await writable.write(JSON.stringify(st)); await writable.close(); } catch (e) {} 
             } else if (gameMode === 'webrtc' && dc && dc.readyState === 'open') {
                 dc.send(JSON.stringify(st));
+            } else if (gameMode === 'ws' && window.wsConn && window.wsConn.readyState === WebSocket.OPEN) {
+                window.wsConn.send(JSON.stringify({ type: 'state_update', st: st }));
             }
             isSaving = false;
         }
@@ -1836,11 +2056,11 @@
                     
                     renderMesa(st.lastTable);
                     
-                    var bTb = getEl('box-table').children;
+		var bTb = getEl('box-table').children;
                     for(var i=0; i<st.lastTable.length; i++) {
-                        if(st.trickWinners && st.trickWinners.includes(st.lastTable[i].p)) {
+                        if(st.trickWinners && 				st.trickWinners.includes(st.lastTable[i].p)) {
                             var innerCard = bTb[i].querySelector('.card');
-                            if(innerCard) innerCard.classList.add('winner-anim');
+                            if (innerCard) innerCard.classList.add('winner-anim');
                         }
                     }
                     
