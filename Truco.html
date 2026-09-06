@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Truco - v0.11.7</title>
+    <title>Truco - v0.11.8</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♣</text></svg>">
     <style>
         /* THEME VARIABLES */
@@ -174,15 +174,15 @@
 
         /* Assentos extras do Trios (3v3) — ativos quando .table ganha .fmt-3v3
            (aplicado em updateUI() sempre que st.gameFormat === '3v3'). */
-        .hand-left2, .hand-right2 { display: none; justify-content: center; gap: 8px; z-index: 5; position: absolute; width: 70px; }
+        .hand-left2, .hand-right2 { display: none; justify-content: center; gap: 8px; z-index: 5; position: absolute; width: 70px; transition: left 0.4s ease, right 0.4s ease, top 0.4s ease, width 0.4s ease, transform 0.4s ease; }
         .table.fmt-3v3 .hand-left { top: 70%; }
         .table.fmt-3v3 .hand-right { top: 70%; }
         .table.fmt-3v3 .hand-left2 { display: flex; left: -35px; top: 24%; transform: translateY(-50%) rotate(90deg); }
         .table.fmt-3v3 .hand-right2 { display: flex; right: -35px; top: 24%; transform: translateY(-50%) rotate(-90deg); }
         
-        .hand-top.show-partner-cards { top: 10px !important; z-index: 100 !important; }
-        .hand-left2.show-partner-cards { left: 15% !important; right: auto !important; top: 10px !important; transform: translateX(-50%) rotate(0deg) !important; z-index: 100 !important; }
-        .hand-right2.show-partner-cards { right: 15% !important; left: auto !important; top: 10px !important; transform: translateX(50%) rotate(0deg) !important; z-index: 100 !important; }
+        .hand-top.show-partner-cards { top: 34% !important; z-index: 100 !important; }
+        .hand-left2.show-partner-cards { left: 8px !important; right: auto !important; top: 34% !important; width: auto !important; transform: translateY(-50%) rotate(0deg) !important; z-index: 100 !important; }
+        .hand-right2.show-partner-cards { right: 8px !important; left: auto !important; top: 34% !important; width: auto !important; transform: translateY(-50%) rotate(0deg) !important; z-index: 100 !important; }
 
         .hand-top .card, .hand-left .card, .hand-right .card, .hand-left2 .card, .hand-right2 .card { width: 50px; height: 75px; }
         .hand-top .card::after, .hand-left .card::after, .hand-right .card::after, .hand-left2 .card::after, .hand-right2 .card::after { font-size: 1.8rem; }
@@ -425,13 +425,19 @@
             <button class="diff-btn" id="btn-fmt-3v3-mp" onclick="setPendingFormat('3v3', 'mp')">TRIOS (3 X 3)</button>
         </div>
 
-        <div class="section-label">Jogadores Humanos (o resto é IA):</div>
-        <div class="diff-selector" id="human-count-selector-mp"></div>
-
         <div class="section-label">Selecione o Baralho:</div>
         <div class="diff-selector">
             <button class="diff-btn active" id="btn-deck-sujo-mp" onclick="setPendingDeck('sujo', 'mp')">BARALHO SUJO</button>
             <button class="diff-btn" id="btn-deck-limpo-mp" onclick="setPendingDeck('limpo', 'mp')">BARALHO LIMPO</button>
+        </div>
+
+        <div class="section-label">Jogadores Humanos (o resto é IA):</div>
+        <div class="diff-selector">
+            <button class="diff-btn active" id="btn-hc-2-mp" onclick="setPendingHumanCount(2, 'mp')">2</button>
+            <button class="diff-btn" id="btn-hc-3-mp" onclick="setPendingHumanCount(3, 'mp')">3</button>
+            <button class="diff-btn" id="btn-hc-4-mp" onclick="setPendingHumanCount(4, 'mp')">4</button>
+            <button class="diff-btn" id="btn-hc-5-mp" onclick="setPendingHumanCount(5, 'mp')">5</button>
+            <button class="diff-btn" id="btn-hc-6-mp" onclick="setPendingHumanCount(6, 'mp')">6</button>
         </div>
 
         <div class="btn-stack" style="margin-top: 15px;">
@@ -533,13 +539,19 @@
             <button class="diff-btn" id="btn-fmt-3v3-on" onclick="setPendingFormat('3v3', 'on')">TRIOS (3 X 3)</button>
         </div>
 
-        <div class="section-label">Jogadores Humanos (o resto é IA):</div>
-        <div class="diff-selector" id="human-count-selector-on"></div>
-
         <div class="section-label">Selecione o Baralho:</div>
         <div class="diff-selector">
             <button class="diff-btn active" id="btn-deck-sujo-on" onclick="setPendingDeck('sujo', 'on')">BARALHO SUJO</button>
             <button class="diff-btn" id="btn-deck-limpo-on" onclick="setPendingDeck('limpo', 'on')">BARALHO LIMPO</button>
+        </div>
+
+        <div class="section-label">Jogadores Humanos (o resto é IA):</div>
+        <div class="diff-selector">
+            <button class="diff-btn active" id="btn-hc-2-on" onclick="setPendingHumanCount(2, 'on')">2</button>
+            <button class="diff-btn" id="btn-hc-3-on" onclick="setPendingHumanCount(3, 'on')">3</button>
+            <button class="diff-btn" id="btn-hc-4-on" onclick="setPendingHumanCount(4, 'on')">4</button>
+            <button class="diff-btn" id="btn-hc-5-on" onclick="setPendingHumanCount(5, 'on')">5</button>
+            <button class="diff-btn" id="btn-hc-6-on" onclick="setPendingHumanCount(6, 'on')">6</button>
         </div>
 
         <div class="btn-stack" style="margin-top:15px;">
@@ -816,30 +828,30 @@
             getEl('btn-fmt-2v2-' + prefix).classList.remove('active');
             getEl('btn-fmt-3v3-' + prefix).classList.remove('active');
             getEl('btn-fmt-' + fmt + '-' + prefix).classList.add('active');
-            renderHumanCountSelector(prefix);
+            updateHumanCountAvailability(prefix);
         };
 
-        // Seletor de "quantos jogadores humanos" — reconstrói as opções (1..N)
-        // toda vez que o formato muda, já que N depende do formato escolhido.
-        function renderHumanCountSelector(screen) {
-            var container = getEl('human-count-selector-' + screen);
-            if (!container) return;
+        // Seletor de "quantos jogadores humanos" (2 a 6 — já que estando no
+        // Multiplayer, sempre tem pelo menos 2). Os botões ficam SEMPRE
+        // visíveis; os que excedem o formato atual só ficam desabilitados,
+        // no mesmo padrão do Baralho Limpo travado quando Mineiro é escolhido.
+        function updateHumanCountAvailability(screen) {
             var maxP = FORMAT_SEATS[pendingFormat] || 2;
             if (pendingHumanCount > maxP) pendingHumanCount = maxP;
-            if (pendingHumanCount < 1) pendingHumanCount = Math.min(2, maxP);
-            container.innerHTML = '';
-            for (var i = 1; i <= maxP; i++) {
-                var btn = document.createElement('button');
-                btn.className = 'diff-btn' + (i === pendingHumanCount ? ' active' : '');
-                btn.innerText = i;
-                btn.onclick = (function(n) { return function() { setPendingHumanCount(n, screen); }; })(i);
-                container.appendChild(btn);
+            if (pendingHumanCount < 2) pendingHumanCount = 2;
+            for (var i = 2; i <= 6; i++) {
+                var btn = getEl('btn-hc-' + i + '-' + screen);
+                if (!btn) continue;
+                if (i > maxP) { btn.setAttribute('disabled', 'true'); btn.classList.remove('active'); }
+                else { btn.removeAttribute('disabled'); btn.classList.toggle('active', i === pendingHumanCount); }
             }
         }
 
         window.setPendingHumanCount = function(n, screen) {
+            var maxP = FORMAT_SEATS[pendingFormat] || 2;
+            if (n > maxP) return;
             pendingHumanCount = n;
-            renderHumanCountSelector(screen);
+            updateHumanCountAvailability(screen);
         };
 
         function getActiveVals() { return st.deckMode === 'limpo' ? VALS_LIMPO : VALS_SUJO; }
@@ -3059,8 +3071,8 @@
             if (savedNick) { getEl('local-nick').value = savedNick; myLocalNick = savedNick; }
         } catch(e) {}
 
-        renderHumanCountSelector('mp');
-        renderHumanCountSelector('on');
+        updateHumanCountAvailability('mp');
+        updateHumanCountAvailability('on');
 
         if (navigator.share) {
             document.querySelectorAll('.btn-share-code').forEach(function(b) { b.classList.remove('hidden'); });
