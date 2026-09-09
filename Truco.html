@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Truco - v0.12.10</title>
+    <title>Truco - v0.12.11</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♣</text></svg>">
     <style>
         /* THEME VARIABLES */
@@ -95,8 +95,15 @@
         .btn-p:hover { background: var(--prim-h); transform: translateY(-2px); }
         .btn-s { background: var(--btn-s-bg); border: 1px solid var(--glass-border); color: var(--txt); }
         .btn-s:hover { background: var(--btn-s-hov); transform: translateY(-2px); }
+        /* Mesmo estilo visual do botão SAIR in-game (.action-btn.danger),
+           aplicado aos botões VOLTAR/SAIR DA SALA dos menus — só a cor, o
+           tamanho/layout continua o de botão de menu (largura total). */
+        .btn-s.danger { background: rgba(239, 68, 68, 0.15); border-color: var(--dang); color: var(--txt); }
+        .btn-s.danger:hover { background: rgba(239, 68, 68, 0.3); }
         .btn-p:disabled, .btn-s:disabled { opacity: 0.3; pointer-events: none; }
         .btn-p:disabled:hover, .btn-s:disabled:hover { transform: none; }
+        .btn-p.warn-btn { background: var(--warn); color: #1c1917; }
+        .btn-p.warn-btn:hover { background: #ca8a04; }
         
         .diff-selector { display: flex; gap: 8px; margin-bottom: 15px; }
         .diff-btn { flex: 1; padding: 6px; border-radius: 8px; border: 1px solid var(--glass-border); background: transparent; color: var(--txt-d); font-size: 0.75rem; cursor: pointer; }
@@ -108,6 +115,12 @@
         .diff-btn:disabled { opacity: 0.3; pointer-events: none; }
 
         .section-label { color: var(--txt-d); font-size: 0.8rem; margin-bottom: 8px; text-align: left; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
+        /* Nas telas de Regra especificamente, o rótulo fica centralizado
+           (acompanhando a fileira de botões centralizados embaixo dele) — as
+           outras telas (nickname, sala, conexão) continuam à esquerda. */
+        #scr-mode .section-label, #scr-local-rules .section-label, #scr-online-rules .section-label, #quick-game-panel .section-label {
+            text-align: center;
+        }
 
         .theme-toggle-container { margin-top: 20px; display: flex; justify-content: center; }
         .btn-theme, .btn-options { background: transparent; border: 1px solid var(--glass-border); color: var(--txt); padding: 8px 16px; border-radius: 20px; font-size: 0.8rem; cursor: pointer; }
@@ -136,7 +149,7 @@
             transition: max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
         #quick-game-wrap.open { max-height: 180px; }
-        #quick-game-panel { padding-top: 18px; }
+        #quick-game-panel { padding: 18px 6px 0; }
 
         .game-area { width: 100vw; height: 100dvh; display: flex; flex-direction: column; padding: 10px 10px max(10px, env(safe-area-inset-bottom)); box-sizing: border-box; position: relative; }
         .glass-panel { background: var(--glass-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-radius: 14px; border: 1px solid var(--glass-border); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15); color: var(--txt); }
@@ -262,6 +275,11 @@
         .action-btn.primary:hover { background: rgba(16, 185, 129, 0.3); }
         .action-btn.danger { background: rgba(239, 68, 68, 0.15); border-color: var(--dang); color: var(--txt); }
         .action-btn.danger:hover { background: rgba(239, 68, 68, 0.3); }
+        /* Pedir Truco/Seis/Nove/Doze — neutro/chamativo (amarelo), igual às
+           notificações de solicitação de Truco, em vez de vermelho (que agora
+           é reservado pra Descartar/Correr). */
+        .action-btn.warn { background: rgba(234, 179, 8, 0.15); border-color: var(--warn); color: var(--txt); }
+        .action-btn.warn:hover { background: rgba(234, 179, 8, 0.3); }
         /* Sem key-box pra ancorar o tamanho (só texto curto "SAIR"), esse
            botão sentia mais o delta de padding/font-size que a media query
            mobile aplica a todo .action-btn — ficava visivelmente menor no
@@ -284,6 +302,7 @@
 
         .key-box { background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); padding: 3px 8px; border-radius: 4px; font-weight: bold; color: var(--txt); display: inline-block; }
         .key-box.highlight { background: rgba(239, 68, 68, 0.2); border-color: var(--dang); color: var(--dang); }
+        .key-box.warn-highlight { background: rgba(234, 179, 8, 0.2); border-color: var(--warn); color: var(--warn); }
         
         .static-info { font-size: 0.8rem; color: var(--txt-d); display: flex; align-items: center; gap: 6px; pointer-events: none; user-select: none; text-transform: uppercase; }
 
@@ -339,6 +358,7 @@
         .choice-card:hover { background: var(--btn-s-hov); transform: translateY(-2px); }
         .choice-card:disabled { opacity: 0.3; pointer-events: none; }
         .choice-card:disabled:hover { transform: none; }
+        .choice-card.active { background: rgba(16, 185, 129, 0.2); border-color: var(--prim); }
         .choice-card .choice-title { font-weight: 900; font-size: 1rem; text-transform: uppercase; letter-spacing: 0.5px; }
         .choice-card .choice-desc { font-size: 0.75rem; color: var(--txt-d); font-weight: normal; text-transform: none; line-height: 1.4; }
 
@@ -437,7 +457,7 @@
                 <div class="theme-toggle-container" style="margin-top:0;">
                     <button class="btn-theme" onclick="toggleTheme()">☀️ MODO CLARO</button>
                 </div>
-                <div id="options-version-tag">v0.12.10</div>
+                <div id="options-version-tag">v0.12.11</div>
             </div>
         </div>
     </div>
@@ -454,21 +474,21 @@
                 <span class="choice-desc" id="btn-multi-local-desc">Jogue com alguém por perto, via arquivo compartilhado ou conexão direta.</span>
             </button>
         </div>
-        <button class="btn-s" style="width: 100%; margin-top: 15px;" onclick="nav('scr-multi-choice', 'scr-start')">VOLTAR</button>
+        <button class="btn-s danger" style="width: 100%; margin-top: 15px;" onclick="nav('scr-multi-choice', 'scr-start')">VOLTAR</button>
     </div>
 
     <div id="scr-sp-choice" class="panel hidden">
         <h2>SINGLE PLAYER</h2>
         <div class="btn-stack">
-            <button class="choice-card" disabled>
+            <button class="choice-card" id="card-sp-arcade" disabled>
                 <span class="choice-title">🕹️ ARCADE</span>
                 <span class="choice-desc">Partidas em sequência com dificuldade e modo variando aleatoriamente. Em breve!</span>
             </button>
-            <button class="choice-card" onclick="nav('scr-sp-choice', 'scr-mode')">
+            <button class="choice-card" id="card-sp-personalizado" onclick="nav('scr-sp-choice', 'scr-mode')">
                 <span class="choice-title">🎮 JOGO PERSONALIZADO</span>
                 <span class="choice-desc">Você escolhe regra, formato, baralho e dificuldade da IA.</span>
             </button>
-            <button class="choice-card" onclick="toggleQuickGamePanel()">
+            <button class="choice-card" id="card-sp-rapido" onclick="toggleQuickGamePanel()">
                 <span class="choice-title">⚡ JOGO RÁPIDO</span>
                 <span class="choice-desc">Só escolha a região do Truco — formato, baralho e dificuldade saem no sorteio.</span>
             </button>
@@ -476,23 +496,25 @@
 
         <div id="quick-game-wrap">
             <div id="quick-game-panel">
-                <div class="section-label" style="margin-top:0;">Região do Truco:</div>
+                <div class="section-label" style="margin-top:0;">Região</div>
                 <div class="diff-selector">
                     <button class="diff-btn active" id="btn-rules-paulista-qg" onclick="setQuickRules('paulista')">PAULISTA</button>
                     <button class="diff-btn" id="btn-rules-mineiro-qg" onclick="setQuickRules('mineiro')">MINEIRO</button>
                     <button class="diff-btn" id="btn-rules-goiano-qg" onclick="setQuickRules('goiano')">GOIANO</button>
                 </div>
-                <button class="btn-p" style="margin-top: 15px;" onclick="startQuickGame()">INICIAR PARTIDA</button>
+                <div class="btn-stack" style="margin-top: 15px;">
+                    <button class="btn-p" onclick="startQuickGame()">JOGAR AGORA</button>
+                </div>
             </div>
         </div>
 
-        <button class="btn-s" style="width: 100%; margin-top: 15px;" onclick="nav('scr-sp-choice', 'scr-start')">VOLTAR</button>
+        <button class="btn-s danger" style="width: 100%; margin-top: 15px;" onclick="nav('scr-sp-choice', 'scr-start')">VOLTAR</button>
     </div>
 
     <div id="scr-mode" class="panel hidden">
         <h2>JOGO PERSONALIZADO</h2>
         
-        <div class="section-label">Regras do Jogo:</div>
+        <div class="section-label">Região</div>
         <div class="diff-selector">
             <button class="diff-btn active" id="btn-rules-paulista-sp" onclick="setRules('paulista', 'sp')">PAULISTA</button>
             <button class="diff-btn" id="btn-rules-mineiro-sp" onclick="setRules('mineiro', 'sp')">MINEIRO</button>
@@ -521,7 +543,7 @@
         </div>
         <div class="btn-stack">
             <button class="btn-p" onclick="startGame('pc', 1)">JOGAR AGORA</button>
-            <button class="btn-s" onclick="nav('scr-mode', 'scr-sp-choice')">VOLTAR</button>
+            <button class="btn-s danger" onclick="nav('scr-mode', 'scr-sp-choice')">VOLTAR</button>
         </div>
     </div>
 
@@ -543,7 +565,7 @@
             </button>
         </div>
 
-        <button class="btn-s" style="width: 100%; margin-top: 15px;" onclick="nav('scr-local-choice', 'scr-multi-choice')">VOLTAR</button>
+        <button class="btn-s danger" style="width: 100%; margin-top: 15px;" onclick="nav('scr-local-choice', 'scr-multi-choice')">VOLTAR</button>
     </div>
 
     <div id="scr-local-role-choice" class="panel hidden">
@@ -558,13 +580,13 @@
                 <span class="choice-desc" id="local-role-join-desc">Abre o arquivo que o outro jogador criou — as regras já vêm definidas.</span>
             </button>
         </div>
-        <button class="btn-s" style="width: 100%; margin-top: 15px;" onclick="nav('scr-local-role-choice', 'scr-local-choice')">VOLTAR</button>
+        <button class="btn-s danger" style="width: 100%; margin-top: 15px;" onclick="nav('scr-local-role-choice', 'scr-local-choice')">VOLTAR</button>
     </div>
 
     <div id="scr-local-rules" class="panel hidden">
         <h2 id="local-rules-title">CONFIGURAR PARTIDA</h2>
 
-        <div class="section-label">Regras do Jogo:</div>
+        <div class="section-label">Região</div>
         <div class="diff-selector">
             <button class="diff-btn active" id="btn-rules-paulista-mp" onclick="setRules('paulista', 'mp')">PAULISTA</button>
             <button class="diff-btn" id="btn-rules-mineiro-mp" onclick="setRules('mineiro', 'mp')">MINEIRO</button>
@@ -605,7 +627,7 @@
             <button class="btn-p" id="btn-local-host" style="background: rgba(59, 130, 246, 0.8);" onclick="startLocalRole('host')">CRIAR ARQUIVO</button>
         </div>
 
-        <button class="btn-s" style="width: 100%; margin-top: 15px;" onclick="nav('scr-local-rules', 'scr-local-role-choice')">VOLTAR</button>
+        <button class="btn-s danger" style="width: 100%; margin-top: 15px;" onclick="nav('scr-local-rules', 'scr-local-role-choice')">VOLTAR</button>
     </div>
 
     <div id="scr-webrtc-connect" class="panel hidden">
@@ -651,7 +673,7 @@
         </div>
 
         <button id="webrtc-btn-retry" class="btn-s hidden" style="width:100%; margin-top:10px;" onclick="webrtcRetry()">🔄 TENTAR NOVAMENTE</button>
-        <button class="btn-s" style="width:100%; margin-top:10px;" onclick="webrtcAbortIfActive(); nav('scr-webrtc-connect', isHostWebRTC ? 'scr-local-rules' : 'scr-local-role-choice')">VOLTAR</button>
+        <button class="btn-s danger" style="width:100%; margin-top:10px;" onclick="webrtcGoBack()">VOLTAR</button>
     </div>
 
     <div id="scr-webrtc-invite-more" class="panel hidden">
@@ -694,23 +716,19 @@
                 <span class="choice-title">➕ CRIAR SALA</span>
                 <span class="choice-desc">Você define as regras e a dificuldade da IA, e gera uma sala com código.</span>
             </button>
-            <button class="choice-card" onclick="goToOnlineRoomScreen(false)">
+            <button class="choice-card" onclick="goToOnlineRoomScreen()">
                 <span class="choice-title">🔑 ENTRAR NUMA SALA</span>
-                <span class="choice-desc">Só cole o código da sala — as regras já vêm definidas por quem criou.</span>
-            </button>
-            <button class="choice-card" onclick="goToOnlineRoomScreen(true)">
-                <span class="choice-title">👁️ ASSISTIR</span>
-                <span class="choice-desc">Acompanhe uma partida em andamento sem jogar.</span>
+                <span class="choice-desc">Cole o código da sala pra jogar ou só assistir — as regras já vêm definidas por quem criou.</span>
             </button>
         </div>
 
-        <button class="btn-s" style="width: 100%; margin-top: 15px;" onclick="nav('scr-online', 'scr-multi-choice')">VOLTAR</button>
+        <button class="btn-s danger" style="width: 100%; margin-top: 15px;" onclick="nav('scr-online', 'scr-multi-choice')">VOLTAR</button>
     </div>
 
     <div id="scr-online-rules" class="panel hidden">
         <h2>CRIAR SALA ONLINE</h2>
 
-        <div class="section-label">Regras do Jogo:</div>
+        <div class="section-label">Região</div>
         <div class="diff-selector">
             <button class="diff-btn active" id="btn-rules-paulista-on" onclick="setRules('paulista', 'on')">PAULISTA</button>
             <button class="diff-btn" id="btn-rules-mineiro-on" onclick="setRules('mineiro', 'on')">MINEIRO</button>
@@ -751,31 +769,28 @@
             <button class="btn-p" onclick="startMultiplayer('host', 'ws')">CRIAR SALA</button>
         </div>
 
-        <button class="btn-s" style="width: 100%; margin-top: 15px;" onclick="nav('scr-online-rules', 'scr-online')">VOLTAR</button>
+        <button class="btn-s danger" style="width: 100%; margin-top: 15px;" onclick="nav('scr-online-rules', 'scr-online')">VOLTAR</button>
     </div>
 
     <div id="scr-online-room" class="panel hidden">
-        <h2 id="online-room-title">SALA ONLINE</h2>
+        <h2 id="online-room-title">ENTRAR NUMA SALA</h2>
 
         <div class="section-label">ID da Sala:</div>
         <input type="text" id="ws-room" oninput="updateOnlineRoomButtons()" placeholder="ID da Sala" style="padding: 8px; border-radius: 8px; border: 1px solid var(--glass-border); background: var(--btn-s-bg); color: var(--txt); width: 100%; box-sizing: border-box; text-align: center; font-size: 0.9rem; margin-bottom: 15px;">
 
-        <div id="online-room-hostguest" class="btn-stack">
-            <button class="btn-s" id="btn-ws-join" disabled onclick="startMultiplayer('guest', 'ws')">ENTRAR NA SALA</button>
+        <div class="btn-stack">
+            <button class="btn-p" id="btn-ws-join" disabled onclick="startMultiplayer('guest', 'ws')">ENTRAR NO JOGO</button>
+            <button class="btn-p warn-btn" id="btn-ws-watch" disabled onclick="startMultiplayer('spectator', 'ws')">👁️ ASSISTIR PARTIDA</button>
         </div>
 
-        <div id="online-room-spectator" class="btn-stack hidden">
-            <button class="btn-p" id="btn-ws-watch" disabled onclick="startMultiplayer('spectator', 'ws')">ASSISTIR</button>
-        </div>
-
-        <button class="btn-s" style="width: 100%; margin-top: 15px;" onclick="nav('scr-online-room', 'scr-online')">VOLTAR</button>
+        <button class="btn-s danger" style="width: 100%; margin-top: 15px;" onclick="nav('scr-online-room', 'scr-online')">VOLTAR</button>
     </div>
 
     <div id="scr-lobby" class="panel hidden">
         <h2>LOBBY DA SALA</h2>
         <div class="section-label">Sala: <span id="lobby-room-id" style="color:var(--prim)">-</span></div>
         <div id="lobby-logs" style="height: 150px; overflow-y: auto; background: var(--btn-s-bg); border-radius: 8px; border: 1px solid var(--glass-border); padding: 10px; font-size: 0.8rem; text-align: left; margin-bottom: 15px; color: var(--txt-d); display: flex; flex-direction: column; gap: 4px;"></div>
-        <button class="btn-s" style="width: 100%;" onclick="nav('scr-lobby', 'scr-multi-choice'); if(window.wsConn) window.wsConn.close();">SAIR DA SALA</button>
+        <button class="btn-s danger" style="width: 100%;" onclick="nav('scr-lobby', 'scr-multi-choice'); if(window.wsConn) window.wsConn.close();">SAIR DA SALA</button>
     </div>
 
     <div id="scr-game" class="game-area hidden">
@@ -838,14 +853,14 @@
 
             <div id="grp-normal" class="legend-group active">
                 <div class="static-info"><span class="key-box">1</span><span class="key-box">2</span><span class="key-box">3</span> <span class="play-text">JOGAR CARTA</span></div>
-                <button id="cmd-truco" class="action-btn danger hidden" onclick="requestTruco()"><span class="key-box highlight">T</span> PEDIR TRUCO</button>
-                <button id="cmd-fold" class="action-btn hidden" onclick="requestFold()"><span class="key-box">D</span> DESCARTAR</button>
+                <button id="cmd-truco" class="action-btn warn hidden" onclick="requestTruco()"><span class="key-box warn-highlight">T</span> TRUCO!</button>
+                <button id="cmd-fold" class="action-btn danger hidden" onclick="requestFold()"><span class="key-box highlight">D</span> DESCARTAR</button>
             </div>
             
             <div id="grp-respond" class="legend-group">
                 <button class="action-btn primary" onclick="respondTruco(true)"><span class="key-box" style="color: var(--prim); border-color: var(--prim); background: rgba(255,255,255,0.8);">A</span> ACEITAR</button>
-                <button id="cmd-raise" class="action-btn danger hidden" onclick="requestTruco()"><span class="key-box highlight">T</span> SEIS!</button>
-                <button class="action-btn" onclick="respondTruco(false)"><span class="key-box">C</span> CORRER</button>
+                <button id="cmd-raise" class="action-btn warn hidden" onclick="requestTruco()"><span class="key-box warn-highlight">T</span> SEIS!</button>
+                <button class="action-btn danger" onclick="respondTruco(false)"><span class="key-box highlight">C</span> CORRER</button>
             </div>
 
             <div id="grp-confirm-fold" class="legend-group">
@@ -863,7 +878,7 @@
             <div id="grp-mao11" class="legend-group">
                 <span id="txt-mao11-title" class="static-info" style="color: var(--warn); font-weight: bold;">Mão de 11!</span>
                 <button class="action-btn primary" onclick="respondMao11(true)"><span class="key-box highlight" style="color:var(--prim); border-color:var(--prim); background:rgba(255,255,255,0.8);">A</span> ACEITAR</button>
-                <button class="action-btn" onclick="respondMao11(false)"><span class="key-box">C</span> CORRER</button>
+                <button class="action-btn danger" onclick="respondMao11(false)"><span class="key-box highlight">C</span> CORRER</button>
             </div>
 
             <div id="grp-pause-menu" class="legend-group">
@@ -995,7 +1010,13 @@
         };
 
         window.toggleQuickGamePanel = function() {
-            getEl('quick-game-wrap').classList.toggle('open');
+            var isOpen = getEl('quick-game-wrap').classList.toggle('open');
+            getEl('card-sp-rapido').classList.toggle('active', isOpen);
+            // Esconde os outros dois cartões enquanto o Jogo Rápido está
+            // aberto — evita que a tela cresça demais e obrigue a arrastar
+            // em celulares menores (nunca queremos isso no jogo).
+            getEl('card-sp-arcade').classList.toggle('hidden', isOpen);
+            getEl('card-sp-personalizado').classList.toggle('hidden', isOpen);
         };
 
         window.startQuickGame = function() {
@@ -1805,8 +1826,8 @@
         // conteúdo, inclusive "Sugiro correr!".
         function adviceMsgType(key) {
             if (key === 'correr') return 'neg';
-            if (key === 'aceitar') return 'neu';
-            return 'pos';
+            if (key === 'aceitar') return 'pos';
+            return 'neu'; // aumentar, bora
         }
 
         // Nome de exibição de um parceiro: usa o nick real se existir
@@ -2011,7 +2032,7 @@
                     if(st.proposedVal < 12 && !meX && getTeam(st.lastTruco) !== getTeam(myPID)) { 
                         var nextVal = getNextTrucoVal(st.proposedVal);
                         btnRaise.classList.remove('hidden'); 
-                        btnRaise.innerHTML = '<span class="key-box highlight">T</span> PEDIR ' + getTrucoName(nextVal) + '!'; 
+                        btnRaise.innerHTML = '<span class="key-box warn-highlight">T</span> ' + getTrucoName(nextVal) + '!'; 
                     } else { btnRaise.classList.add('hidden'); }
                 } else {
                     if(!isExiting && !isPaused) { setBottomGroup(null); actionBar.classList.remove('danger-zone'); }
@@ -2029,7 +2050,7 @@
                 if(isMyTurn && st.handVal < 12 && !meX && !st.maoDeFerro && !st.isMaoDeX && st.table.length < getNumPlayers() && getTeam(st.lastTruco) !== getTeam(myPID)) {
                     var nextVal = getNextTrucoVal(st.handVal);
                     btnTruco.classList.remove('hidden'); 
-                    btnTruco.innerHTML = '<span class="key-box highlight">T</span> PEDIR ' + getTrucoName(nextVal);
+                    btnTruco.innerHTML = '<span class="key-box warn-highlight">T</span> ' + getTrucoName(nextVal) + '!';
                 } else { btnTruco.classList.add('hidden'); }
                 
                 if(isMyTurn && !st.maoDeFerro) btnFold.classList.remove('hidden'); else btnFold.classList.add('hidden');
@@ -2303,7 +2324,7 @@
                 else { st.humanSeats = (st.humanSeats && st.humanSeats.length) ? st.humanSeats : [1, playerID]; }
             }
             
-            if (myPID === 1) st.deckMode = pendingDeckMode;
+            if (myPID === 1) { st.deckMode = pendingDeckMode; st.aiDifficulty = aiDifficulty; }
             
             var fromScreen = (modeStr === 'pc') ? 'scr-mode' : (modeStr === 'json' ? (playerID === 1 ? 'scr-local-rules' : 'scr-local-role-choice') : 'scr-webrtc-connect');
             nav(fromScreen, 'scr-game');
@@ -2441,16 +2462,22 @@
             seats.forEach(function(p) { prob = Math.max(prob, aiContextProb(p)); });
             var accept = (prob >= AI_PROFILES[aiDifficulty].maoDeXAcceptAt); 
             var txt = st.rules === 'mineiro' ? "10" : "11";
-            
+            // decidingTeam pode ser o MEU time também (parceiro-IA decidindo
+            // por mim em Multiplayer/Trios), não só o rival — texto e cor
+            // precisam se ajustar aos dois casos, mesmo padrão de aiDecideTruco.
+            var repPid11 = seats[0];
+            var actor11 = trucoActor(repPid11);
+            var isMyTeamMao11 = (myPID !== 0 && decidingTeam === getTeam(myPID));
+
             if (accept) {
                 st.handVal = st.rules === 'mineiro' ? 4 : 3;
-                var msg = st.gameFormat === '1v1' ? "O Rival aceitou a Mão de "+txt+"!" : "Os Rivais aceitaram a Mão de "+txt+"!";
-                showMsg(msg, 'neg');
+                var msg = actor11.name + ' ' + (actor11.plural ? 'aceitaram' : 'aceitou') + ' a Mão de ' + txt + '!';
+                showMsg(msg, isMyTeamMao11 ? 'pos' : 'neg');
                 st.trucoState = 'none';
                 animLock = false; updateUI(); autoSave(); checkAiTurn();
             } else {
-                var msg = st.gameFormat === '1v1' ? "O Rival correu da Mão de "+txt+"!" : "Os Rivais correram da Mão de "+txt+"!";
-                showMsg(msg, 'pos');
+                var msg = actor11.name + ' ' + (actor11.plural ? 'correram' : 'correu') + ' da Mão de ' + txt + '!';
+                showMsg(msg, isMyTeamMao11 ? 'neg' : 'pos');
                 st.scores[getOppTeam(decidingTeam)] += st.rules === 'mineiro' ? 2 : 1;
                 autoSave();
                 if(st.scores[getOppTeam(decidingTeam)] >= 12) { triggerEndGame(getTeam(myPID) === getOppTeam(decidingTeam)); return; }
@@ -3302,13 +3329,10 @@
         // Vai da tela de Regras (Online) pra tela de Sala, alternando entre o
         // modo Host/Guest normal e o modo Espectador (que só assiste, herdando
         // as regras da sala já criada por outra pessoa).
-        window.goToOnlineRoomScreen = function(isSpectator) {
+        window.goToOnlineRoomScreen = function() {
             var nick = getEl('ws-nick').value.trim();
             if (nick) { myLocalNick = nick.substring(0, 15); try { localStorage.setItem('trucoNick', myLocalNick); } catch(e) {} }
 
-            getEl('online-room-hostguest').classList.toggle('hidden', isSpectator);
-            getEl('online-room-spectator').classList.toggle('hidden', !isSpectator);
-            getEl('online-room-title').innerText = isSpectator ? 'ASSISTIR PARTIDA' : 'SALA ONLINE';
             getEl('ws-room').value = '';
             updateOnlineRoomButtons();
             nav('scr-online', 'scr-online-room');
@@ -3507,6 +3531,15 @@
             }
         };
 
+        // Só existe pq onclick="..." inline roda no escopo GLOBAL, não dentro
+        // do IIFE — variáveis comuns como isHostWebRTC não estão acessíveis
+        // ali (só o que é explicitamente pendurado em window), então precisa
+        // de uma função própria e exposta pra decidir a tela de volta certa.
+        window.webrtcGoBack = function() {
+            webrtcAbortIfActive();
+            nav('scr-webrtc-connect', isHostWebRTC ? 'scr-local-rules' : 'scr-local-role-choice');
+        };
+
         function webrtcSetStatus(text, state) {
             var box = getEl('webrtc-status-box');
             box.classList.remove('hidden', 'status-connecting', 'status-success', 'status-error', 'status-idle');
@@ -3594,6 +3627,15 @@
             if(loadedState.version > st.version || rulesChanged) {
                 var oldSt = st; st = loadedState; animLock = false; 
                 if (rulesChanged) { st.version = Math.max(st.version, oldSt.version + 1); }
+
+                // Dificuldade da IA definida pelo host (nos assentos vagos)
+                // também precisa chegar aqui — sem isso, o convidado nunca
+                // sabia qual dificuldade foi escolhida, e a cor de fundo
+                // correspondente nunca aparecia pra ele.
+                if (typeof st.aiDifficulty === 'number' && st.aiDifficulty !== aiDifficulty) {
+                    aiDifficulty = st.aiDifficulty;
+                    updateBodyDiffClass();
+                }
 
                 // viraRevealed é "minha animação local de virar a carta já
                 // terminou" — por natureza é uma coisa de CADA cliente, mas
