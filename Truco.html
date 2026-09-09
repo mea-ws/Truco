@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Truco - v0.12.6</title>
+    <title>Truco - v0.12.7</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♣</text></svg>">
     <style>
         /* THEME VARIABLES */
@@ -63,7 +63,7 @@
         body.theme-light .light-bg { opacity: 1; }
         body.theme-light .dark-bg { opacity: 0; }
 
-        .panel, .glass-panel, .btn-s, .btn-p, .action-btn, .choice-card, #ui-val, .stadium-display, .key-box, .card, .card-wrapper {
+        .panel, .glass-panel, .btn-s, .btn-p, .action-btn, .choice-card, #ui-val, .stadium-display, .key-box, .card, .card-wrapper, #btn-hide-card, #ghost-m-card {
             transition: background 0.6s ease, background-color 0.6s ease, border-color 0.6s ease, color 0.6s ease, box-shadow 0.6s ease, transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
         
@@ -111,25 +111,19 @@
         .btn-theme, .btn-options { background: transparent; border: 1px solid var(--glass-border); color: var(--txt); padding: 8px 16px; border-radius: 20px; font-size: 0.8rem; cursor: pointer; }
         .btn-theme:hover, .btn-options:hover { background: var(--btn-s-bg); }
 
-        /* Painel de Opções: fica de repouso já ABAIXO de toda a tela inicial
-           (top: 100% dela + respiro), mas começa puxado pra cima (translateY
-           negativo) e escondido atrás dela (z-index negativo + opacity 0) —
-           "engolido" pelo painel principal. Ao abrir, desliza pra baixo até
-           sua posição de repouso, saindo de trás como uma gaveta. #scr-start
-           precisa de position:relative + overflow visível (sobrescritos
-           abaixo) pra isso funcionar. */
-        #scr-start { position: relative; overflow: visible; }
-        #options-panel {
-            position: absolute; top: calc(100% + 14px); left: 0; right: 0;
-            background: var(--glass-bg);
-            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
-            border: 1px solid var(--glass-border); border-radius: 20px;
-            padding: 1.5rem 2rem; box-sizing: border-box;
-            z-index: -1; opacity: 0; pointer-events: none;
-            transform: translateY(-48px) scale(0.92);
-            transition: transform 0.45s cubic-bezier(0.34, 1.2, 0.64, 1), opacity 0.35s ease;
+        /* Painel de Opções: em vez de um cartão separado flutuando por cima/
+           atrás (tentativas anteriores, v0.12.5/v0.12.6), agora é uma SEÇÃO
+           que cresce dentro do PRÓPRIO #scr-start — sem borda, fundo ou
+           cantos arredondados próprios, porque usa os do painel principal.
+           max-height 0->N com overflow:hidden dá o efeito de "puxar uma
+           gaveta de dentro da própria janela", exatamente a sensação de
+           extensão pedida, sem precisar de posicionamento absoluto/z-index. */
+        #options-wrap {
+            max-height: 0; overflow: hidden; width: 100%;
+            transition: max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
-        #options-panel.open { transform: translateY(0) scale(1); opacity: 1; pointer-events: auto; }
+        #options-wrap.open { max-height: 90px; }
+        #options-panel { padding-top: 18px; }
         #options-version-tag { margin-top: 14px; text-align: center; font-size: 0.65rem; color: var(--txt-d); opacity: 0.35; }
 
         .game-area { width: 100vw; height: 100dvh; display: flex; flex-direction: column; padding: 10px 10px max(10px, env(safe-area-inset-bottom)); box-sizing: border-box; position: relative; }
@@ -145,6 +139,7 @@
         .hud-container.notify-pos { border-color: var(--prim); box-shadow: 0 0 20px rgba(16, 185, 129, 0.2); }
         .hud-container.notify-neg { border-color: var(--dang); box-shadow: 0 0 20px rgba(239, 68, 68, 0.2); }
         .hud-container.notify-neu { border-color: var(--warn); box-shadow: 0 0 20px rgba(234, 179, 8, 0.2); }
+        .hud-container.notify-sys { border-color: var(--txt); box-shadow: 0 0 20px rgba(148, 163, 184, 0.25); }
 
         .hud-side { flex: 1; display: flex; flex-direction: column; min-width: 0; }
         .hud-center { flex: 1.2; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 0; padding: 0 5px; }
@@ -243,7 +238,7 @@
         body.theme-dark #btn-hide-card.escondendo { border-color: white !important; box-shadow: 0 0 15px rgba(255,255,255,0.4); background: rgba(255,255,255,0.15); color: white; }
         body.theme-light #btn-hide-card.escondendo { border-color: #334155 !important; box-shadow: 0 0 15px rgba(0,0,0,0.2); background: rgba(0,0,0,0.15); color: #0f172a; }
 
-        .legend-container { position: relative; margin-top: 10px; padding: 10px 16px; min-height: 66px; box-sizing: border-box; z-index: 20; display: flex; justify-content: center; align-items: center; }
+        .legend-container { position: relative; margin-top: 10px; padding: 10px 16px; min-height: 66px; box-sizing: border-box; z-index: 20; display: flex; justify-content: center; align-items: center; transition: border-color 0.35s ease, box-shadow 0.35s ease; }
         .legend-group { display: none; gap: 12px; align-items: center; justify-content: center; width: 100%; flex-wrap: wrap; }
         .legend-group.active { display: flex; animation: slideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         @keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
@@ -266,17 +261,13 @@
 
         .btn-esc { position: absolute; right: 15px; opacity: 0.5; }
         .btn-esc:hover { opacity: 1; }
-        /* Vive fora do grp-pause-menu (ver comentário no HTML), então tem sua
-           própria transição de entrada/saída (opacity + transform), em vez de
-           herdar a animação do grupo — é isso que fica ligado/desligado via
-           classList.toggle('visible', ...) em setBottomGroup(). */
-        .btn-theme-pause {
-            position: absolute; left: 15px;
-            opacity: 0; transform: translateY(8px) scale(0.85);
-            pointer-events: none;
-            transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-        .btn-theme-pause.visible { opacity: 0.5; transform: translateY(0) scale(1); pointer-events: auto; }
+        /* Vive fora do grp-pause-menu (ver comentário no HTML), então usa a
+           MESMA animação slideUp dos outros botões da barra (em vez de herdar
+           a animação do grupo, que causava o bug do "pulo" de posição — ver
+           v0.12.5/v0.12.6). Escondido = opacity:0 parado, sem animação; ao
+           virar .visible, toca o slideUp igualzinho aos outros. */
+        .btn-theme-pause { position: absolute; left: 15px; opacity: 0; pointer-events: none; }
+        .btn-theme-pause.visible { opacity: 0.5; pointer-events: auto; animation: slideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         .btn-theme-pause.visible:hover { opacity: 1; }
 
         .key-box { background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); padding: 3px 8px; border-radius: 4px; font-weight: bold; color: var(--txt); display: inline-block; }
@@ -287,16 +278,40 @@
         .danger-zone { animation: dangerPulse 1s infinite alternate ease-in-out; }
         @keyframes dangerPulse { 0% { border-color: rgba(234, 179, 8, 0.4); box-shadow: 0 0 10px rgba(234, 179, 8, 0.2); } 100% { border-color: rgba(234, 179, 8, 1); box-shadow: 0 0 30px rgba(234, 179, 8, 0.6); } }
 
-        /* Menu de Pausa aberto: borda amarela FIXA (sem piscar) — diferencia de
-           danger-zone (que pisca) e sinaliza "jogo em segundo plano, olhando opções". */
-        .pause-zone { border-color: rgba(234, 179, 8, 1); box-shadow: 0 0 30px rgba(234, 179, 8, 0.6); }
+        /* Menu de Pausa aberto: borda BRANCA/PRETA (conforme o tema) e FIXA
+           (sem piscar) — diferente de danger-zone (amarelo piscando, usado
+           pras respostas de Truco/Mão de 11) e de exit-zone (vermelho
+           piscando, confirmação de saída). Sinaliza "jogo em segundo plano,
+           olhando opções", sem parecer um alerta de jogo. */
+        .pause-zone { border-color: var(--txt); }
+        body.theme-dark .pause-zone { box-shadow: 0 0 30px rgba(248, 250, 252, 0.5); }
+        body.theme-light .pause-zone { box-shadow: 0 0 30px rgba(15, 23, 42, 0.35); }
         /* Confirmação de saída (dentro do Menu de Pausa): pisca em VERMELHO. */
         .exit-zone { animation: dangerPulseRed 1s infinite alternate ease-in-out; }
         @keyframes dangerPulseRed { 0% { border-color: rgba(239, 68, 68, 0.4); box-shadow: 0 0 10px rgba(239, 68, 68, 0.2); } 100% { border-color: rgba(239, 68, 68, 1); box-shadow: 0 0 30px rgba(239, 68, 68, 0.6); } }
 
-        #sync-ui { position: absolute; left: 15px; bottom: 15px; z-index: 25; background: var(--glass-bg); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); padding: 8px 14px; border-radius: 8px; border: 1px solid var(--glass-border); color: var(--txt); font-size: 0.75rem; font-weight: bold; display: flex; align-items: center; gap: 8px; }
-        .sync-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--prim); box-shadow: 0 0 6px var(--prim); animation: blink 1.5s infinite ease-in-out; }
-        @keyframes blink { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.8); } 100% { opacity: 1; transform: scale(1); } }
+        #sync-ui {
+            position: absolute; left: 15px; bottom: 15px; z-index: 25; overflow: hidden;
+            background: var(--glass-bg); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            padding: 8px 14px; border-radius: 8px; border: 1px solid var(--glass-border);
+            color: var(--txt); font-size: 0.75rem; font-weight: bold; display: flex; align-items: center; gap: 8px;
+        }
+        /* Barra de progresso do sincronismo: preenche da esquerda pra direita
+           acompanhando o timer interno (largura em %, via JS). Ao completar,
+           dá fade-out e reinicia (classe .cycle-fade cuida da transição de
+           opacidade). Quando é a vez do jogador, fica parada e 100% cheia
+           (.static-full, sem o fade em loop). Levemente translúcida pra não
+           brigar com o texto por cima, e com um contorno sutil pra continuar
+           legível tanto no tema claro quanto no escuro. */
+        #sync-bar-fill {
+            position: absolute; top: 0; left: 0; bottom: 0; width: 0%;
+            background: rgba(16, 185, 129, 0.4);
+            box-shadow: inset 0 0 0 1px rgba(16, 185, 129, 0.5);
+            transition: width 0.2s linear, opacity 0.35s ease;
+            z-index: 0;
+        }
+        #sync-bar-fill.static-full { width: 100%; transition: opacity 0.35s ease; }
+        #sync-ui #sync-timer-txt { position: relative; z-index: 1; }
 
         #scr-end { position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; display: flex; align-items: center; justify-content: center; z-index: 200; flex-direction: column; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); opacity: 0; pointer-events: none; transition: opacity 0.8s ease, background 0.8s ease; }
         #scr-end.show { opacity: 1; pointer-events: auto; }
@@ -337,6 +352,23 @@
         .hand-right2 .nick-tooltip { right: 40px; top: 50%; transform: translateY(-50%); }
 
         @media (max-width: 768px), (pointer: coarse) {
+            /* Item 10 (v0.12.7): o brilho de fundo por dificuldade ficava quase
+               imperceptível no mobile — aumenta 35% a opacidade aqui (só nessa
+               media query), mantendo a posição/tamanho como estão. Desktop
+               continua com os valores originais (definidos fora daqui). */
+            body.theme-dark {
+                --glow-facil: rgba(59,130,246,0.2);
+                --glow-normal: rgba(16,185,129,0.2);
+                --glow-dificil: rgba(239,68,68,0.2);
+                --glow-insano: rgba(147,51,234,0.2);
+            }
+            body.theme-light {
+                --glow-facil: rgba(59,130,246,0.47);
+                --glow-normal: rgba(16,185,129,0.47);
+                --glow-dificil: rgba(239,68,68,0.47);
+                --glow-insano: rgba(147,51,234,0.47);
+            }
+
             .key-box, .key-hint { display: none !important; }
             .action-btn { padding: 10px 12px; font-size: 0.85rem; border-radius: 10px; }
             .card { width: 55px; height: 85px; } 
@@ -388,12 +420,13 @@
             <button class="btn-options" onclick="toggleOptionsPanel()">⚙️ OPÇÕES</button>
         </div>
 
-        <div id="options-panel">
-            <div class="section-label" style="margin-top:0;">Opções</div>
-            <div class="theme-toggle-container" style="margin-top:0;">
-                <button class="btn-theme" onclick="toggleTheme()">☀️ MODO CLARO</button>
+        <div id="options-wrap">
+            <div id="options-panel">
+                <div class="theme-toggle-container" style="margin-top:0;">
+                    <button class="btn-theme" onclick="toggleTheme()">☀️ MODO CLARO</button>
+                </div>
+                <div id="options-version-tag">v0.12.7</div>
             </div>
-            <div id="options-version-tag">v0.12.6</div>
         </div>
     </div>
 
@@ -696,11 +729,11 @@
             
             <div id="box-my" class="hand-my"></div>
             
-            <button id="btn-hide-card" onclick="toggleHide()" disabled class="disabled">ESCONDER <span class="key-box">E</span></button>
+            <button id="btn-hide-card" onclick="toggleHide()" disabled class="disabled"><span class="key-box">E</span> ESCONDER</button>
 
             <div id="sync-ui" class="hidden">
-                <div class="sync-dot"></div>
-                <span id="sync-timer-txt" style="color: var(--txt-d);">Sincronizando...</span>
+                <div id="sync-bar-fill"></div>
+                <span id="sync-timer-txt">Sincronizando...</span>
             </div>
         </div>
 
@@ -738,7 +771,7 @@
 
             <div id="grp-pause-menu" class="legend-group">
                 <button id="btn-invite-more" class="action-btn hidden" onclick="startInviteMoreFlow('scr-game')">➕ CONVIDAR</button>
-                <button id="btn-pause-exit" class="action-btn danger" onclick="requestExit()"><span class="key-box" style="visibility:hidden;" aria-hidden="true">X</span> SAIR</button>
+                <button id="btn-pause-exit" class="action-btn danger" onclick="requestExit()"><span class="key-box highlight">S</span> SAIR</button>
             </div>
 
             <div id="grp-confirm-exit" class="legend-group">
@@ -822,7 +855,7 @@
         var currentTheme = 'dark';
         var pendingLocalMethod = 'webrtc'; var myLocalNick = 'Jogador';
         
-        var fileHandle = null; var syncCountdown = 3; var syncInterval = null; var activeTurnCheckTimer = 5;
+        var fileHandle = null; var syncProgress = 0; var syncFadeUntil = 0; var syncInterval = null; var activeTurnCheckTimer = 5000;
         var pc = null; var dc = null; var isHostWebRTC = false;
         
         var msgTimeout = null; var isSaving = false;
@@ -835,11 +868,11 @@
         window.nav = function(f, t) { 
             document.getElementById(f).classList.add('hidden'); 
             document.getElementById(t).classList.remove('hidden'); 
-            if (f === 'scr-start') { var op = getEl('options-panel'); if (op) op.classList.remove('open'); }
+            if (f === 'scr-start') { var op = getEl('options-wrap'); if (op) op.classList.remove('open'); }
         };
 
         window.toggleOptionsPanel = function() {
-            getEl('options-panel').classList.toggle('open');
+            getEl('options-wrap').classList.toggle('open');
         };
         function getEl(id) { return document.getElementById(id); }
 
@@ -1049,7 +1082,7 @@
         // verdade, "Vez de: NOME" continua fazendo sentido.
         function turnOfLabel(pid) {
             if (gameMode === 'pc') return 'DO ' + (getTeam(pid) === getTeam(myPID) ? 'PARCEIRO' : 'RIVAL');
-            return 'DE: ' + getPlayerName(pid).toUpperCase();
+            return 'DE ' + getPlayerName(pid).toUpperCase();
         }
 
         function setBottomGroup(id) {
@@ -1076,7 +1109,7 @@
             if(animLock || st.turn !== myPID || st.trucoState !== 'none' || st.isMaoDeX || st.maoDeFerro || isPaused) return;
             
             if(st.trickResults.length === 0) {
-                showMsg("A 1ª carta não pode ser escondida!", 'warn', 2000);
+                showMsg("A 1ª carta não pode ser escondida!", 'sys', 2000);
                 return;
             }
 
@@ -1084,10 +1117,10 @@
             var btn = getEl('btn-hide-card');
             if (window.isHiding) {
                 btn.classList.add('escondendo');
-                btn.innerHTML = 'ESCONDENDO <span class="key-box">E</span>';
+                btn.innerHTML = '<span class="key-box">E</span> ESCONDENDO';
             } else {
                 btn.classList.remove('escondendo');
-                btn.innerHTML = 'ESCONDER <span class="key-box">E</span>';
+                btn.innerHTML = '<span class="key-box">E</span> ESCONDER';
             }
         };
 
@@ -1095,7 +1128,7 @@
             window.isHiding = false;
             var btn = getEl('btn-hide-card');
             btn.classList.remove('escondendo');
-            btn.innerHTML = 'ESCONDER <span class="key-box">E</span>';
+            btn.innerHTML = '<span class="key-box">E</span> ESCONDER';
         }
 
         // Botão único (⋮ / ESC) que abre o Menu de Pausa, e também funciona como
@@ -1163,6 +1196,7 @@
 
             if (isPaused) {
                 if (key === 'W') toggleTheme();
+                else if (key === 'S') requestExit();
                 return;
             }
 
@@ -1206,16 +1240,17 @@
         function showMsg(m, type, durOverride) {
             var hud = getEl('main-hud'); var display = getEl('stadium-text');
             clearTimeout(msgTimeout);
-            hud.classList.remove('show-msg', 'notify-pos', 'notify-neg', 'notify-neu');
+            hud.classList.remove('show-msg', 'notify-pos', 'notify-neg', 'notify-neu', 'notify-sys');
             void hud.offsetWidth; 
             display.innerText = m;
             if (type === 'pos') { hud.classList.add('notify-pos'); display.style.color = 'var(--prim)'; } 
             else if (type === 'neg') { hud.classList.add('notify-neg'); display.style.color = 'var(--dang)'; } 
+            else if (type === 'sys') { hud.classList.add('notify-sys'); display.style.color = 'var(--txt)'; }
             else { hud.classList.add('notify-neu'); display.style.color = 'var(--warn)'; }
             hud.classList.add('show-msg');
             
             var duration = durOverride || 1300;
-            msgTimeout = setTimeout(function() { hud.classList.remove('show-msg', 'notify-pos', 'notify-neg', 'notify-neu'); }, duration); 
+            msgTimeout = setTimeout(function() { hud.classList.remove('show-msg', 'notify-pos', 'notify-neg', 'notify-neu', 'notify-sys'); }, duration); 
         }
 
         function triggerEndGame(isWin) {
@@ -1626,6 +1661,17 @@
             return { key: 'bora', label: 'Bora!', verb: 'ir com tudo' };
         }
 
+        // Cor certa pro conselho, dependendo do CONTEÚDO (não de quem está
+        // falando) — "correr" é notícia ruim (vermelho), "aceitar" é neutro
+        // (amarelo, como os pedidos de Truco), "aumentar"/"bora" é boa notícia
+        // (verde). Antes toda mensagem de conselho usava verde sem olhar pro
+        // conteúdo, inclusive "Sugiro correr!".
+        function adviceMsgType(key) {
+            if (key === 'correr') return 'neg';
+            if (key === 'aceitar') return 'neu';
+            return 'pos';
+        }
+
         // Nome de exibição de um parceiro: usa o nick real se existir
         // (multiplayer), senão cai pra "Parceiro 1"/"Parceiro 2" — evita que
         // dois parceiros sem nick fiquem ambíguos ("Seu Parceiro" duas vezes).
@@ -1737,7 +1783,7 @@
             if (st.isMaoDeX || st.maoDeFerro) {
                 getEl('ui-val').innerText = (st.rules === 'mineiro') ? "4" : "3";
             } else { 
-                getEl('ui-val').innerText = (st.handVal === 3 || st.handVal === 4) ? getTrucoName(st.handVal) : st.handVal.toString(); 
+                getEl('ui-val').innerText = st.handVal.toString(); 
             }
             
             var indicatorText = (st.rules === 'mineiro') ? "TRUCO MINEIRO" : (st.rules === 'goiano' ? "TRUCO GOIANO" : (st.deckMode === 'limpo' ? "BARALHO LIMPO" : "BARALHO SUJO"));
@@ -1789,11 +1835,12 @@
                             // mesmo quando o pedido já estava no telhado (12).
                             var partnerProb = aiContextProb(partners[0]);
                             var advice = adviceTextFor(partnerProb, st.proposedVal);
+                            var adviceCat = adviceCategoryFor(partnerProb, st.proposedVal);
                             indicatorText = advice.toUpperCase();
                             if(window.lastAdviceLevel !== st.proposedVal) {
                                 window.lastAdviceLevel = st.proposedVal;
                                 setTimeout(function() {
-                                    if (st.trucoState === 'pending') { showMsg(advice, 'pos', 2300); }
+                                    if (st.trucoState === 'pending') { showMsg(advice, adviceMsgType(adviceCat.key), 2300); }
                                 }, 1500);
                             }
                         } else if (partners.length > 1) {
@@ -1817,7 +1864,7 @@
                                 cats.forEach(function(c) {
                                     var pMsg = partnerLabel(c.pid, c.idx) + ": " + c.cat.label;
                                     setTimeout(function() {
-                                        if (st.trucoState === 'pending') { showMsg(pMsg, 'pos', 2000); }
+                                        if (st.trucoState === 'pending') { showMsg(pMsg, adviceMsgType(c.cat.key), 2000); }
                                     }, 1500 + c.idx * 2200);
                                 });
                             }
@@ -2086,6 +2133,11 @@
                         void innerCard.offsetWidth; 
                         innerCard.style.transition = 'transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
                         innerCard.style.transform = 'rotateY(0deg)';
+                        // Sem isso, essa transition (só transform) ficava presa
+                        // ali pro resto da rodada, e a carta parava de responder
+                        // suavemente a troca de tema (que depende da transition
+                        // mais completa vinda da classe .card).
+                        setTimeout(() => { innerCard.style.transition = ''; }, 520);
                     }
                 });
 
@@ -2526,16 +2578,23 @@
             if(raise) {
                 st.proposedVal = getNextTrucoVal(st.proposedVal); 
                 st.trucoBy = pid; st.lastTruco = pid;
-                showMsg(trucoActionText(pid, 'pediu', 'pediram', st.proposedVal), 'neg');
+                showMsg(trucoActionText(pid, 'pediu', 'pediram', st.proposedVal), 'neu');
                 animLock = false; updateUI(); updateTurnGlow(); autoSave(); checkAiTrucoDecision(); return;
             }
+            // Cor de aceitar/correr depende de QUEM está respondendo: se for
+            // um parceiro-IA (mesmo time), o sinal se inverte em relação ao
+            // padrão "resposta do rival" (aceitar = confiante/bom quando é
+            // meu time, ruim quando é o rival subindo a aposta contra mim;
+            // correr = ruim quando é meu time abrindo mão dos pontos, bom
+            // quando é o rival fugindo).
+            var isMyTeamResponding = (myPID !== 0 && getTeam(pid) === getTeam(myPID));
             if(accept) {
                 st.handVal = st.proposedVal; st.proposedVal = 0;
                 st.aiJustAccepted = true; 
-                showMsg(trucoActionText(pid, 'ACEITOU', 'ACEITARAM'), 'neg');
+                showMsg(trucoActionText(pid, 'ACEITOU', 'ACEITARAM'), isMyTeamResponding ? 'pos' : 'neg');
                 st.trucoState = 'none'; animLock = false; updateUI(); autoSave(); checkAiTurn();
             } else {
-                showMsg(trucoActionText(pid, 'CORREU', 'CORRERAM'), 'pos');
+                showMsg(trucoActionText(pid, 'CORREU', 'CORRERAM'), isMyTeamResponding ? 'neg' : 'pos');
                 st.trucoState = 'none';
                 var pts = st.handVal;
                 st.scores[getOppTeam(myTeam)] += pts; animLock = false;
@@ -2971,7 +3030,7 @@
                 var answer = parsed.sdp || parsed;
                 if (parsed.nick) { st.nicks = st.nicks || {}; st.nicks[targetPid] = parsed.nick.substring(0, 15); }
                 peer.pc.setRemoteDescription(answer);
-            } catch(e) { showMsg("Código de resposta inválido.", 'neg'); }
+            } catch(e) { showMsg("Código de resposta inválido.", 'sys'); }
         }
 
         // Abre a tela de "convidar mais um" — reaproveita o backend de
@@ -2980,7 +3039,7 @@
         // depois, a qualquer momento, pelo menu de pausa.
         window.startInviteMoreFlow = function(fromScreen) {
             var nextPid = getNextOpenHumanSeat();
-            if (!nextPid) { showMsg("A mesa já está com todos os assentos ocupados.", 'neu'); return; }
+            if (!nextPid) { showMsg("A mesa já está com todos os assentos ocupados.", 'sys'); return; }
             window._inviteMoreTargetPid = nextPid;
 
             var expected = st.expectedHumans || 2;
@@ -2999,7 +3058,7 @@
 
         window.confirmInviteMoreAnswer = async function() {
             var answerCodeStr = getEl('invite-more-answer-in').value.trim();
-            if (!answerCodeStr) { showMsg("Cole a resposta do novo jogador antes de confirmar.", 'neg'); return; }
+            if (!answerCodeStr) { showMsg("Cole a resposta do novo jogador antes de confirmar.", 'sys'); return; }
             var box = getEl('invite-more-status-box');
             box.classList.remove('hidden');
             getEl('invite-more-status-text').innerText = '🔄 Conectando...';
@@ -3021,7 +3080,7 @@
             if (!isHostWebRTC || gameMode !== 'webrtc') return;
             var expected = st.expectedHumans || 2;
             if (st.humanSeats.length < expected && getNextOpenHumanSeat()) {
-                showMsg("Ainda faltam jogadores — use CONVIDAR no menu de pausa.", 'neu', 3500);
+                showMsg("Ainda faltam jogadores — use CONVIDAR no menu de pausa.", 'sys', 3500);
             }
         }
 
@@ -3432,7 +3491,7 @@
                 // pegava pedido novo do rival, deixando pedido do parceiro e
                 // qualquer aumento subsequente sem notificação nenhuma.
                 if (st.trucoState === 'pending' && st.trucoBy !== myPID && (oldSt.trucoState !== 'pending' || st.proposedVal !== oldSt.proposedVal)) {
-                    showMsg(trucoActionText(st.trucoBy, 'pediu', 'pediram', st.proposedVal), 'neg');
+                    showMsg(trucoActionText(st.trucoBy, 'pediu', 'pediram', st.proposedVal), 'neu');
                 }
                 else if (st.trucoState === 'none' && oldSt.trucoState === 'pending') {
                     if (st.scores[1] === oldSt.scores[1] && st.scores[2] === oldSt.scores[2]) {
@@ -3451,15 +3510,49 @@
 
         function startSyncTimer() {
             if(gameMode !== 'json') return;
-            var uiText = getEl('sync-timer-txt'); syncCountdown = 3; clearInterval(syncInterval);
+            var uiText = getEl('sync-timer-txt'); var bar = getEl('sync-bar-fill');
+            clearInterval(syncInterval);
+            syncProgress = 0; syncFadeUntil = 0;
+            var tickMs = 200;
             syncInterval = setInterval(function() {
-                if(isAwaitingMyAction()) { 
-                    uiText.innerText = "Sua vez!"; uiText.style.color = "var(--prim)"; 
-                    activeTurnCheckTimer--; if(activeTurnCheckTimer <= 0) { activeTurnCheckTimer = 5; autoLoad(); } return; 
+                if(isAwaitingMyAction()) {
+                    // Minha vez: já estou com o estado mais recente, a barra
+                    // fica cheia e parada (sem o loop de carregar/sumir).
+                    uiText.innerText = "Sincronizado"; uiText.style.color = "var(--prim)";
+                    bar.classList.add('static-full'); bar.style.width = '100%'; bar.style.opacity = '1';
+                    activeTurnCheckTimer -= tickMs;
+                    if(activeTurnCheckTimer <= 0) { activeTurnCheckTimer = 5000; autoLoad(); }
+                    return;
                 }
-                activeTurnCheckTimer = 5; syncCountdown--; uiText.innerText = "Sincronizando em " + syncCountdown + "s..."; uiText.style.color = "var(--txt-d)";
-                if(syncCountdown <= 0) { syncCountdown = 3; uiText.innerText = "Sincronizando..."; autoLoad(); }
-            }, 1000);
+
+                var wasStaticFull = bar.classList.contains('static-full');
+                bar.classList.remove('static-full');
+                if (wasStaticFull) { bar.style.width = '0%'; syncProgress = 0; syncFadeUntil = 0; }
+                uiText.innerText = "Sincronizando..."; uiText.style.color = "var(--txt-d)";
+                activeTurnCheckTimer = 5000;
+
+                var now = Date.now();
+                if (now < syncFadeUntil) return; // ainda no fade-out entre um ciclo e outro
+
+                // Dinamismo: enquanto espero um humano pensar, 1s é de sobra
+                // (ele não vai jogar mais rápido que isso de qualquer forma).
+                // Mas se quem está jogando agora é uma IA/transição (venceu a
+                // mão, trocou de vez, etc.), sincroniza bem mais rápido — ajuda
+                // a evitar notificação atrasada ou perdida nesses momentos.
+                var waitMs = isHumanSeat(st.turn) ? 1000 : 300;
+                syncProgress += tickMs;
+
+                if (syncProgress >= waitMs) {
+                    bar.style.opacity = '0';
+                    syncFadeUntil = now + 350;
+                    setTimeout(function() { bar.style.width = '0%'; }, 350);
+                    syncProgress = 0;
+                    autoLoad();
+                } else {
+                    bar.style.opacity = '1';
+                    bar.style.width = Math.min(100, (syncProgress / waitMs) * 100) + '%';
+                }
+            }, tickMs);
         }
 
         try {
