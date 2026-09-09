@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Truco - v0.12.7</title>
+    <title>Truco - v0.12.10</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♣</text></svg>">
     <style>
         /* THEME VARIABLES */
@@ -95,6 +95,8 @@
         .btn-p:hover { background: var(--prim-h); transform: translateY(-2px); }
         .btn-s { background: var(--btn-s-bg); border: 1px solid var(--glass-border); color: var(--txt); }
         .btn-s:hover { background: var(--btn-s-hov); transform: translateY(-2px); }
+        .btn-p:disabled, .btn-s:disabled { opacity: 0.3; pointer-events: none; }
+        .btn-p:disabled:hover, .btn-s:disabled:hover { transform: none; }
         
         .diff-selector { display: flex; gap: 8px; margin-bottom: 15px; }
         .diff-btn { flex: 1; padding: 6px; border-radius: 8px; border: 1px solid var(--glass-border); background: transparent; color: var(--txt-d); font-size: 0.75rem; cursor: pointer; }
@@ -125,6 +127,16 @@
         #options-wrap.open { max-height: 90px; }
         #options-panel { padding-top: 18px; }
         #options-version-tag { margin-top: 14px; text-align: center; font-size: 0.65rem; color: var(--txt-d); opacity: 0.35; }
+
+        /* Mesmo padrão do #options-wrap, reaproveitado pro mini-painel do
+           Jogo Rápido (Single Player) — só a altura máxima muda, por ter
+           mais conteúdo (rótulo + 3 botões de região + botão de iniciar). */
+        #quick-game-wrap {
+            max-height: 0; overflow: hidden; width: 100%;
+            transition: max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        #quick-game-wrap.open { max-height: 180px; }
+        #quick-game-panel { padding-top: 18px; }
 
         .game-area { width: 100vw; height: 100dvh; display: flex; flex-direction: column; padding: 10px 10px max(10px, env(safe-area-inset-bottom)); box-sizing: border-box; position: relative; }
         .glass-panel { background: var(--glass-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-radius: 14px; border: 1px solid var(--glass-border); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15); color: var(--txt); }
@@ -413,7 +425,7 @@
             </div>
         </div>
         <div class="btn-stack">
-            <button class="btn-p" onclick="nav('scr-start', 'scr-mode')">SINGLE PLAYER</button>
+            <button class="btn-p" onclick="nav('scr-start', 'scr-sp-choice')">SINGLE PLAYER</button>
             <button class="btn-p" style="background: rgba(59, 130, 246, 0.6);" onclick="nav('scr-start', 'scr-multi-choice')">MULTIPLAYER</button>
         </div>
         <div class="theme-toggle-container">
@@ -425,7 +437,7 @@
                 <div class="theme-toggle-container" style="margin-top:0;">
                     <button class="btn-theme" onclick="toggleTheme()">☀️ MODO CLARO</button>
                 </div>
-                <div id="options-version-tag">v0.12.7</div>
+                <div id="options-version-tag">v0.12.10</div>
             </div>
         </div>
     </div>
@@ -445,8 +457,40 @@
         <button class="btn-s" style="width: 100%; margin-top: 15px;" onclick="nav('scr-multi-choice', 'scr-start')">VOLTAR</button>
     </div>
 
-    <div id="scr-mode" class="panel hidden">
+    <div id="scr-sp-choice" class="panel hidden">
         <h2>SINGLE PLAYER</h2>
+        <div class="btn-stack">
+            <button class="choice-card" disabled>
+                <span class="choice-title">🕹️ ARCADE</span>
+                <span class="choice-desc">Partidas em sequência com dificuldade e modo variando aleatoriamente. Em breve!</span>
+            </button>
+            <button class="choice-card" onclick="nav('scr-sp-choice', 'scr-mode')">
+                <span class="choice-title">🎮 JOGO PERSONALIZADO</span>
+                <span class="choice-desc">Você escolhe regra, formato, baralho e dificuldade da IA.</span>
+            </button>
+            <button class="choice-card" onclick="toggleQuickGamePanel()">
+                <span class="choice-title">⚡ JOGO RÁPIDO</span>
+                <span class="choice-desc">Só escolha a região do Truco — formato, baralho e dificuldade saem no sorteio.</span>
+            </button>
+        </div>
+
+        <div id="quick-game-wrap">
+            <div id="quick-game-panel">
+                <div class="section-label" style="margin-top:0;">Região do Truco:</div>
+                <div class="diff-selector">
+                    <button class="diff-btn active" id="btn-rules-paulista-qg" onclick="setQuickRules('paulista')">PAULISTA</button>
+                    <button class="diff-btn" id="btn-rules-mineiro-qg" onclick="setQuickRules('mineiro')">MINEIRO</button>
+                    <button class="diff-btn" id="btn-rules-goiano-qg" onclick="setQuickRules('goiano')">GOIANO</button>
+                </div>
+                <button class="btn-p" style="margin-top: 15px;" onclick="startQuickGame()">INICIAR PARTIDA</button>
+            </div>
+        </div>
+
+        <button class="btn-s" style="width: 100%; margin-top: 15px;" onclick="nav('scr-sp-choice', 'scr-start')">VOLTAR</button>
+    </div>
+
+    <div id="scr-mode" class="panel hidden">
+        <h2>JOGO PERSONALIZADO</h2>
         
         <div class="section-label">Regras do Jogo:</div>
         <div class="diff-selector">
@@ -470,14 +514,14 @@
 
         <div class="section-label">Dificuldade da IA:</div>
         <div class="diff-selector" style="flex-wrap: wrap;">
-            <button class="diff-btn facil" id="btn-diff-1" onclick="setDiff(1)">FÁCIL</button>
-            <button class="diff-btn active" id="btn-diff-2" onclick="setDiff(2)">NORMAL</button>
-            <button class="diff-btn dificil" id="btn-diff-3" onclick="setDiff(3)">DIFÍCIL</button>
-            <button class="diff-btn insano" id="btn-diff-4" onclick="setDiff(4)">INSANO</button>
+            <button class="diff-btn facil" id="btn-diff-1-sp" onclick="setDiff(1, 'sp')">FÁCIL</button>
+            <button class="diff-btn active" id="btn-diff-2-sp" onclick="setDiff(2, 'sp')">NORMAL</button>
+            <button class="diff-btn dificil" id="btn-diff-3-sp" onclick="setDiff(3, 'sp')">DIFÍCIL</button>
+            <button class="diff-btn insano" id="btn-diff-4-sp" onclick="setDiff(4, 'sp')">INSANO</button>
         </div>
         <div class="btn-stack">
             <button class="btn-p" onclick="startGame('pc', 1)">JOGAR AGORA</button>
-            <button class="btn-s" onclick="nav('scr-mode', 'scr-start')">VOLTAR</button>
+            <button class="btn-s" onclick="nav('scr-mode', 'scr-sp-choice')">VOLTAR</button>
         </div>
     </div>
 
@@ -490,7 +534,7 @@
         <div class="section-label">Como deseja conectar?</div>
         <div class="btn-stack">
             <button class="choice-card" id="btn-method-json" onclick="selectLocalMethod('json')">
-                <span class="choice-title">📁 ARQUIVO LOCAL</span>
+                <span class="choice-title">📁 ARQUIVO NA REDE</span>
                 <span class="choice-desc" id="btn-method-json-desc">Um cria o arquivo, o outro abre — ideal para computadores na mesma rede ou pasta compartilhada. Só no Chrome/Edge Desktop.</span>
             </button>
             <button class="choice-card" id="btn-method-webrtc" onclick="selectLocalMethod('webrtc')">
@@ -500,6 +544,21 @@
         </div>
 
         <button class="btn-s" style="width: 100%; margin-top: 15px;" onclick="nav('scr-local-choice', 'scr-multi-choice')">VOLTAR</button>
+    </div>
+
+    <div id="scr-local-role-choice" class="panel hidden">
+        <h2 id="local-role-title">ARQUIVO NA REDE</h2>
+        <div class="btn-stack">
+            <button class="choice-card" id="btn-local-role-create" onclick="nav('scr-local-role-choice', 'scr-local-rules')">
+                <span class="choice-title" id="local-role-create-title">📁 CRIAR ARQUIVO</span>
+                <span class="choice-desc" id="local-role-create-desc">Você define as regras e cria o arquivo pra compartilhar.</span>
+            </button>
+            <button class="choice-card" id="btn-local-role-join" onclick="startLocalRole('guest')">
+                <span class="choice-title" id="local-role-join-title">📂 ABRIR ARQUIVO</span>
+                <span class="choice-desc" id="local-role-join-desc">Abre o arquivo que o outro jogador criou — as regras já vêm definidas.</span>
+            </button>
+        </div>
+        <button class="btn-s" style="width: 100%; margin-top: 15px;" onclick="nav('scr-local-role-choice', 'scr-local-choice')">VOLTAR</button>
     </div>
 
     <div id="scr-local-rules" class="panel hidden">
@@ -534,12 +593,19 @@
             <button class="diff-btn" id="btn-hc-6-mp" onclick="setPendingHumanCount(6, 'mp')">6</button>
         </div>
 
-        <div class="btn-stack" style="margin-top: 15px;">
-            <button class="btn-p" id="btn-local-host" style="background: rgba(59, 130, 246, 0.8);" onclick="startLocalRole('host')">CRIAR SALA (HOST)</button>
-            <button class="btn-s" id="btn-local-guest" onclick="startLocalRole('guest')">ENTRAR NA SALA (GUEST)</button>
+        <div class="section-label">Dificuldade da IA (assentos vagos):</div>
+        <div class="diff-selector" style="flex-wrap: wrap;">
+            <button class="diff-btn facil" id="btn-diff-1-mp" onclick="setDiff(1, 'mp')">FÁCIL</button>
+            <button class="diff-btn active" id="btn-diff-2-mp" onclick="setDiff(2, 'mp')">NORMAL</button>
+            <button class="diff-btn dificil" id="btn-diff-3-mp" onclick="setDiff(3, 'mp')">DIFÍCIL</button>
+            <button class="diff-btn insano" id="btn-diff-4-mp" onclick="setDiff(4, 'mp')">INSANO</button>
         </div>
 
-        <button class="btn-s" style="width: 100%; margin-top: 15px;" onclick="nav('scr-local-rules', 'scr-local-choice')">VOLTAR</button>
+        <div class="btn-stack" style="margin-top: 15px;">
+            <button class="btn-p" id="btn-local-host" style="background: rgba(59, 130, 246, 0.8);" onclick="startLocalRole('host')">CRIAR ARQUIVO</button>
+        </div>
+
+        <button class="btn-s" style="width: 100%; margin-top: 15px;" onclick="nav('scr-local-rules', 'scr-local-role-choice')">VOLTAR</button>
     </div>
 
     <div id="scr-webrtc-connect" class="panel hidden">
@@ -585,7 +651,7 @@
         </div>
 
         <button id="webrtc-btn-retry" class="btn-s hidden" style="width:100%; margin-top:10px;" onclick="webrtcRetry()">🔄 TENTAR NOVAMENTE</button>
-        <button class="btn-s" style="width:100%; margin-top:10px;" onclick="webrtcAbortIfActive(); nav('scr-webrtc-connect', 'scr-local-rules')">VOLTAR</button>
+        <button class="btn-s" style="width:100%; margin-top:10px;" onclick="webrtcAbortIfActive(); nav('scr-webrtc-connect', isHostWebRTC ? 'scr-local-rules' : 'scr-local-role-choice')">VOLTAR</button>
     </div>
 
     <div id="scr-webrtc-invite-more" class="panel hidden">
@@ -619,6 +685,31 @@
         <div class="section-label">Seu Nickname:</div>
         <input type="text" id="ws-nick" maxlength="15" placeholder="Seu Nickname" style="padding: 8px; border-radius: 8px; border: 1px solid var(--glass-border); background: var(--btn-s-bg); color: var(--txt); width: 100%; box-sizing: border-box; text-align: center; font-weight: bold; margin-bottom: 15px;">
 
+        <div class="btn-stack">
+            <button class="choice-card" disabled>
+                <span class="choice-title">🏆 RANQUEADA</span>
+                <span class="choice-desc">Partidas competitivas com pontuação — em breve!</span>
+            </button>
+            <button class="choice-card" onclick="goToOnlineRulesScreen()">
+                <span class="choice-title">➕ CRIAR SALA</span>
+                <span class="choice-desc">Você define as regras e a dificuldade da IA, e gera uma sala com código.</span>
+            </button>
+            <button class="choice-card" onclick="goToOnlineRoomScreen(false)">
+                <span class="choice-title">🔑 ENTRAR NUMA SALA</span>
+                <span class="choice-desc">Só cole o código da sala — as regras já vêm definidas por quem criou.</span>
+            </button>
+            <button class="choice-card" onclick="goToOnlineRoomScreen(true)">
+                <span class="choice-title">👁️ ASSISTIR</span>
+                <span class="choice-desc">Acompanhe uma partida em andamento sem jogar.</span>
+            </button>
+        </div>
+
+        <button class="btn-s" style="width: 100%; margin-top: 15px;" onclick="nav('scr-online', 'scr-multi-choice')">VOLTAR</button>
+    </div>
+
+    <div id="scr-online-rules" class="panel hidden">
+        <h2>CRIAR SALA ONLINE</h2>
+
         <div class="section-label">Regras do Jogo:</div>
         <div class="diff-selector">
             <button class="diff-btn active" id="btn-rules-paulista-on" onclick="setRules('paulista', 'on')">PAULISTA</button>
@@ -648,12 +739,19 @@
             <button class="diff-btn" id="btn-hc-6-on" onclick="setPendingHumanCount(6, 'on')">6</button>
         </div>
 
-        <div class="btn-stack" style="margin-top:15px;">
-            <button class="btn-p" onclick="goToOnlineRoomScreen(false)">CONTINUAR</button>
-            <button class="btn-s" onclick="goToOnlineRoomScreen(true)">ENTRAR COMO ESPECTADOR</button>
+        <div class="section-label">Dificuldade da IA (assentos vagos):</div>
+        <div class="diff-selector" style="flex-wrap: wrap;">
+            <button class="diff-btn facil" id="btn-diff-1-on" onclick="setDiff(1, 'on')">FÁCIL</button>
+            <button class="diff-btn active" id="btn-diff-2-on" onclick="setDiff(2, 'on')">NORMAL</button>
+            <button class="diff-btn dificil" id="btn-diff-3-on" onclick="setDiff(3, 'on')">DIFÍCIL</button>
+            <button class="diff-btn insano" id="btn-diff-4-on" onclick="setDiff(4, 'on')">INSANO</button>
         </div>
 
-        <button class="btn-s" style="width: 100%; margin-top: 15px;" onclick="nav('scr-online', 'scr-multi-choice')">VOLTAR</button>
+        <div class="btn-stack" style="margin-top:15px;">
+            <button class="btn-p" onclick="startMultiplayer('host', 'ws')">CRIAR SALA</button>
+        </div>
+
+        <button class="btn-s" style="width: 100%; margin-top: 15px;" onclick="nav('scr-online-rules', 'scr-online')">VOLTAR</button>
     </div>
 
     <div id="scr-online-room" class="panel hidden">
@@ -663,7 +761,6 @@
         <input type="text" id="ws-room" oninput="updateOnlineRoomButtons()" placeholder="ID da Sala" style="padding: 8px; border-radius: 8px; border: 1px solid var(--glass-border); background: var(--btn-s-bg); color: var(--txt); width: 100%; box-sizing: border-box; text-align: center; font-size: 0.9rem; margin-bottom: 15px;">
 
         <div id="online-room-hostguest" class="btn-stack">
-            <button class="btn-p" onclick="startMultiplayer('host', 'ws')">CRIAR SALA</button>
             <button class="btn-s" id="btn-ws-join" disabled onclick="startMultiplayer('guest', 'ws')">ENTRAR NA SALA</button>
         </div>
 
@@ -846,7 +943,16 @@
             // mais um número de pid fixo espalhado pelo código.
             humanSeats: [1, 2],
             expectedHumans: 2,
-            partnerFoldPid: 0
+            partnerFoldPid: 0,
+            // Quem descartou a mão (foi ao baralho) pra terminar a rodada
+            // anterior — só existe pra dar tempo de avisar os outros jogadores
+            // via sync (processLoadedState), já que descartar não passa por
+            // trucoState 'pending'/'mao11' como as outras formas de terminar
+            // uma rodada. nextRoundFoldBy é o "rascunho" que executeFold/
+            // respondPartnerFold preenchem; startRound() transfere pra
+            // lastFoldBy (o que realmente viaja on estado da rodada NOVA) e
+            // zera nextRoundFoldBy de novo.
+            lastFoldBy: 0, nextRoundFoldBy: 0
         };
 
         var myPID = 1; 
@@ -876,6 +982,35 @@
         };
         function getEl(id) { return document.getElementById(id); }
 
+        // Jogo Rápido (Single Player): só a região é escolhida pelo jogador —
+        // formato de mesa, baralho e dificuldade da IA saem no sorteio ao
+        // iniciar. Usa uma variável e uma função PRÓPRIAS (não setRules) já
+        // que aqui não existem botões de baralho pra travar/destravar.
+        var pendingQuickRules = 'paulista';
+        window.setQuickRules = function(rules) {
+            pendingQuickRules = rules;
+            ['paulista', 'mineiro', 'goiano'].forEach(function(r) {
+                getEl('btn-rules-' + r + '-qg').classList.toggle('active', r === rules);
+            });
+        };
+
+        window.toggleQuickGamePanel = function() {
+            getEl('quick-game-wrap').classList.toggle('open');
+        };
+
+        window.startQuickGame = function() {
+            pendingRules = pendingQuickRules;
+            var formats = ['1v1', '2v2', '3v3'];
+            pendingFormat = formats[Math.floor(Math.random() * formats.length)];
+            // Mineiro só existe em Baralho Sujo — os outros dois sorteiam entre os dois.
+            pendingDeckMode = (pendingQuickRules === 'mineiro') ? 'sujo' : (Math.random() < 0.5 ? 'sujo' : 'limpo');
+            aiDifficulty = 1 + Math.floor(Math.random() * 4);
+            updateBodyDiffClass();
+            getEl('quick-game-wrap').classList.remove('open');
+            nav('scr-sp-choice', 'scr-game');
+            startGame('pc', 1);
+        };
+
         window.toggleTheme = function() {
             var body = document.body;
             var btn = document.querySelector('.btn-theme');
@@ -902,10 +1037,12 @@
             body.classList.add('diff-' + aiDifficulty);
         }
 
-        window.setDiff = function(level) {
+        window.setDiff = function(level, screen) {
             aiDifficulty = level;
-            document.querySelectorAll('#scr-mode .diff-btn:not([id^="btn-deck"]):not([id^="btn-fmt"]):not([id^="btn-rules"])').forEach(b => b.classList.remove('active'));
-            getEl('btn-diff-' + level).classList.add('active');
+            var prefix = screen || 'sp';
+            ['1','2','3','4'].forEach(function(n) { var b = getEl('btn-diff-' + n + '-' + prefix); if (b) b.classList.remove('active'); });
+            var active = getEl('btn-diff-' + level + '-' + prefix);
+            if (active) active.classList.add('active');
             updateBodyDiffClass();
         };
 
@@ -2168,7 +2305,7 @@
             
             if (myPID === 1) st.deckMode = pendingDeckMode;
             
-            var fromScreen = (modeStr === 'pc') ? 'scr-mode' : (modeStr === 'json' ? 'scr-local-rules' : 'scr-webrtc-connect');
+            var fromScreen = (modeStr === 'pc') ? 'scr-mode' : (modeStr === 'json' ? (playerID === 1 ? 'scr-local-rules' : 'scr-local-role-choice') : 'scr-webrtc-connect');
             nav(fromScreen, 'scr-game');
             if (myPID === 1) {
                 st.firstPlayerOfRound = 1; 
@@ -2180,6 +2317,7 @@
             var deck = []; window.lastAdviceLevel = 0; st.humanAccepted = false; resetHideBtn();
             var activeVals = getActiveVals();
             st.partnerForcedPlay = false; 
+            st.lastFoldBy = st.nextRoundFoldBy || 0; st.nextRoundFoldBy = 0;
             
             if (st.rules === 'goiano' && st.deckMode === 'limpo') {
                 // Padrão regional do Goiano: base Limpo + 3 manilhas fixas extras
@@ -2234,9 +2372,9 @@
             if (st.scores[1] === thres && st.scores[2] === thres) {
                 st.maoDeFerro = true; st.handVal = st.rules === 'mineiro' ? 4 : 3;
             } else if (st.scores[1] === thres) {
-                st.isMaoDeX = true; st.maoDeXTeam = 1; st.handVal = st.rules === 'mineiro' ? 4 : 3; st.trucoState = 'mao11';
+                st.isMaoDeX = true; st.maoDeXTeam = 1; st.trucoState = 'mao11';
             } else if (st.scores[2] === thres) {
-                st.isMaoDeX = true; st.maoDeXTeam = 2; st.handVal = st.rules === 'mineiro' ? 4 : 3; st.trucoState = 'mao11';
+                st.isMaoDeX = true; st.maoDeXTeam = 2; st.trucoState = 'mao11';
             }
             
             getEl('box-table').innerHTML = '';
@@ -2277,6 +2415,7 @@
             if(animLock || st.trucoState !== 'mao11') return;
             var txt = st.rules === 'mineiro' ? "10" : "11";
             if(accept) {
+                st.handVal = st.rules === 'mineiro' ? 4 : 3;
                 var msgAcc = st.gameFormat === '1v1' ? "Você Aceitou a Mão de "+txt+"!" : "Vocês Aceitaram a Mão de "+txt+"!";
                 showMsg(msgAcc, 'pos'); 
                 st.trucoState = 'none'; 
@@ -2304,6 +2443,7 @@
             var txt = st.rules === 'mineiro' ? "10" : "11";
             
             if (accept) {
+                st.handVal = st.rules === 'mineiro' ? 4 : 3;
                 var msg = st.gameFormat === '1v1' ? "O Rival aceitou a Mão de "+txt+"!" : "Os Rivais aceitaram a Mão de "+txt+"!";
                 showMsg(msg, 'neg');
                 st.trucoState = 'none';
@@ -2331,6 +2471,7 @@
             cancelFold();
             if(animLock || st.turn !== myPID || st.trucoState !== 'none') return;
             showMsg(st.gameFormat === '1v1' ? "Você correu!" : "Vocês correram!", 'neg'); st.scores[getOppTeam(getTeam(myPID))] += st.handVal;
+            st.nextRoundFoldBy = myPID;
             if(st.scores[getOppTeam(getTeam(myPID))] >= 12) { autoSave(); triggerEndGame(false); return; }
             var nxtFirst = getNextTurn(st.firstPlayerOfRound);
             if (myPID === 1 || gameMode !== 'json') { startRound(nxtFirst); } else { st.needsNewRound = true; st.nextFirstPlayer = nxtFirst; autoSave(); }
@@ -2343,6 +2484,7 @@
                 st.trucoState = 'none';
                 var oppT2 = getOppTeam(getTeam(myPID));
                 st.scores[oppT2] += st.handVal;
+                st.nextRoundFoldBy = myPID;
                 if(st.scores[oppT2] >= 12) { autoSave(); triggerEndGame(false); return; }
                 var nxtFirst = getNextTurn(st.firstPlayerOfRound);
                 if (myPID === 1 || gameMode !== 'json') { startRound(nxtFirst); } else { st.needsNewRound = true; st.nextFirstPlayer = nxtFirst; autoSave(); }
@@ -2782,20 +2924,23 @@
             mpMethod = method;
             if (method === 'ws') {
                 var nick = getEl('ws-nick').value.trim() || 'Anônimo';
-                var room = getEl('ws-room').value.trim();
+                // Host cria a sala direto da tela de Regras — nunca visita
+                // scr-online-room, então gera um ID novo sempre (não lê
+                // ws-room, que poderia ter um valor antigo de uma tentativa
+                // anterior de Entrar/Assistir).
+                var room = (role === 'host') ? ('SALA-' + Math.floor(Math.random()*10000)) : getEl('ws-room').value.trim();
                 var protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
                 var url = protocol + '//' + window.location.host;
                 if(window.location.protocol === 'file:') url = 'ws://localhost:3000'; 
                 
-                if(role === 'host' && !room) room = 'SALA-' + Math.floor(Math.random()*10000);
                 if(role === 'guest' && !room) { alert("Informe o ID da Sala para entrar."); return; }
                 if(role === 'spectator' && !room) { alert("Informe o ID da Sala para assistir."); return; }
                 
                 getEl('lobby-room-id').innerText = room;
                 getEl('lobby-logs').innerHTML = '';
-                nav('scr-online-room', 'scr-lobby');
+                nav(role === 'host' ? 'scr-online-rules' : 'scr-online-room', 'scr-lobby');
                 
-                connectWS(url, room, nick, pendingFormat, role === 'spectator', pendingHumanCount);
+                connectWS(url, room, nick, pendingFormat, role === 'spectator', pendingHumanCount, role);
             } else if (method === 'json') {
                 if (!window.showSaveFilePicker && !window.showOpenFilePicker) { alert("Navegador não suportado."); return; }
                 try {
@@ -2836,11 +2981,11 @@
         window.wsConn = null;
         window.wsPlayers = {};
 
-        function connectWS(url, roomId, nick, format, isSpectator, expectedHumans) {
+        function connectWS(url, roomId, nick, format, isSpectator, expectedHumans, role) {
             try {
                 window.wsConn = new WebSocket(url);
             } catch(e) {
-                alert("Erro ao conectar no servidor."); nav('scr-lobby', 'scr-online-room'); return;
+                alert("Erro ao conectar no servidor."); nav('scr-lobby', role === 'host' ? 'scr-online-rules' : 'scr-online-room'); return;
             }
             
             window.wsConn.onopen = function() {
@@ -3116,15 +3261,23 @@
             try { localStorage.setItem('trucoNick', myLocalNick); } catch(e) {}
 
             if (method === 'json') {
-                getEl('local-rules-title').innerText = 'ARQUIVO LOCAL';
-                getEl('btn-local-host').innerText = 'CRIAR ARQUIVO (HOST)';
-                getEl('btn-local-guest').innerText = 'ABRIR ARQUIVO (GUEST)';
+                getEl('local-rules-title').innerText = 'ARQUIVO NA REDE';
+                getEl('local-role-title').innerText = 'ARQUIVO NA REDE';
+                getEl('local-role-create-title').innerText = '📁 CRIAR ARQUIVO';
+                getEl('local-role-create-desc').innerText = 'Você define as regras e cria o arquivo pra compartilhar.';
+                getEl('local-role-join-title').innerText = '📂 ABRIR ARQUIVO';
+                getEl('local-role-join-desc').innerText = 'Abre o arquivo que o outro jogador criou — as regras já vêm definidas.';
+                getEl('btn-local-host').innerText = 'CRIAR ARQUIVO';
             } else {
                 getEl('local-rules-title').innerText = 'CONEXÃO DIRETA';
-                getEl('btn-local-host').innerText = '🏠 CRIAR SALA (HOST)';
-                getEl('btn-local-guest').innerText = '🔑 ENTRAR COM CÓDIGO (GUEST)';
+                getEl('local-role-title').innerText = 'CONEXÃO DIRETA';
+                getEl('local-role-create-title').innerText = '🏠 CRIAR SALA';
+                getEl('local-role-create-desc').innerText = 'Você define as regras e gera o código pra compartilhar.';
+                getEl('local-role-join-title').innerText = '🔑 ENTRAR COM CÓDIGO';
+                getEl('local-role-join-desc').innerText = 'Cola o código de quem já criou a sala — as regras já vêm definidas.';
+                getEl('btn-local-host').innerText = '🏠 CRIAR SALA';
             }
-            nav('scr-local-choice', 'scr-local-rules');
+            nav('scr-local-choice', 'scr-local-role-choice');
         };
 
         window.startLocalRole = function(role) {
@@ -3133,8 +3286,17 @@
             } else {
                 isHostWebRTC = (role === 'host');
                 mpMethod = 'webrtc';
-                enterWebrtcConnectScreen('scr-local-rules');
+                enterWebrtcConnectScreen(role === 'host' ? 'scr-local-rules' : 'scr-local-role-choice');
             }
+        };
+
+        // Vai da tela inicial do Online pra tela de Regras (CRIAR SALA) —
+        // captura o nick antes de navegar, igual goToOnlineRoomScreen faz
+        // pros caminhos de Entrar/Assistir.
+        window.goToOnlineRulesScreen = function() {
+            var nick = getEl('ws-nick').value.trim();
+            if (nick) { myLocalNick = nick.substring(0, 15); try { localStorage.setItem('trucoNick', myLocalNick); } catch(e) {} }
+            nav('scr-online', 'scr-online-rules');
         };
 
         // Vai da tela de Regras (Online) pra tela de Sala, alternando entre o
@@ -3455,6 +3617,16 @@
                     var endScrEl = getEl('scr-end');
                     if (endScrEl.className) endScrEl.className = '';
                     animDeal();
+
+                    // Descarte (executeFold/respondPartnerFold) não passa por
+                    // trucoState 'pending' — sem isso, nenhuma notificação
+                    // aparecia pros outros jogadores quando alguém descartava.
+                    if (st.lastFoldBy && st.lastFoldBy !== myPID) {
+                        var foldActor = trucoActor(st.lastFoldBy);
+                        var isMyTeamFold = (myPID !== 0 && getTeam(st.lastFoldBy) === getTeam(myPID));
+                        var foldVerb = foldActor.plural ? 'descartaram a mão!' : 'descartou a mão!';
+                        showMsg(foldActor.name + ' ' + foldVerb, isMyTeamFold ? 'neg' : 'pos');
+                    }
                 } 
                 else if (st.trickResults.length > oldSt.trickResults.length && st.lastTable && st.lastTable.length > 0) {
                     var lastWinner = st.trickResults[st.trickResults.length - 1];
@@ -3503,6 +3675,18 @@
                         showMsg(iScored ? (st.gameFormat === '1v1' ? "O Rival CORREU!" : "Os Rivais CORRERAM!") : "Seu time foi ao baralho!", iScored ? 'pos' : 'neg');
                     }
                 }
+                // Mão de 11/10 resolvida (aceita ou corrida) por outro jogador
+                // — antes também não gerava notificação nenhuma pros demais.
+                else if (st.trucoState !== 'mao11' && oldSt.trucoState === 'mao11') {
+                    var txt11 = st.rules === 'mineiro' ? "10" : "11";
+                    var repPid11 = getTeamPIDs(oldSt.maoDeXTeam)[0];
+                    var actor11 = trucoActor(repPid11);
+                    var isMyTeamMao11 = (myPID !== 0 && oldSt.maoDeXTeam === getTeam(myPID));
+                    var accepted11 = (st.handVal === (st.rules === 'mineiro' ? 4 : 3));
+                    var verb11 = accepted11 ? (actor11.plural ? 'aceitaram' : 'aceitou') : (actor11.plural ? 'correram' : 'correu');
+                    var type11 = accepted11 ? (isMyTeamMao11 ? 'pos' : 'neg') : (isMyTeamMao11 ? 'neg' : 'pos');
+                    showMsg(actor11.name + ' ' + verb11 + ' a Mão de ' + txt11 + '!', type11);
+                }
 
                 updateUI(); checkAiTurn(); checkAiTrucoDecision();
             }
@@ -3512,28 +3696,62 @@
             if(gameMode !== 'json') return;
             var uiText = getEl('sync-timer-txt'); var bar = getEl('sync-bar-fill');
             clearInterval(syncInterval);
-            syncProgress = 0; syncFadeUntil = 0;
+            syncProgress = 0; 
+            // Máquina de estados de 4 fases, tudo decidido dentro do MESMO
+            // tick (nunca um setTimeout correndo em paralelo com o setInterval)
+            // — isso é o que garante a ordem certa: cresce até 100% de verdade,
+            // FICA parada em 100% um instante visível, só DEPOIS desaparece
+            // (fade), e só troca a largura pra 0% enquanto already invisível,
+            // reaparecendo do zero. Um setTimeout solto brigando com o
+            // setInterval era exatamente o que causava o "pulo pra trás".
+            var syncPhase = 'growing'; var syncPhaseUntil = 0;
             var tickMs = 200;
             syncInterval = setInterval(function() {
                 if(isAwaitingMyAction()) {
                     // Minha vez: já estou com o estado mais recente, a barra
-                    // fica cheia e parada (sem o loop de carregar/sumir).
-                    uiText.innerText = "Sincronizado"; uiText.style.color = "var(--prim)";
+                    // fica cheia e parada (sem o loop de carregar/sumir). Usa
+                    // --txt (não --prim) pro texto continuar legível mesmo no
+                    // tema claro, onde verde-sobre-verde-claro ficava apagado.
+                    uiText.innerText = "Sincronizado"; uiText.style.color = "var(--txt)";
                     bar.classList.add('static-full'); bar.style.width = '100%'; bar.style.opacity = '1';
+                    syncPhase = 'growing'; syncProgress = 0;
                     activeTurnCheckTimer -= tickMs;
                     if(activeTurnCheckTimer <= 0) { activeTurnCheckTimer = 5000; autoLoad(); }
                     return;
                 }
 
-                var wasStaticFull = bar.classList.contains('static-full');
                 bar.classList.remove('static-full');
-                if (wasStaticFull) { bar.style.width = '0%'; syncProgress = 0; syncFadeUntil = 0; }
                 uiText.innerText = "Sincronizando..."; uiText.style.color = "var(--txt-d)";
                 activeTurnCheckTimer = 5000;
-
                 var now = Date.now();
-                if (now < syncFadeUntil) return; // ainda no fade-out entre um ciclo e outro
 
+                if (syncPhase === 'full') {
+                    if (now >= syncPhaseUntil) { bar.style.opacity = '0'; syncPhase = 'fading'; syncPhaseUntil = now + 350; }
+                    return;
+                }
+                if (syncPhase === 'fading') {
+                    if (now >= syncPhaseUntil) {
+                        // Reset instantâneo (sem a transition de width, só
+                        // nesse instante) — garante que a barra realmente
+                        // esteja em 0% antes da opacidade voltar a subir,
+                        // em vez de confiar em duas transitions CSS (width e
+                        // opacity) terminando exatamente na hora certa.
+                        bar.style.transition = 'opacity 0.35s ease';
+                        bar.style.width = '0%';
+                        void bar.offsetWidth;
+                        syncPhase = 'hidden'; syncPhaseUntil = now + 60;
+                    }
+                    return;
+                }
+                if (syncPhase === 'hidden') {
+                    if (now >= syncPhaseUntil) {
+                        bar.style.transition = 'width 0.2s linear, opacity 0.35s ease';
+                        syncPhase = 'growing'; syncProgress = 0; bar.style.opacity = '1';
+                    }
+                    return;
+                }
+
+                // syncPhase === 'growing'
                 // Dinamismo: enquanto espero um humano pensar, 1s é de sobra
                 // (ele não vai jogar mais rápido que isso de qualquer forma).
                 // Mas se quem está jogando agora é uma IA/transição (venceu a
@@ -3541,16 +3759,13 @@
                 // a evitar notificação atrasada ou perdida nesses momentos.
                 var waitMs = isHumanSeat(st.turn) ? 1000 : 300;
                 syncProgress += tickMs;
-
+                bar.style.opacity = '1';
                 if (syncProgress >= waitMs) {
-                    bar.style.opacity = '0';
-                    syncFadeUntil = now + 350;
-                    setTimeout(function() { bar.style.width = '0%'; }, 350);
-                    syncProgress = 0;
+                    bar.style.width = '100%';
+                    syncPhase = 'full'; syncPhaseUntil = now + 120;
                     autoLoad();
                 } else {
-                    bar.style.opacity = '1';
-                    bar.style.width = Math.min(100, (syncProgress / waitMs) * 100) + '%';
+                    bar.style.width = (syncProgress / waitMs) * 100 + '%';
                 }
             }, tickMs);
         }
