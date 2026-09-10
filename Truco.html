@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Truco - v0.12.11</title>
+    <title>Truco - v0.12.12</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♣</text></svg>">
     <style>
         /* THEME VARIABLES */
@@ -151,6 +151,14 @@
         #quick-game-wrap.open { max-height: 180px; }
         #quick-game-panel { padding: 18px 6px 0; }
 
+        /* Arcade/Jogo Personalizado colapsam suavemente (em vez de sumir com
+           .hidden, que fazia a janela saltar) quando o Jogo Rápido abre. */
+        #sp-other-modes-wrap {
+            max-height: 180px; overflow: hidden; display: flex; flex-direction: column; gap: 10px;
+            transition: max-height 0.4s cubic-bezier(0.65, 0, 0.35, 1), opacity 0.3s ease, margin-bottom 0.4s;
+        }
+        #sp-other-modes-wrap.closed { max-height: 0; opacity: 0; margin-bottom: -10px; }
+
         .game-area { width: 100vw; height: 100dvh; display: flex; flex-direction: column; padding: 10px 10px max(10px, env(safe-area-inset-bottom)); box-sizing: border-box; position: relative; }
         .glass-panel { background: var(--glass-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-radius: 14px; border: 1px solid var(--glass-border); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15); color: var(--txt); }
 
@@ -269,6 +277,7 @@
         @keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
         
         .action-btn { background: var(--btn-s-bg); border: 1px solid var(--glass-border); padding: 6px 12px; border-radius: 8px; color: var(--txt); display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
+        .action-btn:disabled { opacity: 0.3; pointer-events: none; }
         .action-btn:hover { background: var(--btn-s-hov); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
         .action-btn:active { transform: translateY(0); }
         .action-btn.primary { background: rgba(16, 185, 129, 0.15); border-color: var(--prim); color: var(--txt); }
@@ -457,7 +466,7 @@
                 <div class="theme-toggle-container" style="margin-top:0;">
                     <button class="btn-theme" onclick="toggleTheme()">☀️ MODO CLARO</button>
                 </div>
-                <div id="options-version-tag">v0.12.11</div>
+                <div id="options-version-tag">v0.12.12</div>
             </div>
         </div>
     </div>
@@ -480,14 +489,16 @@
     <div id="scr-sp-choice" class="panel hidden">
         <h2>SINGLE PLAYER</h2>
         <div class="btn-stack">
-            <button class="choice-card" id="card-sp-arcade" disabled>
-                <span class="choice-title">🕹️ ARCADE</span>
-                <span class="choice-desc">Partidas em sequência com dificuldade e modo variando aleatoriamente. Em breve!</span>
-            </button>
-            <button class="choice-card" id="card-sp-personalizado" onclick="nav('scr-sp-choice', 'scr-mode')">
-                <span class="choice-title">🎮 JOGO PERSONALIZADO</span>
-                <span class="choice-desc">Você escolhe regra, formato, baralho e dificuldade da IA.</span>
-            </button>
+            <div id="sp-other-modes-wrap">
+                <button class="choice-card" id="card-sp-arcade" disabled>
+                    <span class="choice-title">🕹️ ARCADE</span>
+                    <span class="choice-desc">Partidas em sequência com dificuldade e modo variando aleatoriamente. Em breve!</span>
+                </button>
+                <button class="choice-card" id="card-sp-personalizado" onclick="nav('scr-sp-choice', 'scr-mode')">
+                    <span class="choice-title">🎮 JOGO PERSONALIZADO</span>
+                    <span class="choice-desc">Você escolhe regra, formato, baralho e dificuldade da IA.</span>
+                </button>
+            </div>
             <button class="choice-card" id="card-sp-rapido" onclick="toggleQuickGamePanel()">
                 <span class="choice-title">⚡ JOGO RÁPIDO</span>
                 <span class="choice-desc">Só escolha a região do Truco — formato, baralho e dificuldade saem no sorteio.</span>
@@ -508,7 +519,7 @@
             </div>
         </div>
 
-        <button class="btn-s danger" style="width: 100%; margin-top: 15px;" onclick="nav('scr-sp-choice', 'scr-start')">VOLTAR</button>
+        <button class="btn-s danger" style="width: 100%; margin-top: 15px;" onclick="resetSpChoiceScreen(); nav('scr-sp-choice', 'scr-start')">VOLTAR</button>
     </div>
 
     <div id="scr-mode" class="panel hidden">
@@ -521,14 +532,14 @@
             <button class="diff-btn" id="btn-rules-goiano-sp" onclick="setRules('goiano', 'sp')">GOIANO</button>
         </div>
 
-        <div class="section-label">Formato de Mesa:</div>
+        <div class="section-label">Formato de Mesa</div>
         <div class="diff-selector">
             <button class="diff-btn active" id="btn-fmt-1v1-sp" onclick="setPendingFormat('1v1', 'sp')">1 X 1</button>
             <button class="diff-btn" id="btn-fmt-2v2-sp" onclick="setPendingFormat('2v2', 'sp')">DUPLAS (2 X 2)</button>
             <button class="diff-btn" id="btn-fmt-3v3-sp" onclick="setPendingFormat('3v3', 'sp')">TRIOS (3 X 3)</button>
         </div>
 
-        <div class="section-label">Selecione o Baralho:</div>
+        <div class="section-label">Selecione o Baralho</div>
         <div class="diff-selector">
             <button class="diff-btn active" id="btn-deck-sujo-sp" onclick="setPendingDeck('sujo', 'sp')">BARALHO SUJO</button>
             <button class="diff-btn" id="btn-deck-limpo-sp" onclick="setPendingDeck('limpo', 'sp')">BARALHO LIMPO</button>
@@ -593,20 +604,20 @@
             <button class="diff-btn" id="btn-rules-goiano-mp" onclick="setRules('goiano', 'mp')">GOIANO</button>
         </div>
 
-        <div class="section-label">Formato de Mesa:</div>
+        <div class="section-label">Formato de Mesa</div>
         <div class="diff-selector">
             <button class="diff-btn active" id="btn-fmt-1v1-mp" onclick="setPendingFormat('1v1', 'mp')">1 X 1</button>
             <button class="diff-btn" id="btn-fmt-2v2-mp" onclick="setPendingFormat('2v2', 'mp')">DUPLAS (2 X 2)</button>
             <button class="diff-btn" id="btn-fmt-3v3-mp" onclick="setPendingFormat('3v3', 'mp')">TRIOS (3 X 3)</button>
         </div>
 
-        <div class="section-label">Selecione o Baralho:</div>
+        <div class="section-label">Selecione o Baralho</div>
         <div class="diff-selector">
             <button class="diff-btn active" id="btn-deck-sujo-mp" onclick="setPendingDeck('sujo', 'mp')">BARALHO SUJO</button>
             <button class="diff-btn" id="btn-deck-limpo-mp" onclick="setPendingDeck('limpo', 'mp')">BARALHO LIMPO</button>
         </div>
 
-        <div class="section-label">Jogadores Humanos (o resto é IA):</div>
+        <div class="section-label">Jogadores Humanos (o resto é IA)</div>
         <div class="diff-selector">
             <button class="diff-btn active" id="btn-hc-2-mp" onclick="setPendingHumanCount(2, 'mp')">2</button>
             <button class="diff-btn" id="btn-hc-3-mp" onclick="setPendingHumanCount(3, 'mp')">3</button>
@@ -615,7 +626,7 @@
             <button class="diff-btn" id="btn-hc-6-mp" onclick="setPendingHumanCount(6, 'mp')">6</button>
         </div>
 
-        <div class="section-label">Dificuldade da IA (assentos vagos):</div>
+        <div class="section-label">Dificuldade da IA (assentos vagos)</div>
         <div class="diff-selector" style="flex-wrap: wrap;">
             <button class="diff-btn facil" id="btn-diff-1-mp" onclick="setDiff(1, 'mp')">FÁCIL</button>
             <button class="diff-btn active" id="btn-diff-2-mp" onclick="setDiff(2, 'mp')">NORMAL</button>
@@ -646,8 +657,10 @@
             </div>
             <div class="section-label" style="text-align:left;">Seu código (envie pro outro jogador):</div>
             <textarea id="webrtc-data-host" class="webrtc-code-box" readonly onclick="this.select()"></textarea>
-            <button class="action-btn primary" style="width:100%; justify-content:center;" onclick="copyWebrtcCode('webrtc-data-host', this)">📋 COPIAR CÓDIGO</button>
-            <button class="action-btn btn-share-code hidden" style="width:100%; justify-content:center;" onclick="shareWebrtcCode('webrtc-data-host')">📤 COMPARTILHAR</button>
+            <div style="display:flex; gap:10px;">
+                <button id="btn-copy-host-code" class="action-btn primary" style="flex:1; justify-content:center;" disabled onclick="copyWebrtcCode('webrtc-data-host', this)">📋 COPIAR CÓDIGO</button>
+                <button id="btn-share-host-code" class="action-btn btn-share-code hidden" style="flex:1; justify-content:center;" disabled onclick="shareWebrtcCode('webrtc-data-host')">📤 COMPARTILHAR</button>
+            </div>
 
             <div class="section-label" style="text-align:left; margin-top:6px;">Cole aqui a resposta do outro jogador:</div>
             <textarea id="webrtc-answer-input" class="webrtc-code-box" placeholder="Aguardando você colar a resposta..."></textarea>
@@ -667,8 +680,10 @@
             <div id="webrtc-guest-response-area" class="hidden btn-stack">
                 <div class="section-label" style="text-align:left;">Sua resposta (envie pro Host):</div>
                 <textarea id="webrtc-data-guest-output" class="webrtc-code-box" readonly onclick="this.select()"></textarea>
-                <button class="action-btn primary" style="width:100%; justify-content:center;" onclick="copyWebrtcCode('webrtc-data-guest-output', this)">📋 COPIAR RESPOSTA</button>
-                <button class="action-btn btn-share-code hidden" style="width:100%; justify-content:center;" onclick="shareWebrtcCode('webrtc-data-guest-output')">📤 COMPARTILHAR</button>
+                <div style="display:flex; gap:10px;">
+                    <button class="action-btn primary" style="flex:1; justify-content:center;" onclick="copyWebrtcCode('webrtc-data-guest-output', this)">📋 COPIAR RESPOSTA</button>
+                    <button class="action-btn btn-share-code hidden" style="flex:1; justify-content:center;" onclick="shareWebrtcCode('webrtc-data-guest-output')">📤 COMPARTILHAR</button>
+                </div>
             </div>
         </div>
 
@@ -735,20 +750,20 @@
             <button class="diff-btn" id="btn-rules-goiano-on" onclick="setRules('goiano', 'on')">GOIANO</button>
         </div>
 
-        <div class="section-label">Formato de Mesa:</div>
+        <div class="section-label">Formato de Mesa</div>
         <div class="diff-selector">
             <button class="diff-btn active" id="btn-fmt-1v1-on" onclick="setPendingFormat('1v1', 'on')">1 X 1</button>
             <button class="diff-btn" id="btn-fmt-2v2-on" onclick="setPendingFormat('2v2', 'on')">DUPLAS (2 X 2)</button>
             <button class="diff-btn" id="btn-fmt-3v3-on" onclick="setPendingFormat('3v3', 'on')">TRIOS (3 X 3)</button>
         </div>
 
-        <div class="section-label">Selecione o Baralho:</div>
+        <div class="section-label">Selecione o Baralho</div>
         <div class="diff-selector">
             <button class="diff-btn active" id="btn-deck-sujo-on" onclick="setPendingDeck('sujo', 'on')">BARALHO SUJO</button>
             <button class="diff-btn" id="btn-deck-limpo-on" onclick="setPendingDeck('limpo', 'on')">BARALHO LIMPO</button>
         </div>
 
-        <div class="section-label">Jogadores Humanos (o resto é IA):</div>
+        <div class="section-label">Jogadores Humanos (o resto é IA)</div>
         <div class="diff-selector">
             <button class="diff-btn active" id="btn-hc-2-on" onclick="setPendingHumanCount(2, 'on')">2</button>
             <button class="diff-btn" id="btn-hc-3-on" onclick="setPendingHumanCount(3, 'on')">3</button>
@@ -757,7 +772,7 @@
             <button class="diff-btn" id="btn-hc-6-on" onclick="setPendingHumanCount(6, 'on')">6</button>
         </div>
 
-        <div class="section-label">Dificuldade da IA (assentos vagos):</div>
+        <div class="section-label">Dificuldade da IA (assentos vagos)</div>
         <div class="diff-selector" style="flex-wrap: wrap;">
             <button class="diff-btn facil" id="btn-diff-1-on" onclick="setDiff(1, 'on')">FÁCIL</button>
             <button class="diff-btn active" id="btn-diff-2-on" onclick="setDiff(2, 'on')">NORMAL</button>
@@ -1012,11 +1027,21 @@
         window.toggleQuickGamePanel = function() {
             var isOpen = getEl('quick-game-wrap').classList.toggle('open');
             getEl('card-sp-rapido').classList.toggle('active', isOpen);
-            // Esconde os outros dois cartões enquanto o Jogo Rápido está
-            // aberto — evita que a tela cresça demais e obrigue a arrastar
-            // em celulares menores (nunca queremos isso no jogo).
-            getEl('card-sp-arcade').classList.toggle('hidden', isOpen);
-            getEl('card-sp-personalizado').classList.toggle('hidden', isOpen);
+            // Colapsa suavemente os outros dois cartões (não esconde de
+            // repente) enquanto o Jogo Rápido está aberto — evita que a tela
+            // cresça demais e obrigue a arrastar em celulares menores (nunca
+            // queremos isso no jogo).
+            getEl('sp-other-modes-wrap').classList.toggle('closed', isOpen);
+        };
+
+        // Volta a tela do Single Player pro estado normal (Jogo Rápido
+        // fechado, os 3 cartões visíveis) — usada ao sair da tela, pra não
+        // ficar com o Jogo Rápido aberto/selecionado da próxima vez que o
+        // jogador voltar aqui.
+        window.resetSpChoiceScreen = function() {
+            getEl('quick-game-wrap').classList.remove('open');
+            getEl('card-sp-rapido').classList.remove('active');
+            getEl('sp-other-modes-wrap').classList.remove('closed');
         };
 
         window.startQuickGame = function() {
@@ -1027,7 +1052,7 @@
             pendingDeckMode = (pendingQuickRules === 'mineiro') ? 'sujo' : (Math.random() < 0.5 ? 'sujo' : 'limpo');
             aiDifficulty = 1 + Math.floor(Math.random() * 4);
             updateBodyDiffClass();
-            getEl('quick-game-wrap').classList.remove('open');
+            resetSpChoiceScreen();
             nav('scr-sp-choice', 'scr-game');
             startGame('pc', 1);
         };
@@ -1588,7 +1613,7 @@
                 intel: { goneCardWeight: 3, teamStrength: true },
                 maoDeXAcceptAt: 42,
                 trucoResponse: { acceptAt: 32, bluffAt: 15, bluffChance: 0.10, raiseAt: 60, raiseBluffAt: 30, raiseBluffChance: 0.22 },
-                askTruco: { baseAt: 55, extraGateAt: 20, firstPlayChance: 0.20, wonFirstTrickChance: 0.40, wonFirstTrickNeedsLead: true, finalFallbackChance: 0.10, finalFallbackNeedsTricks: false },
+                askTruco: { baseAt: 55, extraGateAt: 20, firstPlayMinProb: 40, firstPlayChance: 0.20, wonFirstTrickChance: 0.40, wonFirstTrickNeedsLead: true, finalFallbackChance: 0.10, finalFallbackNeedsTricks: false },
                 openPlay: 'smart',
                 usesMistakes: false, mistakeChance: 0,
                 hideAsRival: { whenPartnerWinning: 0.5, whenNoWinningCard: 0.6 },
@@ -1601,7 +1626,7 @@
                 intel: { goneCardWeight: 6, teamStrength: true },
                 maoDeXAcceptAt: 42,
                 trucoResponse: { acceptAt: 15, bluffAt: 10, bluffChance: 0.40, raiseAt: 45, raiseBluffAt: 25, raiseBluffChance: 0.50 },
-                askTruco: { baseAt: 40, extraGateAt: 20, firstPlayChance: 0.65, wonFirstTrickChance: 0.72, wonFirstTrickNeedsLead: false, losingDecentAt: 30, losingDecentChance: 0.40, finalFallbackChance: 0.30, finalFallbackNeedsTricks: true },
+                askTruco: { baseAt: 40, extraGateAt: 20, firstPlayMinProb: 40, firstPlayChance: 0.65, wonFirstTrickChance: 0.72, wonFirstTrickNeedsLead: false, losingDecentAt: 30, losingDecentChance: 0.40, finalFallbackChance: 0.30, finalFallbackNeedsTricks: true },
                 openPlay: 'smart',
                 usesMistakes: false, mistakeChance: 0,
                 hideAsRival: { whenPartnerWinning: 0.5, whenNoWinningCard: 0.6 },
@@ -2812,7 +2837,8 @@
                     }
 
                     if (AT.extraGateAt !== undefined && prob >= AT.extraGateAt) {
-                        if (isFirstPlay && Math.random() < AT.firstPlayChance) askTruco = true;
+                        var firstPlayOk = (AT.firstPlayMinProb === undefined) || (prob >= AT.firstPlayMinProb);
+                        if (isFirstPlay && firstPlayOk && Math.random() < AT.firstPlayChance) askTruco = true;
 
                         var wonFirstOk = AT.wonFirstTrickNeedsLead ? (myW === 1 && opW === 0) : (myW === 1);
                         if (wonFirstOk && Math.random() < AT.wonFirstTrickChance) askTruco = true;
@@ -3357,6 +3383,8 @@
             if (isHostWebRTC) {
                 getEl('webrtc-data-host').value = '';
                 getEl('webrtc-data-host').placeholder = 'Gerando código, aguarde...';
+                getEl('btn-copy-host-code').disabled = true;
+                getEl('btn-share-host-code').disabled = true;
                 getEl('webrtc-answer-input').value = '';
                 webrtcSetStatus('🔄 Coletando informações de rede...', 'connecting');
             } else {
@@ -3407,6 +3435,8 @@
             var codeStr = await packCode(payload);
             if (isHostWebRTC && pc.localDescription.type === 'offer') {
                 getEl('webrtc-data-host').value = codeStr;
+                getEl('btn-copy-host-code').disabled = false;
+                getEl('btn-share-host-code').disabled = false;
                 webrtcSetStatus('✅ Código pronto! Copie e envie pro outro jogador.', 'success');
             } else if (!isHostWebRTC && pc.localDescription.type === 'answer') {
                 getEl('webrtc-data-guest-output').value = codeStr;
@@ -3517,6 +3547,8 @@
             if (isHostWebRTC) {
                 getEl('webrtc-data-host').value = '';
                 getEl('webrtc-data-host').placeholder = 'Gerando código, aguarde...';
+                getEl('btn-copy-host-code').disabled = true;
+                getEl('btn-share-host-code').disabled = true;
                 webrtcSetStatus('🔄 Coletando informações de rede...', 'connecting');
             } else {
                 webrtcSetStatus('Aguardando você colar o código do Host...', 'idle');
