@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Truco - v0.13.0</title>
+    <title>Truco - v0.13.1</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♣</text></svg>">
     <style>
         /* THEME VARIABLES */
@@ -79,7 +79,7 @@
         .hidden { display: none !important; }
 
         #version-warn-banner {
-            position: fixed; top: 12px; left: 50%; transform: translateX(-50%);
+            position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%);
             max-width: 92%; z-index: 300;
             background: var(--notify-bg); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
             border: 1px solid var(--warn); box-shadow: 0 8px 25px rgba(0,0,0,0.3);
@@ -138,29 +138,28 @@
         .btn-theme, .btn-options { background: transparent; border: 1px solid var(--glass-border); color: var(--txt); padding: 8px 16px; border-radius: 20px; font-size: 0.8rem; cursor: pointer; }
         .btn-theme:hover, .btn-options:hover { background: var(--btn-s-bg); }
 
-        /* Painel de Opções: em vez de um cartão separado flutuando por cima/
-           atrás (tentativas anteriores, v0.12.5/v0.12.6), agora é uma SEÇÃO
-           que cresce dentro do PRÓPRIO #scr-start — sem borda, fundo ou
-           cantos arredondados próprios, porque usa os do painel principal.
-           max-height 0->N com overflow:hidden dá o efeito de "puxar uma
-           gaveta de dentro da própria janela", exatamente a sensação de
-           extensão pedida, sem precisar de posicionamento absoluto/z-index. */
-        #options-wrap {
-            max-height: 0; overflow: hidden; width: 100%;
-            transition: max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        #options-wrap.open { max-height: 230px; }
-        #options-panel { padding-top: 18px; }
+        /* Opções virou tela própria (scr-options) na v0.13.1 — a v0.13.0
+           tinha isso como gaveta expansível dentro do #scr-start (comentário
+           antigo removido), mas isso deixava o sistema de foco de
+           teclado/gamepad incluir os botões de dentro da gaveta mesmo
+           fechada (offsetParent/getBoundingClientRect não refletem recorte
+           por overflow:hidden do ANCESTRAL — só o próprio elemento). Uma
+           tela separada elimina a classe inteira desse problema aqui; o
+           #quick-game-wrap (Jogo Rápido) continua como gaveta, mas o cálculo
+           de visibilidade em getFocusableList() agora considera o corte por
+           overflow dos ancestrais, então o mesmo bug não se repete lá. */
         #options-version-tag { margin-top: 14px; text-align: center; font-size: 0.65rem; color: var(--txt-d); opacity: 0.35; }
+        #scr-options .btn-theme { width: 100%; border-radius: 10px; padding: 12px 16px; font-size: 0.9rem; }
         /* Separa visualmente o botão de Estatísticas dos demais (mesma cor
            de borda usada em todo o resto da UI) — ele leva a uma tela com
            uma ação sensível (apagar dados), então precisa se destacar como
-           "categoria à parte" dentro da gaveta de Opções. */
-        .options-divider { border-top: 1px solid var(--glass-border); margin-top: 14px; padding-top: 14px; }
+           "categoria à parte". Só margem (não padding-top) pra não brigar
+           com o padding uniforme de #scr-options .btn-theme acima. */
+        .options-divider { border-top: 1px solid var(--glass-border); margin-top: 14px; }
 
-        /* Mesmo padrão do #options-wrap, reaproveitado pro mini-painel do
-           Jogo Rápido (Single Player) — só a altura máxima muda, por ter
-           mais conteúdo (rótulo + 3 botões de região + botão de iniciar). */
+        /* Gaveta colapsável (max-height 0->N + overflow:hidden) pro mini-painel
+           do Jogo Rápido (Single Player) — mesma técnica que a antiga gaveta
+           de Opções usava antes de virar tela própria (v0.13.1). */
         #quick-game-wrap {
             max-height: 0; overflow: hidden; width: 100%;
             transition: max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1);
@@ -169,12 +168,18 @@
         #quick-game-panel { padding: 18px 6px 0; }
 
         /* Arcade/Jogo Personalizado colapsam suavemente (em vez de sumir com
-           .hidden, que fazia a janela saltar) quando o Jogo Rápido abre. */
+           .hidden, que fazia a janela saltar) quando o Jogo Rápido abre.
+           max-height vem de --sp-modes-h (calibrada via JS a partir da
+           altura real do conteúdo — calibrateSpOtherModesHeight()) em vez de
+           um valor fixo: 180px era curto demais em telas estreitas, onde o
+           texto de descrição quebra em mais linhas e o card "JOGO
+           PERSONALIZADO" ficava cortado (v0.13.1). .closed usa !important
+           pra sempre conseguir colapsar pra 0, mesmo com a variável setada. */
         #sp-other-modes-wrap {
-            max-height: 180px; overflow: hidden; display: flex; flex-direction: column; gap: 10px;
+            max-height: var(--sp-modes-h, 180px); overflow: hidden; display: flex; flex-direction: column; gap: 10px;
             transition: max-height 0.4s cubic-bezier(0.65, 0, 0.35, 1), opacity 0.3s ease, margin-bottom 0.4s;
         }
-        #sp-other-modes-wrap.closed { max-height: 0; opacity: 0; margin-bottom: -10px; }
+        #sp-other-modes-wrap.closed { max-height: 0 !important; opacity: 0; margin-bottom: -10px; }
 
         .game-area { width: 100vw; height: 100dvh; display: flex; flex-direction: column; padding: 10px 10px max(10px, env(safe-area-inset-bottom)); box-sizing: border-box; position: relative; }
         .glass-panel { background: var(--glass-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-radius: 14px; border: 1px solid var(--glass-border); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15); color: var(--txt); }
@@ -231,9 +236,17 @@
            Transição própria e rápida (não usa a lista de propriedades já
            animada lá em cima — 0.4-0.6s, pensada pra crossfade de tema,
            lenta demais pra navegação rápida entre botões). */
-        .gp-focus { transition: box-shadow 0.15s ease, transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        body.theme-dark .gp-focus { box-shadow: 0 0 0 2px rgba(248, 250, 252, 0.85), 0 0 16px rgba(248, 250, 252, 0.5); transform: scale(1.035); }
-        body.theme-light .gp-focus { box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.75), 0 0 16px rgba(15, 23, 42, 0.3); transform: scale(1.035); }
+        /* position/z-index garantem que o botão focado pinte por CIMA dos
+           vizinhos (senão o brilho ficava "cortado" pelo próximo botão da
+           mesma fileira, que vem depois no DOM e pinta por cima por padrão —
+           bug relatado na v0.13.0). box-shadow 100% inset (nenhum valor
+           "sai" pra fora da própria caixa) pelo mesmo motivo: um outer-glow
+           pode ser cortado por overflow:hidden/auto de um ancestral (painel
+           rolável, gaveta colapsável) mesmo quando o elemento em si está
+           visível — inset nunca depende do que o ancestral deixa vazar. */
+        .gp-focus { position: relative; z-index: 5; transition: box-shadow 0.15s ease, transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        body.theme-dark .gp-focus { box-shadow: inset 0 0 0 2px rgba(248, 250, 252, 0.85), inset 0 0 12px rgba(248, 250, 252, 0.45); transform: scale(1.035); }
+        body.theme-light .gp-focus { box-shadow: inset 0 0 0 2px rgba(15, 23, 42, 0.75), inset 0 0 12px rgba(15, 23, 42, 0.28); transform: scale(1.035); }
 
         @keyframes winnerPulse {
             0% { transform: scale(1) translateY(0); box-shadow: 0 6px 15px rgba(0,0,0,0.3); border: 1px solid var(--glass-border); }
@@ -504,23 +517,19 @@
             <button class="btn-p" style="background: rgba(59, 130, 246, 0.6);" onclick="nav('scr-start', 'scr-multi-choice')">MULTIPLAYER</button>
         </div>
         <div class="theme-toggle-container">
-            <button class="btn-options" onclick="toggleOptionsPanel()">⚙️ OPÇÕES</button>
+            <button class="btn-options" onclick="nav('scr-start', 'scr-options')">⚙️ OPÇÕES</button>
         </div>
+    </div>
 
-        <div id="options-wrap">
-            <div id="options-panel">
-                <div class="theme-toggle-container" style="margin-top:0;">
-                    <button class="btn-theme" onclick="toggleTheme()">☀️ MODO CLARO</button>
-                </div>
-                <div class="theme-toggle-container">
-                    <button class="btn-theme" id="btn-manilha-hint" onclick="toggleManilhaHint()">🃏 OCULTAR DICA DE MANILHA</button>
-                </div>
-                <div class="options-divider theme-toggle-container">
-                    <button class="btn-theme" onclick="refreshStatsScreen(); nav('scr-start', 'scr-stats')">📊 ESTATÍSTICAS</button>
-                </div>
-                <div id="options-version-tag"></div>
-            </div>
+    <div id="scr-options" class="panel hidden">
+        <h2>OPÇÕES</h2>
+        <div class="btn-stack">
+            <button class="btn-theme" onclick="toggleTheme()">☀️ MODO CLARO</button>
+            <button class="btn-theme" id="btn-manilha-hint" onclick="toggleManilhaHint()">🃏 COM DICA DE MANILHA</button>
+            <button class="btn-theme options-divider" onclick="refreshStatsScreen(); nav('scr-options', 'scr-stats')">📊 ESTATÍSTICAS</button>
         </div>
+        <div id="options-version-tag"></div>
+        <button class="btn-s danger" data-nav-back style="width: 100%; margin-top: 15px;" onclick="nav('scr-options', 'scr-start')">VOLTAR</button>
     </div>
 
     <div id="scr-multi-choice" class="panel hidden">
@@ -878,7 +887,7 @@
             <span>🗑️ SEGURE 3s PARA APAGAR TUDO</span>
         </button>
 
-        <button class="btn-s danger" data-nav-back style="width: 100%; margin-top: 15px;" onclick="nav('scr-stats', 'scr-start'); document.getElementById('options-wrap').classList.add('open');">VOLTAR</button>
+        <button class="btn-s danger" data-nav-back style="width: 100%; margin-top: 15px;" onclick="nav('scr-stats', 'scr-options')">VOLTAR</button>
     </div>
 
     <div id="scr-game" class="game-area hidden">
@@ -1011,7 +1020,7 @@
         var SUITS = ['♦', '♠', '♥', '♣']; 
         var VALS_SUJO = ['4', '5', '6', '7', 'Q', 'J', 'K', 'A', '2', '3'];
         var VALS_LIMPO = ['Q', 'J', 'K', 'A', '2', '3'];
-        var APP_VERSION = '0.13.0';
+        var APP_VERSION = '0.13.1';
 
         // ═══════════════════════════════════════════════════════════════
         // FORMATO DE `st` (estado sincronizado entre jogadores)
@@ -1076,14 +1085,10 @@
         var pendingHumanCount = 2;
 
         window.nav = function(f, t) { 
-            document.getElementById(f).classList.add('hidden'); 
-            document.getElementById(t).classList.remove('hidden'); 
-            if (f === 'scr-start') { var op = getEl('options-wrap'); if (op) op.classList.remove('open'); }
+            document.getElementById(f).classList.add('hidden');
+            document.getElementById(t).classList.remove('hidden');
         };
 
-        window.toggleOptionsPanel = function() {
-            getEl('options-wrap').classList.toggle('open');
-        };
         function getEl(id) { return document.getElementById(id); }
 
         // Aviso de versão diferente entre jogadores em multiplayer (não
@@ -1171,7 +1176,7 @@
         window.toggleManilhaHint = function() {
             manilhaHintHidden = !manilhaHintHidden;
             var btn = getEl('btn-manilha-hint');
-            if (btn) btn.innerText = manilhaHintHidden ? "🃏 MOSTRAR DICA DE MANILHA" : "🃏 OCULTAR DICA DE MANILHA";
+            if (btn) btn.innerText = manilhaHintHidden ? "🃏 SEM DICA DE MANILHA" : "🃏 COM DICA DE MANILHA";
             try { localStorage.setItem('trucoHideManilhaHint', manilhaHintHidden ? '1' : '0'); } catch(e) {}
             updateGhostManilha();
         };
@@ -1470,12 +1475,46 @@
         // onclick já existente continua sendo o único dono do comportamento.
         // ═══════════════════════════════════════════════════════════════
         var gpFocusedEl = null;
+        // Só existe indicador visual depois que o jogador de fato usou
+        // teclado (seta) ou gamepad — quem só usa mouse/touch nunca vê nada
+        // destacado sem necessidade. Some de novo no primeiro clique/toque
+        // real (mousedown/touchstart "de verdade" — .click() sintético do
+        // confirmMenuFocus() não dispara esses eventos, então não se auto-revoga).
+        var gpFocusVisible = false;
+        function revealGpFocus() {
+            if (gpFocusVisible) return;
+            gpFocusVisible = true;
+            if (gpFocusedEl) gpFocusedEl.classList.add('gp-focus');
+        }
+        function hideGpFocus() {
+            if (!gpFocusVisible) return;
+            gpFocusVisible = false;
+            if (gpFocusedEl) gpFocusedEl.classList.remove('gp-focus');
+        }
+        document.addEventListener('mousedown', hideGpFocus, true);
+        document.addEventListener('touchstart', hideGpFocus, true);
 
+        // Visível de verdade: não só o próprio elemento (offsetParent +
+        // retângulo próprio), mas também não pode estar cortado por nenhum
+        // ANCESTRAL com overflow escondido e área efetivamente zero/fora do
+        // alcance — é exatamente o caso de um item dentro de uma gaveta
+        // colapsada (#quick-game-wrap com max-height:0), que tem retângulo
+        // PRÓPRIO normal mas fica de fato invisível por causa do pai.
         function isReallyVisible(el) {
             if (el.disabled) return false;
-            if (el.offsetParent === null) return false;
             var rect = el.getBoundingClientRect();
-            return rect.width > 0 && rect.height > 0;
+            if (rect.width <= 0 || rect.height <= 0) return false;
+            if (el.offsetParent === null && getComputedStyle(el).position !== 'fixed') return false;
+            var node = el.parentElement;
+            while (node && node !== document.body) {
+                var cs = getComputedStyle(node);
+                if (cs.overflow === 'hidden' || cs.overflowY === 'hidden' || cs.overflowX === 'hidden' || cs.overflow === 'clip') {
+                    var aRect = node.getBoundingClientRect();
+                    if (rect.bottom <= aRect.top || rect.top >= aRect.bottom || rect.right <= aRect.left || rect.left >= aRect.right) return false;
+                }
+                node = node.parentElement;
+            }
+            return true;
         }
 
         // #scr-end não usa .hidden (fica sempre display:flex, some via
@@ -1498,10 +1537,39 @@
             return list;
         }
 
+        // Agrupa a lista em "linhas" por posição vertical (mesmo padrão dos
+        // .diff-selector, que são fileiras horizontais de botões) — Up/Down
+        // troca de linha (mantendo a coluna quando possível), Left/Right
+        // percorre só a linha atual. Agrupar por posição real na tela (em
+        // vez de por classe CSS) generaliza pra qualquer tela nova sem
+        // precisar saber a estrutura dela de antemão.
+        function getFocusableRows(screen) {
+            var list = getFocusableList(screen);
+            var rows = [];
+            var TOL = 10;
+            for (var i = 0; i < list.length; i++) {
+                var rect = list[i].getBoundingClientRect();
+                var row = null;
+                for (var r = 0; r < rows.length; r++) { if (Math.abs(rows[r].top - rect.top) <= TOL) { row = rows[r]; break; } }
+                if (!row) { row = { top: rect.top, els: [] }; rows.push(row); }
+                row.els.push(list[i]);
+            }
+            rows.sort(function(a, b) { return a.top - b.top; });
+            rows.forEach(function(r) { r.els.sort(function(a, b) { return a.getBoundingClientRect().left - b.getBoundingClientRect().left; }); });
+            return rows.map(function(r) { return r.els; });
+        }
+        function findRowCol(rows, el) {
+            for (var r = 0; r < rows.length; r++) { var c = rows[r].indexOf(el); if (c !== -1) return [r, c]; }
+            return null;
+        }
+
         function setGpFocus(el) {
             if (gpFocusedEl && gpFocusedEl !== el) gpFocusedEl.classList.remove('gp-focus');
             gpFocusedEl = el || null;
-            if (gpFocusedEl) { gpFocusedEl.classList.add('gp-focus'); try { gpFocusedEl.focus({ preventScroll: true }); } catch(e) {} }
+            if (gpFocusedEl) {
+                if (gpFocusVisible) gpFocusedEl.classList.add('gp-focus');
+                try { gpFocusedEl.focus({ preventScroll: true }); } catch(e) {}
+            }
         }
 
         // Chamado pelo MutationObserver sempre que uma tela troca de visível
@@ -1510,20 +1578,26 @@
         // indesejado por churn de DOM dentro da própria tela).
         function refreshMenuFocus() {
             var screen = getActiveMenuScreen();
-            var list = getFocusableList(screen);
-            if (!list.length) { setGpFocus(null); return; }
-            if (gpFocusedEl && list.indexOf(gpFocusedEl) !== -1) return;
-            setGpFocus(list[0]);
+            var rows = getFocusableRows(screen);
+            if (!rows.length) { setGpFocus(null); return; }
+            if (gpFocusedEl && findRowCol(rows, gpFocusedEl)) return;
+            setGpFocus(rows[0][0]);
         }
 
         function moveMenuFocus(dir) {
             var screen = getActiveMenuScreen();
-            var list = getFocusableList(screen);
-            if (!list.length) return;
-            var idx = gpFocusedEl ? list.indexOf(gpFocusedEl) : -1;
-            if (idx === -1) { setGpFocus(list[0]); return; }
-            idx = (dir === 'next') ? (idx + 1) % list.length : (idx - 1 + list.length) % list.length;
-            setGpFocus(list[idx]);
+            var rows = getFocusableRows(screen);
+            if (!rows.length) return;
+            var pos = gpFocusedEl ? findRowCol(rows, gpFocusedEl) : null;
+            if (!pos) { setGpFocus(rows[0][0]); return; }
+            var r = pos[0], c = pos[1];
+            if (dir === 'up' || dir === 'down') {
+                r = (dir === 'up') ? (r - 1 + rows.length) % rows.length : (r + 1) % rows.length;
+                c = Math.min(c, rows[r].length - 1);
+            } else {
+                c = (dir === 'left') ? (c - 1 + rows[r].length) % rows[r].length : (c + 1) % rows[r].length;
+            }
+            setGpFocus(rows[r][c]);
         }
 
         function confirmMenuFocus() {
@@ -1542,22 +1616,41 @@
         function menuBack() {
             var screen = getActiveMenuScreen();
             if (!screen) return;
-            if (screen.querySelector('#options-wrap.open')) { toggleOptionsPanel(); return; }
             if (screen.querySelector('#quick-game-wrap.open')) { toggleQuickGamePanel(); return; }
             var backBtn = screen.querySelector('[data-nav-back]');
             if (backBtn) backBtn.click();
         }
 
+        // Mede a altura real do conteúdo de #sp-other-modes-wrap (não dá pra
+        // medir com a tela escondida — scrollHeight de algo dentro de um
+        // ancestral display:none sempre volta 0 — por isso só roda quando a
+        // tela realmente está visível, chamada junto do MutationObserver
+        // abaixo, e de novo no resize porque quebra de linha do texto muda
+        // com a largura disponível).
+        function calibrateSpOtherModesHeight() {
+            var wrap = getEl('sp-other-modes-wrap');
+            var screen = getEl('scr-sp-choice');
+            if (!wrap || !screen || screen.classList.contains('hidden') || wrap.classList.contains('closed')) return;
+            wrap.style.setProperty('--sp-modes-h', wrap.scrollHeight + 'px');
+        }
+        var spModesResizeTimer = null;
+        window.addEventListener('resize', function() {
+            clearTimeout(spModesResizeTimer);
+            spModesResizeTimer = setTimeout(calibrateSpOtherModesHeight, 150);
+        });
+
         document.querySelectorAll('.panel, #scr-game, #scr-end').forEach(function(el) {
-            new MutationObserver(refreshMenuFocus).observe(el, { attributes: true, attributeFilter: ['class'] });
+            new MutationObserver(function() { refreshMenuFocus(); calibrateSpOtherModesHeight(); }).observe(el, { attributes: true, attributeFilter: ['class'] });
         });
 
         function handleMenuKey(e) {
             if (e.key === 'Escape') { menuBack(); e.preventDefault(); return; }
             var active = document.activeElement;
             if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) return;
-            if (e.key === 'ArrowDown' || e.key === 'ArrowRight') { moveMenuFocus('next'); e.preventDefault(); }
-            else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') { moveMenuFocus('prev'); e.preventDefault(); }
+            if (e.key === 'ArrowDown') { revealGpFocus(); moveMenuFocus('down'); e.preventDefault(); }
+            else if (e.key === 'ArrowUp') { revealGpFocus(); moveMenuFocus('up'); e.preventDefault(); }
+            else if (e.key === 'ArrowLeft') { revealGpFocus(); moveMenuFocus('left'); e.preventDefault(); }
+            else if (e.key === 'ArrowRight') { revealGpFocus(); moveMenuFocus('right'); e.preventDefault(); }
             else if (e.key === 'Enter' || e.key === ' ') { confirmMenuFocus(); e.preventDefault(); }
         }
 
@@ -4222,7 +4315,7 @@
             if (localStorage.getItem('trucoHideManilhaHint') === '1') {
                 manilhaHintHidden = true;
                 var manilhaBtn = getEl('btn-manilha-hint');
-                if (manilhaBtn) manilhaBtn.innerText = "🃏 MOSTRAR DICA DE MANILHA";
+                if (manilhaBtn) manilhaBtn.innerText = "🃏 SEM DICA DE MANILHA";
             }
         } catch(e) {}
 
@@ -4295,17 +4388,21 @@
         function gpReleaseConfirm() { if (!isInGameScreen()) releaseMenuFocusHold(); }
 
         function gpFireDirection(name) {
-            var dir = (name === 'up' || name === 'left') ? 'prev' : 'next';
             if (isInGameScreen()) {
                 if (!gpInGameGateOpen()) return;
-                if (st.turn === myPID && st.trucoState === 'none') moveGpCardSelection(dir);
+                if (st.turn === myPID && st.trucoState === 'none') {
+                    var cardDir = (name === 'up' || name === 'left') ? 'prev' : 'next';
+                    moveGpCardSelection(cardDir);
+                }
             } else {
-                moveMenuFocus(dir);
+                revealGpFocus();
+                moveMenuFocus(name);
             }
         }
 
         function gpOnButtonDown(idx) {
             if (!gpHintsActive) { gpHintsActive = true; applyGpHints(); }
+            revealGpFocus();
             if (idx === 0) { gpFireConfirm(); return; }
             if (isInGameScreen()) {
                 if (!gpInGameGateOpen()) return;
