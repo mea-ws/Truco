@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Truco - v0.13.2</title>
+    <title>Truco - v0.13.3</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♣</text></svg>">
     <style>
         /* THEME VARIABLES */
@@ -238,22 +238,34 @@
            Transição própria e rápida (não usa a lista de propriedades já
            animada lá em cima — 0.4-0.6s, pensada pra crossfade de tema,
            lenta demais pra navegação rápida entre botões). */
-        /* position/z-index garantem que o botão focado pinte por CIMA dos
-           vizinhos (senão o brilho ficava "cortado" pelo próximo botão da
-           mesma fileira, que vem depois no DOM e pinta por cima por padrão —
-           bug relatado na v0.13.0). box-shadow 100% inset (nenhum valor
-           "sai" pra fora da própria caixa) pelo mesmo motivo: um outer-glow
-           pode ser cortado por overflow:hidden/auto de um ancestral (painel
-           rolável, gaveta colapsável) mesmo quando o elemento em si está
-           visível — inset nunca depende do que o ancestral deixa vazar.
-           SEM transform:scale (v0.13.2) — mesmo pequeno, ainda fazia a caixa
-           RENDERIZADA crescer um pouco além do layout, e isso sozinho já
-           bastava pra ser cortado quando o container estava calibrado bem
-           justo ao conteúdo (#sp-other-modes-wrap, .panel com scroll) —
-           box-shadow inset sozinho não tem como vazar de jeito nenhum. */
-        .gp-focus { position: relative; z-index: 5; transition: box-shadow 0.15s ease; }
-        body.theme-dark .gp-focus { box-shadow: inset 0 0 0 2px rgba(248, 250, 252, 0.85), inset 0 0 12px rgba(248, 250, 252, 0.45); }
-        body.theme-light .gp-focus { box-shadow: inset 0 0 0 2px rgba(15, 23, 42, 0.75), inset 0 0 12px rgba(15, 23, 42, 0.28); }
+        /* Destaque de foco (teclado/gamepad). Decisões que já custaram bug:
+           - box-shadow 100% INSET: um outer-glow é cortado por
+             overflow:hidden/auto de qualquer ancestral (painel rolável,
+             gaveta colapsável) mesmo com o elemento visível; inset nunca.
+           - sem transform:scale: mesmo pequeno, fazia a caixa renderizada
+             crescer além do layout e voltava a ser cortado (v0.13.2).
+           - o brilho mora num ::after, não no próprio elemento (v0.13.3):
+             o elemento hospedeiro está na lista global de transições lá em
+             cima (box-shadow 0.6s, pro crossfade de tema), e isso fazia o
+             anel DEMORAR 0.6s pra sumir ao trocar de opção — lido como
+             "ficou uma borda no botão anterior". No pseudo-elemento o anel
+             nasce e some junto com a classe, sem herdar aquela transição.
+           - z-index no hospedeiro pra pintar por cima dos vizinhos da mesma
+             fileira (senão o vizinho seguinte no DOM cobre o anel). */
+        body.theme-dark { --gp-ring: rgba(248, 250, 252, 0.85); --gp-glow: rgba(248, 250, 252, 0.35); --gp-glow-peak: rgba(248, 250, 252, 0.75); }
+        body.theme-light { --gp-ring: rgba(15, 23, 42, 0.75); --gp-glow: rgba(15, 23, 42, 0.22); --gp-glow-peak: rgba(15, 23, 42, 0.5); }
+        .gp-focus { position: relative; z-index: 5; }
+        .gp-focus::after {
+            content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 1;
+            animation: gpFocusIn 0.16s ease-out, gpBreathe 1.25s ease-in-out infinite alternate;
+        }
+        /* Duas animações que NÃO disputam a mesma propriedade: a de entrada
+           só mexe em opacity, a de "respiração" só em box-shadow. */
+        @keyframes gpFocusIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes gpBreathe {
+            from { box-shadow: inset 0 0 0 2px var(--gp-ring), inset 0 0 8px var(--gp-glow); }
+            to   { box-shadow: inset 0 0 0 2px var(--gp-ring), inset 0 0 22px var(--gp-glow-peak); }
+        }
 
         @keyframes winnerPulse {
             0% { transform: scale(1) translateY(0); box-shadow: 0 6px 15px rgba(0,0,0,0.3); border: 1px solid var(--glass-border); }
@@ -325,7 +337,12 @@
         .legend-group.active { display: flex; animation: slideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         @keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
         
-        .action-btn { background: var(--btn-s-bg); border: 1px solid var(--glass-border); padding: 6px 12px; border-radius: 8px; color: var(--txt); display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
+        /* min-height restaura a altura que os botões tinham quando ainda
+           carregavam um key-box dentro (v0.13.3): o key-box (padding+borda
+           próprios) era quem esticava a linha flex pra 35.6px no desktop —
+           sem ele os botões caíram pra 28px. No mobile a media query já usa
+           padding maior e passa desse mínimo, então nada muda lá. */
+        .action-btn { background: var(--btn-s-bg); border: 1px solid var(--glass-border); padding: 6px 12px; min-height: 35.6px; border-radius: 8px; color: var(--txt); display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
         .action-btn:disabled { opacity: 0.3; pointer-events: none; }
         .action-btn:hover { background: var(--btn-s-hov); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
         .action-btn:active { transform: translateY(0); }
@@ -353,7 +370,9 @@
            virar .visible, toca o slideUp igualzinho aos outros. */
         .btn-theme-pause { position: absolute; left: 15px; opacity: 0; pointer-events: none; }
         .btn-theme-pause.visible { opacity: 0.5; pointer-events: auto; animation: slideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        .btn-theme-pause.visible:hover { opacity: 1; }
+        /* Focado por teclado/gamepad tem que acender igual ao hover — senão
+           o botão fica meio apagado justamente quando está selecionado. */
+        .btn-theme-pause.visible:hover, .btn-theme-pause.visible.gp-focus { opacity: 1; }
 
         .key-box { background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); padding: 3px 8px; border-radius: 4px; font-weight: bold; color: var(--txt); display: inline-block; }
         .key-box.highlight { background: rgba(239, 68, 68, 0.2); border-color: var(--dang); color: var(--dang); }
@@ -560,12 +579,12 @@
                 </button>
                 <button class="choice-card" id="card-sp-personalizado" onclick="nav('scr-sp-choice', 'scr-mode')">
                     <span class="choice-title">🎮 JOGO PERSONALIZADO</span>
-                    <span class="choice-desc">Você escolhe regra, formato, baralho e dificuldade da IA.</span>
+                    <span class="choice-desc">Você define todas as regras.</span>
                 </button>
             </div>
             <button class="choice-card" id="card-sp-rapido" onclick="toggleQuickGamePanel()">
                 <span class="choice-title">⚡ JOGO RÁPIDO</span>
-                <span class="choice-desc">Só escolha a região do Truco — formato, baralho e dificuldade saem no sorteio.</span>
+                <span class="choice-desc">Defina a Região e o resto é sorteado!</span>
             </button>
         </div>
 
@@ -875,14 +894,14 @@
     <div id="scr-stats" class="panel hidden">
         <h2>ESTATÍSTICAS</h2>
 
-        <div class="section-label">Single Player</div>
-        <div id="stats-sp-body" class="stats-section"></div>
+        <div class="diff-selector">
+            <button class="diff-btn active" id="tab-stats-sp" onclick="setStatsTab('sp')">SINGLE</button>
+            <button class="diff-btn" id="tab-stats-mpOnline" onclick="setStatsTab('mpOnline')">ONLINE</button>
+            <button class="diff-btn" id="tab-stats-mpLocal" onclick="setStatsTab('mpLocal')">LOCAL</button>
+            <button class="diff-btn" id="tab-stats-perfil" onclick="setStatsTab('perfil')">PERFIL</button>
+        </div>
 
-        <div class="section-label" style="margin-top:14px;">Multiplayer Online</div>
-        <div id="stats-mp-online-body" class="stats-section"></div>
-
-        <div class="section-label" style="margin-top:14px;">Multiplayer Local</div>
-        <div id="stats-mp-local-body" class="stats-section"></div>
+        <div id="stats-body" class="stats-section"></div>
 
         <button id="btn-reset-stats" class="action-btn danger hold-reset-btn" style="margin-top:18px;"
             onpointerdown="holdResetPointerDown()" onpointerup="holdResetPointerUp()" onpointerleave="holdResetPointerUp()" onpointercancel="holdResetPointerUp()">
@@ -941,7 +960,7 @@
             
             <div id="box-my" class="hand-my"></div>
             
-            <button id="btn-hide-card" onclick="toggleHide()" disabled class="disabled"><span class="key-box">E</span> ESCONDER</button>
+            <button id="btn-hide-card" onclick="toggleHide()" disabled class="disabled"><span class="key-box">E</span> <span id="hide-card-label">ESCONDER</span></button>
 
             <div id="sync-ui" class="hidden">
                 <div id="sync-bar-fill"></div>
@@ -987,7 +1006,7 @@
 
             <div id="grp-confirm-exit" class="legend-group">
                 <span class="static-info" style="color: var(--warn); font-weight: bold;">Sair do Jogo?</span>
-                <button class="action-btn danger" onclick="location.reload()">SIM</button>
+                <button class="action-btn danger" onclick="confirmExitGame()">SIM</button>
                 <button class="action-btn" onclick="cancelExit()">NÃO</button>
             </div>
 
@@ -1024,7 +1043,7 @@
         var SUITS = ['♦', '♠', '♥', '♣']; 
         var VALS_SUJO = ['4', '5', '6', '7', 'Q', 'J', 'K', 'A', '2', '3'];
         var VALS_LIMPO = ['Q', 'J', 'K', 'A', '2', '3'];
-        var APP_VERSION = '0.13.2';
+        var APP_VERSION = '0.13.3';
 
         // ═══════════════════════════════════════════════════════════════
         // FORMATO DE `st` (estado sincronizado entre jogadores)
@@ -1395,6 +1414,10 @@
             // via updateUI() — um recalculo de foco aqui cobre isso tudo de
             // uma vez, sem precisar caçar cada função que muda estado.
             refreshMenuFocus();
+            syncGpHints();
+            // Mesmo motivo: é o ponto que roda em toda transição de estado
+            // nos três modos, então serve de relógio pro desfecho do truco.
+            settleTrucoAsk();
         }
 
         // Estado (só de UI, não faz parte de st) do Menu de Pausa — ver
@@ -1411,20 +1434,23 @@
 
             window.isHiding = !window.isHiding;
             var btn = getEl('btn-hide-card');
-            if (window.isHiding) {
-                btn.classList.add('escondendo');
-                btn.innerHTML = '<span class="key-box">E</span> ESCONDENDO';
-            } else {
-                btn.classList.remove('escondendo');
-                btn.innerHTML = '<span class="key-box">E</span> ESCONDER';
-            }
+            btn.classList.toggle('escondendo', window.isHiding);
+            // Troca SÓ o rótulo, nunca o innerHTML inteiro: reescrever o botão
+            // destruía o <span class="key-box"> junto, e com ele o hint de
+            // gamepad já aplicado (e o data-key-letter que permite reverter)
+            // — era por isso que a dica do Esconder voltava pra "E" sozinha.
+            setHideBtnLabel(window.isHiding ? 'ESCONDENDO' : 'ESCONDER');
         };
+
+        function setHideBtnLabel(txt) {
+            var lbl = getEl('hide-card-label');
+            if (lbl) lbl.innerText = txt;
+        }
 
         function resetHideBtn() {
             window.isHiding = false;
-            var btn = getEl('btn-hide-card');
-            btn.classList.remove('escondendo');
-            btn.innerHTML = '<span class="key-box">E</span> ESCONDER';
+            getEl('btn-hide-card').classList.remove('escondendo');
+            setHideBtnLabel('ESCONDER');
         }
 
         // Botão único (⋮ / ESC) que abre o Menu de Pausa, e também funciona como
@@ -1572,6 +1598,12 @@
             return null;
         }
 
+        // Lembra em qual carta da mão o foco estava: renderMesa() recria os
+        // elementos de carta do zero (bMy.innerHTML = ''), então a referência
+        // guardada em gpFocusedEl morre a cada re-render — sem isso o foco
+        // pularia de volta pra primeira carta toda vez que a mesa redesenha.
+        var gpLastCardIdx = 0;
+
         function setGpFocus(el) {
             if (gpFocusedEl && gpFocusedEl !== el) {
                 gpFocusedEl.classList.remove('gp-focus');
@@ -1583,7 +1615,30 @@
             gpFocusedEl = el || null;
             if (gpFocusedEl) {
                 if (gpFocusVisible) gpFocusedEl.classList.add('gp-focus');
-                try { gpFocusedEl.focus({ preventScroll: true }); } catch(e) {}
+                if (gpFocusedEl.classList.contains('card')) {
+                    var ci = Array.prototype.indexOf.call(getHandCardEls(), gpFocusedEl);
+                    if (ci !== -1) gpLastCardIdx = ci;
+                }
+                // Foco NATIVO só em campo de texto (pra dar pra digitar). Em
+                // botão/carta o indicador é o .gp-focus, e deixar o foco
+                // nativo junto causava dois bugs: o anel padrão do navegador
+                // (um outline, que NÃO é inset) voltava a ser cortado por
+                // containers com overflow, e ao mover o foco pra uma carta
+                // (<div>, que não aceita .focus()) o botão anterior CONTINUAVA
+                // com foco nativo — ficava "uma borda no botão anterior".
+                if (gpFocusedEl.tagName === 'INPUT' || gpFocusedEl.tagName === 'TEXTAREA') {
+                    try { gpFocusedEl.focus({ preventScroll: true }); } catch(e) {}
+                } else if (document.activeElement && document.activeElement !== document.body && typeof document.activeElement.blur === 'function') {
+                    document.activeElement.blur();
+                }
+                // Sem foco nativo, ninguém rola o painel sozinho: num menu que
+                // passa de 90vh (Estatísticas com histórico cheio) o indicador
+                // sumia embaixo da dobra pra quem navega só de gamepad.
+                // 'nearest' não faz nada quando o alvo já está visível, e o
+                // in-game fica de fora de propósito (a mesa não rola).
+                if (!isInGameScreen() && typeof gpFocusedEl.scrollIntoView === 'function') {
+                    try { gpFocusedEl.scrollIntoView({ block: 'nearest', inline: 'nearest' }); } catch(e) {}
+                }
             }
         }
 
@@ -1602,6 +1657,13 @@
                 var btn = banner.querySelector('button');
                 return btn ? [[btn]] : [];
             }
+            // A tela de fim de jogo é um overlay POR CIMA do #scr-game, que
+            // continua visível por baixo — então ela tem que ser checada
+            // ANTES de isInGameScreen(), senão o foco ia parar nas cartas/
+            // botões do jogo atrás dela e os botões de fim ficavam
+            // inalcançáveis por teclado/gamepad (v0.13.3).
+            var endScr = getEl('scr-end');
+            if (endScr && endScr.classList.contains('show')) return getFocusableRows(endScr);
             if (isInGameScreen()) return getInGameFocusRows();
             return getFocusableRows(getActiveMenuScreen());
         }
@@ -1658,7 +1720,16 @@
             var rows = getActiveFocusRows();
             if (!rows.length) { setGpFocus(null); return; }
             if (gpFocusedEl && findRowCol(rows, gpFocusedEl)) return;
-            setGpFocus(rows[0][0]);
+            // Se a primeira linha é a mão do jogador, volta pra MESMA carta
+            // (por índice) em vez da primeira — renderMesa() recria esses
+            // elementos a cada redesenho, e sem isso o foco pulava sozinho
+            // pra carta 1 no meio da jogada.
+            var first = rows[0];
+            if (first.length && first[0].classList && first[0].classList.contains('card')) {
+                setGpFocus(first[Math.min(gpLastCardIdx, first.length - 1)]);
+                return;
+            }
+            setGpFocus(first[0]);
         }
 
         function moveMenuFocus(dir) {
@@ -1704,6 +1775,11 @@
         function menuBack() {
             var banner = getEl('version-warn-banner');
             if (banner && !banner.classList.contains('hidden')) { dismissVersionWarning(); return; }
+            // Na tela de fim de jogo não há "voltar": a partida acabou, as
+            // duas opções (jogar de novo / menu) são escolhas, não retorno —
+            // e pausar o jogo por trás do overlay seria só confusão.
+            var endScr = getEl('scr-end');
+            if (endScr && endScr.classList.contains('show')) return;
             if (isInGameScreen()) { togglePauseMenu(); return; }
             var screen = getActiveMenuScreen();
             if (!screen) return;
@@ -1737,7 +1813,15 @@
         function handleMenuKey(e) {
             if (e.key === 'Escape') { menuBack(); e.preventDefault(); return; }
             var active = document.activeElement;
-            if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) return;
+            if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) {
+                // Digitando num campo de texto: esquerda/direita continuam
+                // sendo do campo (mover o cursor), mas cima/baixo e Enter
+                // SAEM do campo — antes o campo virava uma armadilha, só
+                // dava pra sair com o mouse ou abandonando a tela no Escape.
+                if (e.key === 'ArrowUp') { revealGpFocus(); moveMenuFocus('up'); e.preventDefault(); }
+                else if (e.key === 'ArrowDown' || e.key === 'Enter') { revealGpFocus(); moveMenuFocus('down'); e.preventDefault(); }
+                return;
+            }
             if (e.key === 'ArrowDown') { revealGpFocus(); moveMenuFocus('down'); e.preventDefault(); }
             else if (e.key === 'ArrowUp') { revealGpFocus(); moveMenuFocus('up'); e.preventDefault(); }
             else if (e.key === 'ArrowLeft') { revealGpFocus(); moveMenuFocus('left'); e.preventDefault(); }
@@ -1785,12 +1869,24 @@
             msgTimeout = setTimeout(function() { hud.classList.remove('show-msg', 'notify-pos', 'notify-neg', 'notify-neu', 'notify-sys'); }, duration); 
         }
 
-        // Estatísticas (trucoStatsV1): três baldes independentes — sp (Single
+        // Estatísticas (trucoStatsV2): três baldes independentes — sp (Single
         // Player, Personalizado e Rápido juntos), mpOnline (WebSocket) e
         // mpLocal (Arquivo na Rede + Conexão Direta juntos, mesma natureza
         // "sem servidor"). Em multiplayer só grava se EU estiver no assento 1
         // neste dispositivo — os outros assentos não geram estatística pra
         // ninguém aqui, por decisão explícita (evita ambiguidade de dono).
+        //
+        // Formato v2 (trocou a chave, NÃO migra o v1 — só a v0.13 tem
+        // estatística e ela ainda não saiu da máquina do autor, então valeu
+        // mais desenhar o formato certo do que empilhar campos):
+        //   { v:2, buckets: { sp: { byConfig: { "1v1|paulista|2": <reg> },
+        //                          recent: [ <partida> ] }, ... } }
+        // Separar `byConfig` de `recent` importa: a render antiga iterava as
+        // chaves do balde assumindo que TODA chave era uma configuração —
+        // qualquer campo novo no mesmo nível entraria na lista como se fosse
+        // um formato de jogo.
+        var RECENT_KEEP = 20;   // guarda 20 e exibe 10: folga barata pra testar
+        var RECENT_SHOW = 10;   // outra janela depois sem precisar recoletar
         function statsBucketFor() {
             if (gameMode === 'pc') return 'sp';
             if (gameMode === 'ws') return myPID === 1 ? 'mpOnline' : null;
@@ -1798,35 +1894,134 @@
             return null;
         }
         function loadStats() {
-            try { return JSON.parse(localStorage.getItem('trucoStatsV1')) || {}; } catch(e) { return {}; }
+            try {
+                var raw = JSON.parse(localStorage.getItem('trucoStatsV2'));
+                if (raw && raw.v === 2 && raw.buckets) return raw;
+            } catch(e) {}
+            return { v: 2, buckets: {} };
         }
         function saveStats(data) {
-            try { localStorage.setItem('trucoStatsV1', JSON.stringify(data)); } catch(e) {}
+            try { localStorage.setItem('trucoStatsV2', JSON.stringify(data)); } catch(e) {}
         }
         function statsKey() { return st.gameFormat + '|' + st.rules + '|' + aiDifficulty; }
-        function emptyStatsRecord() { return { w: 0, l: 0, trucoAsked: 0, trucoAccepted: 0, trucoRan: 0, streak: 0, bestStreak: 0 }; }
-        function recordMatchResult(isWin) {
+        // askTotal conta CADA pedido meu (um mesmo jogador pode retrucar por
+        // cima do aumento do rival dentro da mesma mão); askHit/askRanFromRaise/
+        // askLost contam DESFECHO de mão, no máximo um por mão — por isso a
+        // taxa de acerto nunca usa askTotal como base (ver askDecided()).
+        function emptyStatsRecord() {
+            return { w: 0, l: 0, quit: 0,
+                     marginWinSum: 0, marginLossSum: 0,
+                     askTotal: 0, askHit: 0, askRanFromRaise: 0, askLost: 0,
+                     respAccepted: 0, respRan: 0,
+                     streak: 0, bestStreak: 0 };
+        }
+        function statsBucketOf(data, bucket) {
+            if (!data.buckets[bucket]) data.buckets[bucket] = { byConfig: {}, recent: [] };
+            var b = data.buckets[bucket];
+            if (!b.byConfig) b.byConfig = {};
+            if (!b.recent) b.recent = [];
+            return b;
+        }
+        // Único caminho de escrita: resolve balde + configuração, entrega o
+        // registro pra mutação e salva. Evita repetir load/merge/save em cada
+        // ponto de registro (era onde o formato antigo mais dava chance de
+        // esquecer um campo novo).
+        function mutateStats(fn) {
             var bucket = statsBucketFor();
             if (!bucket) return;
             var data = loadStats();
-            if (!data[bucket]) data[bucket] = {};
+            var b = statsBucketOf(data, bucket);
             var key = statsKey();
-            var rec = data[bucket][key] || emptyStatsRecord();
-            if (isWin) { rec.w++; rec.streak++; if (rec.streak > rec.bestStreak) rec.bestStreak = rec.streak; }
-            else { rec.l++; rec.streak = 0; }
-            data[bucket][key] = rec;
+            if (!b.byConfig[key]) b.byConfig[key] = emptyStatsRecord();
+            fn(b.byConfig[key], b);
             saveStats(data);
         }
-        function recordTrucoEvent(field) {
-            var bucket = statsBucketFor();
-            if (!bucket) return;
-            var data = loadStats();
-            if (!data[bucket]) data[bucket] = {};
+        // Margem da partida do MEU ponto de vista. Espectador (myPID 0) não
+        // grava estatística, mas a referência cai no assento 1 pelo mesmo
+        // critério já usado em updateUI()/triggerEndGame.
+        function currentMargin() {
+            var refPID = (myPID === 0) ? 1 : myPID;
+            var myTeam = getTeam(refPID);
+            return Math.abs((st.scores[myTeam] || 0) - (st.scores[getOppTeam(myTeam)] || 0));
+        }
+        function recordMatchResult(isWin) {
+            var margin = currentMargin();
             var key = statsKey();
-            var rec = data[bucket][key] || emptyStatsRecord();
-            rec[field] = (rec[field] || 0) + 1;
-            data[bucket][key] = rec;
-            saveStats(data);
+            mutateStats(function(rec, b) {
+                if (isWin) {
+                    rec.w++; rec.marginWinSum += margin;
+                    rec.streak++; if (rec.streak > rec.bestStreak) rec.bestStreak = rec.streak;
+                } else {
+                    rec.l++; rec.marginLossSum += margin; rec.streak = 0;
+                }
+                // Desistência NÃO entra aqui: não é vitória nem derrota, e
+                // poluiria a janela móvel que vai alimentar a dificuldade
+                // adaptativa. Fica só no contador `quit`.
+                b.recent.push({ w: isWin ? 1 : 0, m: margin, k: key, t: Date.now() });
+                if (b.recent.length > RECENT_KEEP) b.recent = b.recent.slice(-RECENT_KEEP);
+            });
+        }
+        function recordTrucoEvent(field) {
+            mutateStats(function(rec) { rec[field] = (rec[field] || 0) + 1; });
+        }
+
+        // Desistência: sair de uma partida EM ANDAMENTO (o "SIM" da
+        // confirmação de saída). Não conta sair pelo menu de fim de jogo —
+        // ali a partida já terminou e já virou vitória ou derrota.
+        function recordQuit() {
+            if (!isInGameScreen() || matchResultRecorded) return;
+            mutateStats(function(rec) { rec.quit = (rec.quit || 0) + 1; rec.streak = 0; });
+        }
+        window.confirmExitGame = function() { recordQuit(); location.reload(); };
+
+        // ---- Taxa de acerto ao trucar: julgada pelo DESFECHO DA MÃO ----
+        // Responder "aceitei/corri" na hora diz pouco: quem truca e leva um
+        // aumento na cara ainda pode ganhar a mão jogando. A classificação
+        // pedida é:
+        //   pedi e o rival correu ............................. acerto
+        //   pedi, houve aceite/aumento, e GANHEI a mão ........ acerto
+        //   pedi, o rival aumentou, e EU corri ................ blefe
+        //   pedi e PERDI a mão jogando ........................ erro
+        //   mão empatada (canga) depois do pedido ............. não conta
+        //
+        // O que faz isso funcionar em multiplayer sem tocar no sync: placar e
+        // roundId JÁ viajam dentro do `st` pra todos os dispositivos, então
+        // cada aparelho julga sozinho o desfecho da própria mão — sem campo
+        // novo no estado, sem dedupe por sequência, sem semear em reconexão.
+        // O watch é puramente local (não entra no `st`).
+        var askWatch = null; // { roundId, my, opp, theyRaised, iRan }
+        function openAskWatch() {
+            if (myPID === 0) return;
+            var myTeam = getTeam(myPID);
+            askWatch = {
+                roundId: st.roundId,
+                my: st.scores[myTeam] || 0,
+                opp: st.scores[getOppTeam(myTeam)] || 0,
+                theyRaised: false,
+                iRan: false
+            };
+        }
+        // Idempotente e barata: sai na hora quando não há pedido em
+        // observação, que é o caso na esmagadora maioria das chamadas.
+        // Chamada do setBottomGroup() (chokepoint de todo sub-estado in-game,
+        // nos três modos), do fim do processLoadedState() e do triggerEndGame()
+        // — este último porque a última mão da partida não passa por um
+        // updateUI() depois de pontuar.
+        function settleTrucoAsk() {
+            if (!askWatch || myPID === 0) return;
+            var myTeam = getTeam(myPID);
+            var oppTeam = getOppTeam(myTeam);
+            if (st.trucoState === 'pending' && st.trucoBy && getTeam(st.trucoBy) === oppTeam) askWatch.theyRaised = true;
+            var my = st.scores[myTeam] || 0, opp = st.scores[oppTeam] || 0;
+            var scored = (my !== askWatch.my) || (opp !== askWatch.opp);
+            var roundChanged = (st.roundId !== askWatch.roundId);
+            if (!scored && !roundChanged) return;
+            if (scored) {
+                if (my > askWatch.my) recordTrucoEvent('askHit');
+                else if (opp > askWatch.opp) recordTrucoEvent(askWatch.iRan && askWatch.theyRaised ? 'askRanFromRaise' : 'askLost');
+            }
+            // Rodada trocou sem ninguém pontuar = canga: descarta sem contar.
+            askWatch = null;
         }
 
         function formatStatsKey(key) {
@@ -1836,38 +2031,188 @@
             var diffLabel = (AI_PROFILES[parts[2]] && AI_PROFILES[parts[2]].label) || parts[2];
             return fmtLabel + ' · ' + regionLabel + ' · ' + diffLabel;
         }
-        function renderStatsSection(containerId, bucketData) {
-            var el = getEl(containerId);
-            if (!el) return;
-            var agg = { w: 0, l: 0, trucoAsked: 0, trucoAccepted: 0, trucoRan: 0 };
+
+        // Aba ativa da tela de Estatísticas (só estado de UI, não é salvo).
+        var STATS_TABS = ['sp', 'mpOnline', 'mpLocal', 'perfil'];
+        var statsTab = 'sp';
+        window.setStatsTab = function(tab) {
+            statsTab = tab;
+            STATS_TABS.forEach(function(t) {
+                var b = getEl('tab-stats-' + t);
+                if (b) b.classList.toggle('active', t === tab);
+            });
+            renderStatsBody();
+        };
+
+        function statLine(label, value, strong) {
+            return '<div style="display:flex; justify-content:space-between; padding:3px 0;' + (strong ? ' font-weight:bold;' : ' color:var(--txt-d);') + '">'
+                + '<span>' + label + '</span><span>' + value + '</span></div>';
+        }
+        function statPct(n, d) { return d ? Math.round(n / d * 100) : 0; }
+        function statAvg(sum, n) { return n ? (Math.round(sum / n * 10) / 10).toFixed(1) : '—'; }
+        // Base da taxa de acerto: só as mãos que TIVERAM desfecho depois de um
+        // pedido meu. Nunca askTotal (um pedido reaumentado conta várias vezes
+        // ali, mas o desfecho da mão é um só) e nunca incluindo canga.
+        function askDecided(a) { return (a.askHit || 0) + (a.askRanFromRaise || 0) + (a.askLost || 0); }
+
+        // Soma todas as configurações de um balde num registro único, e de
+        // quebra devolve as linhas por configuração já ordenadas.
+        var AGG_FIELDS = ['w','l','quit','marginWinSum','marginLossSum','askTotal','askHit','askRanFromRaise','askLost','respAccepted','respRan'];
+        function aggregateBucket(bucket) {
+            var b = (loadStats().buckets || {})[bucket] || null;
+            var agg = emptyStatsRecord();
             var rows = [];
-            Object.keys(bucketData || {}).forEach(function(key) {
-                var r = bucketData[key];
-                agg.w += r.w; agg.l += r.l; agg.trucoAsked += r.trucoAsked; agg.trucoAccepted += r.trucoAccepted; agg.trucoRan += r.trucoRan;
-                if (r.w || r.l) rows.push({ key: key, w: r.w, l: r.l, bestStreak: r.bestStreak });
-            });
-            rows.sort(function(a, b) { return (b.w + b.l) - (a.w + a.l); });
+            if (b && b.byConfig) {
+                Object.keys(b.byConfig).forEach(function(key) {
+                    var r = b.byConfig[key] || {};
+                    AGG_FIELDS.forEach(function(f) { agg[f] += (r[f] || 0); });
+                    if ((r.bestStreak || 0) > agg.bestStreak) agg.bestStreak = r.bestStreak || 0;
+                    if (r.w || r.l || r.quit) rows.push({ key: key, w: r.w || 0, l: r.l || 0, quit: r.quit || 0, bestStreak: r.bestStreak || 0 });
+                });
+            }
+            rows.sort(function(a, b2) { return (b2.w + b2.l) - (a.w + a.l); });
+            return { agg: agg, rows: rows, recent: (b && b.recent) ? b.recent : [], matches: agg.w + agg.l };
+        }
 
-            var total = agg.w + agg.l;
-            if (total === 0) { el.innerHTML = '<div class="static-info" style="justify-content:center; padding:6px 0;">Nenhuma partida registrada ainda.</div>'; return; }
+        function renderStatsBody() {
+            var el = getEl('stats-body');
+            if (!el) return;
+            if (statsTab === 'perfil') { renderPerfilBody(el); return; }
 
-            var winPct = Math.round(agg.w / total * 100);
-            var html = '<div style="display:flex; justify-content:space-between; font-weight:bold;">'
-                + '<span>' + agg.w + 'V - ' + agg.l + 'D</span><span style="color:var(--prim)">' + winPct + '%</span></div>';
-            html += '<div class="static-info" style="justify-content:flex-start; margin:6px 0 10px; font-size:0.7rem;">Truco: ' + agg.trucoAsked + ' pedidos · ' + agg.trucoAccepted + ' aceitos · ' + agg.trucoRan + ' corridos</div>';
-            rows.forEach(function(row) {
-                html += '<div style="display:flex; justify-content:space-between; font-size:0.72rem; color:var(--txt-d); padding:4px 0; border-top:1px solid var(--glass-border);">'
-                    + '<span>' + formatStatsKey(row.key) + '</span>'
-                    + '<span>' + row.w + 'V-' + row.l + 'D' + (row.bestStreak > 1 ? ' · 🔥' + row.bestStreak : '') + '</span></div>';
-            });
+            var info = aggregateBucket(statsTab);
+            var agg = info.agg, rows = info.rows, total = info.matches;
+            if (total === 0 && !agg.quit) {
+                el.innerHTML = '<div class="static-info" style="justify-content:center; padding:14px 0;">Sem jogos nesse modo</div>';
+                return;
+            }
+
+            var html = '<div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px;">'
+                + '<span style="font-size:1.4rem; font-weight:900;">' + agg.w + '<span style="color:var(--txt-d); font-size:0.9rem;">V</span> '
+                + agg.l + '<span style="color:var(--txt-d); font-size:0.9rem;">D</span></span>'
+                + '<span style="font-size:1.1rem; font-weight:bold; color:var(--prim);">' + statPct(agg.w, total) + '%</span></div>';
+
+            html += statLine('Partidas', total, false);
+            html += statLine('Desistências', agg.quit, false);
+            html += statLine('Melhor sequência', agg.bestStreak > 0 ? ('🔥 ' + agg.bestStreak) : '—', false);
+
+            // Janela móvel: é ela (e não o acumulado da vida toda) que vai
+            // servir de insumo pra Dificuldade Adaptativa mais pra frente.
+            var last = info.recent.slice(-RECENT_SHOW);
+            if (last.length) {
+                var lw = 0;
+                for (var i = 0; i < last.length; i++) { if (last[i].w) lw++; }
+                html += '<div class="section-label" style="margin:12px 0 4px; text-align:left;">Desempenho recente</div>';
+                html += statLine('Últimas ' + last.length, lw + 'V-' + (last.length - lw) + 'D · ' + statPct(lw, last.length) + '%', false);
+                var dots = '';
+                last.forEach(function(m) {
+                    dots += '<span style="display:inline-block; width:15px; height:15px; line-height:15px; text-align:center; border-radius:4px; font-size:0.58rem; font-weight:bold; color:#fff; background:'
+                        + (m.w ? 'rgba(16,185,129,0.75)' : 'rgba(239,68,68,0.7)') + ';">' + (m.w ? 'V' : 'D') + '</span>';
+                });
+                html += '<div style="display:flex; gap:4px; flex-wrap:wrap; padding:4px 0 2px;">' + dots + '</div>';
+                html += '<div style="font-size:0.65rem; color:var(--txt-d); opacity:0.7; padding-bottom:2px;">mais antiga → mais recente</div>';
+            }
+
+            // Margem: base numérica pro rebalanceamento da IA (v0.15/v0.16).
+            if (agg.w || agg.l) {
+                html += '<div class="section-label" style="margin:12px 0 4px; text-align:left;">Margem média</div>';
+                html += statLine('Nas vitórias', agg.w ? (statAvg(agg.marginWinSum, agg.w) + ' pts') : '—', false);
+                html += statLine('Nas derrotas', agg.l ? (statAvg(agg.marginLossSum, agg.l) + ' pts') : '—', false);
+            }
+
+            var decided = askDecided(agg);
+            html += '<div class="section-label" style="margin:12px 0 4px; text-align:left;">Truco · quando eu peço</div>';
+            html += statLine('Pedidos', agg.askTotal, false);
+            if (decided) {
+                html += statLine('Acerto (ganhei a mão)', statPct(agg.askHit, decided) + '% <span style="opacity:0.6">(' + agg.askHit + '/' + decided + ')</span>', false);
+                html += statLine('Blefe (corri do aumento)', statPct(agg.askRanFromRaise, decided) + '% <span style="opacity:0.6">(' + agg.askRanFromRaise + ')</span>', false);
+                html += statLine('Perdi jogando', statPct(agg.askLost, decided) + '% <span style="opacity:0.6">(' + agg.askLost + ')</span>', false);
+            } else if (agg.askTotal) {
+                html += statLine('Acerto', 'sem mão decidida ainda', false);
+            }
+
+            var trucoResp = agg.respAccepted + agg.respRan;
+            html += '<div class="section-label" style="margin:12px 0 4px; text-align:left;">Truco · quando me pedem</div>';
+            html += statLine('Aceitos', agg.respAccepted, false);
+            html += statLine('Corridos', agg.respRan, false);
+            if (trucoResp) html += statLine('Taxa de aceite', statPct(agg.respAccepted, trucoResp) + '%', false);
+
+            if (rows.length) {
+                html += '<div class="section-label" style="margin:12px 0 4px; text-align:left;">Por configuração</div>';
+                rows.forEach(function(row) {
+                    var extra = (row.bestStreak > 1 ? ' · 🔥' + row.bestStreak : '') + (row.quit ? ' · ' + row.quit + '✖' : '');
+                    html += '<div style="display:flex; justify-content:space-between; font-size:0.72rem; color:var(--txt-d); padding:4px 0; border-top:1px solid var(--glass-border);">'
+                        + '<span>' + formatStatsKey(row.key) + '</span>'
+                        + '<span>' + row.w + 'V-' + row.l + 'D' + extra + '</span></div>';
+                });
+            }
             el.innerHTML = html;
         }
-        window.refreshStatsScreen = function() {
-            var data = loadStats();
-            renderStatsSection('stats-sp-body', data.sp);
-            renderStatsSection('stats-mp-online-body', data.mpOnline);
-            renderStatsSection('stats-mp-local-body', data.mpLocal);
-        };
+
+        // Aba Perfil: o MESMO jogador lado a lado contra a IA e contra gente.
+        // A hipótese que motivou isso é que quase todo mundo joga mais solto
+        // contra bot ("bot é fácil") e mais estratégico contra humano — se o
+        // número confirmar isso, ele vira alvo de calibração de IA depois.
+        var PERFIL_COLS = [ { k: 'sp', label: 'SINGLE' }, { k: 'mpOnline', label: 'ONLINE' }, { k: 'mpLocal', label: 'LOCAL' } ];
+        var PERFIL_ROWS = [
+            { label: 'Partidas', get: function(i) { return i.matches ? String(i.matches) : '—'; } },
+            { label: 'Pedidos por partida', get: function(i) { return i.matches ? (i.agg.askTotal / i.matches).toFixed(1) : '—'; } },
+            { label: 'Acerto ao trucar', get: function(i) { var d = askDecided(i.agg); return d ? statPct(i.agg.askHit, d) + '%' : '—'; } },
+            { label: 'Blefes', get: function(i) { var d = askDecided(i.agg); return d ? statPct(i.agg.askRanFromRaise, d) + '%' : '—'; } },
+            { label: 'Fuga ao responder', get: function(i) { var r = i.agg.respAccepted + i.agg.respRan; return r ? statPct(i.agg.respRan, r) + '%' : '—'; } },
+            { label: 'Margem de vitória', get: function(i) { return i.agg.w ? statAvg(i.agg.marginWinSum, i.agg.w) : '—'; } }
+        ];
+        function renderPerfilBody(el) {
+            var info = PERFIL_COLS.map(function(c) { return aggregateBucket(c.k); });
+            if (!info[0].matches && !info[1].matches && !info[2].matches) {
+                el.innerHTML = '<div class="static-info" style="justify-content:center; padding:14px 0;">Nenhuma partida registrada ainda.</div>';
+                return;
+            }
+
+            var grid = 'display:grid; grid-template-columns:1.45fr repeat(3, 1fr); align-items:center;';
+            var html = '<div style="' + grid + ' font-size:0.68rem; color:var(--txt-d); font-weight:bold; letter-spacing:0.5px; padding-bottom:5px;">'
+                + '<span></span>';
+            PERFIL_COLS.forEach(function(c) { html += '<span style="text-align:right;">' + c.label + '</span>'; });
+            html += '</div>';
+
+            PERFIL_ROWS.forEach(function(row) {
+                html += '<div style="' + grid + ' padding:4px 0; border-top:1px solid var(--glass-border);">'
+                    + '<span style="color:var(--txt-d); font-size:0.74rem;">' + row.label + '</span>';
+                info.forEach(function(i) {
+                    html += '<span style="text-align:right; font-size:0.78rem;">' + row.get(i) + '</span>';
+                });
+                html += '</div>';
+            });
+
+            // Leitura derivada: Online + Local somam como "humanos". Só sai do
+            // "sem amostra" com pelo menos 5 partidas de CADA lado — abaixo
+            // disso o número oscila demais pra virar conclusão.
+            var spInfo = info[0];
+            var humanMatches = info[1].matches + info[2].matches;
+            var humanAsk = info[1].agg.askTotal + info[2].agg.askTotal;
+            var reading;
+            if (spInfo.matches < 5 || humanMatches < 5) {
+                reading = 'Jogue 5 partidas contra IA e 5 partidas humanos no Multiplayer para mais dados!';
+            } else {
+                var spRate = spInfo.agg.askTotal / spInfo.matches;
+                var huRate = humanAsk / humanMatches;
+                if (!huRate && !spRate) {
+                    reading = 'Você ainda não pediu truco em nenhum dos dois lados.';
+                } else if (!huRate) {
+                    reading = 'Contra humanos você ainda não pediu truco nenhuma vez, e contra a IA pede ' + spRate.toFixed(1) + ' por partida.';
+                } else {
+                    var diff = Math.round((spRate - huRate) / huRate * 100);
+                    if (Math.abs(diff) < 10) reading = 'Seu ritmo de pedidos é praticamente o mesmo contra a IA e contra humanos.';
+                    else if (diff > 0) reading = 'Você pede ' + diff + '% mais truco contra a IA do que contra humanos.';
+                    else reading = 'Você pede ' + (-diff) + '% menos truco contra a IA do que contra humanos.';
+                }
+            }
+            html += '<div style="margin-top:12px; padding:9px 11px; border-radius:10px; background:var(--btn-s-bg); border:1px solid var(--glass-border); font-size:0.73rem; color:var(--txt-d); line-height:1.45;">'
+                + reading + '</div>';
+
+            el.innerHTML = html;
+        }
+
+        window.refreshStatsScreen = function() { setStatsTab(statsTab); };
 
         // Botão de apagar tudo: mesma técnica do #sync-bar-fill (barra que
         // enche via width%), mas aqui o tempo de pressão é que enche a barra
@@ -1892,7 +2237,10 @@
             location.reload();
         }
         window.holdResetPointerDown = function() {
-            cancelHoldReset();
+            // Segurar Enter/Espaço dispara keydown repetido pelo auto-repeat do
+            // sistema; sem esta guarda cada repetição reiniciava a contagem e a
+            // barra nunca chegava ao fim pelo teclado.
+            if (holdResetRAF) return;
             holdResetStart = Date.now();
             var fill = getEl('reset-stats-fill');
             (function tick() {
@@ -1909,6 +2257,10 @@
 
         var matchResultRecorded = false;
         function triggerEndGame(isWin) {
+            // A última mão da partida pontua e cai direto aqui, sem um
+            // updateUI()/setBottomGroup() depois — sem esta chamada o desfecho
+            // do truco que FECHOU o jogo nunca seria contabilizado.
+            settleTrucoAsk();
             if (!matchResultRecorded) { matchResultRecorded = true; recordMatchResult(isWin); }
             clearSessionBackup();
             setTimeout(function() {
@@ -1953,7 +2305,7 @@
 
             getEl('scr-end').className = '';
             st.scores = { 1: 0, 2: 0 };
-            matchResultRecorded = false;
+            matchResultRecorded = false; askWatch = null;
             st.vazas = { 1: 0, 2: 0 };
             st.firstPlayerOfRound = 1;
             
@@ -2710,6 +3062,11 @@
 
             updateGhostManilha();
             updateTurnGlow();
+            // As cartas da mão foram recriadas do zero aqui — a referência
+            // guardada em gpFocusedEl apontava pra um nó que não existe mais.
+            // Reatribui o foco (preservando o índice da carta) pra ele não
+            // sumir nem pular pra primeira carta a cada redesenho da mesa.
+            refreshMenuFocus();
         }
 
         function animDeal() {
@@ -2815,7 +3172,7 @@
             gameMode = modeStr; myPID = playerID; 
             st.gameFormat = pendingFormat;
             st.rules = pendingRules;
-            st.scores = {1:0, 2:0}; window.lastAdviceLevel = 0; st.humanAccepted = false; matchResultRecorded = false;
+            st.scores = {1:0, 2:0}; window.lastAdviceLevel = 0; st.humanAccepted = false; matchResultRecorded = false; askWatch = null;
             if (modeStr === 'pc') { st.nicks = {1:'',2:'',3:'',4:'',5:'',6:''}; window.wsPlayers = {}; st.humanSeats = [1]; st.expectedHumans = 1; }
             else if (modeStr === 'json' || (modeStr === 'webrtc' && !webrtcResuming)) {
                 if (playerID === 1) { st.humanSeats = [1]; st.expectedHumans = pendingHumanCount; }
@@ -3130,13 +3487,21 @@
             st.trucoBy = myPID; st.lastTruco = myPID; st.trucoState = 'pending';
             var pedMsg = (st.gameFormat === '1v1' ? "Você pediu " : "Vocês pediram ") + getTrucoName(st.proposedVal) + "!";
             showMsg(pedMsg, 'neu'); window.lastAdviceLevel = 0;
-            if (myPID !== 0) recordTrucoEvent('trucoAsked');
+            // Só input humano local chega aqui — aiDecideTruco() age por outro
+            // caminho, então nenhuma decisão de bot entra na minha estatística.
+            // Reabrir o watch a cada pedido é proposital: se eu retruco por
+            // cima de um aumento, é o pedido MAIS RECENTE que está em jogo.
+            if (myPID !== 0) { recordTrucoEvent('askTotal'); openAskWatch(); }
             updateUI(); updateTurnGlow(); autoSave(); checkAiTrucoDecision();
         };
 
 		window.respondTruco = function(accept) {
             if(animLock) return;
-            if (myPID !== 0) recordTrucoEvent(accept ? 'trucoAccepted' : 'trucoRan');
+            if (myPID !== 0) recordTrucoEvent(accept ? 'respAccepted' : 'respRan');
+            // Correr aqui só vira "blefe" se houver um pedido MEU em
+            // observação (ou seja, o rival aumentou por cima) — correr de um
+            // pedido que partiu do rival não mexe na taxa de acerto.
+            if (!accept && askWatch) askWatch.iRan = true;
             if(accept) {
                 st.humanAccepted = true;
                 st.handVal = st.proposedVal; st.proposedVal = 0;
@@ -3539,7 +3904,7 @@
                         nav('scr-lobby', 'scr-game');
                         gameMode = 'ws';
                         if (myPID === 1) { 
-                            st.scores = {1:0, 2:0}; window.lastAdviceLevel = 0; st.humanAccepted = false; matchResultRecorded = false;
+                            st.scores = {1:0, 2:0}; window.lastAdviceLevel = 0; st.humanAccepted = false; matchResultRecorded = false; askWatch = null;
                             st.firstPlayerOfRound = 1;
                             startRound(st.firstPlayerOfRound);
                         } else if (myPID === 0) { 
@@ -3558,7 +3923,7 @@
                     }
                     getEl('scr-end').className = '';
                     if (myPID === 1) {
-                        st.scores = {1:0, 2:0}; window.lastAdviceLevel = 0; st.humanAccepted = false; matchResultRecorded = false;
+                        st.scores = {1:0, 2:0}; window.lastAdviceLevel = 0; st.humanAccepted = false; matchResultRecorded = false; askWatch = null;
                         st.firstPlayerOfRound = 1;
                         startRound(st.firstPlayerOfRound);
                     }
@@ -4242,6 +4607,10 @@
                 }
 
                 updateUI(); checkAiTurn(); checkAiTrucoDecision();
+                // Reforço pro caso de um sync chegar sem passar pelo
+                // setBottomGroup() (espectador, pausa aberta, tela de fim):
+                // a função é idempotente, chamar duas vezes não conta duas.
+                settleTrucoAsk();
             }
         }
 
@@ -4444,22 +4813,39 @@
             var gp = pads && pads[0];
             if (gp) {
                 var now = performance.now();
+                var known = gpLastButtonState.hasOwnProperty(gp.index);
                 var prev = gpLastButtonState[gp.index] || [];
-                for (var i = 0; i < gp.buttons.length; i++) {
-                    var pressed = gamepadButtonPressed(gp, i);
-                    if (pressed && !prev[i]) gpOnButtonDown(i);
-                    else if (!pressed && prev[i]) gpOnButtonUp(i);
+                // Primeira leitura deste controle: só REGISTRA o estado, sem
+                // disparar nada. Sem isso, um botão que já estava segurado
+                // quando a página carregou contava como "acabou de ser
+                // apertado" — foi o que fazia o jogo pular pra tela de Single
+                // Player logo depois de apagar os dados (o A ainda estava
+                // pressionado do hold de 5s quando a página recarregou, e no
+                // primeiro frame ele "confirmava" o botão em foco).
+                if (known) {
+                    for (var i = 0; i < gp.buttons.length; i++) {
+                        var pressed = gamepadButtonPressed(gp, i);
+                        if (pressed && !prev[i]) gpOnButtonDown(i);
+                        else if (!pressed && prev[i]) gpOnButtonUp(i);
+                    }
                 }
                 var next = []; for (var j = 0; j < gp.buttons.length; j++) next[j] = gamepadButtonPressed(gp, j);
                 gpLastButtonState[gp.index] = next;
 
-                if (gamepadButtonPressed(gp, 9) && !prev[9] && isInGameScreen()) togglePauseMenu();
+                if (known && gamepadButtonPressed(gp, 9) && !prev[9] && isInGameScreen()) togglePauseMenu();
 
                 var ax0 = gp.axes[0] || 0, ax1 = gp.axes[1] || 0;
-                gpPollDirection('up', gamepadButtonPressed(gp, 12) || ax1 < -GP_DEADZONE, now);
-                gpPollDirection('down', gamepadButtonPressed(gp, 13) || ax1 > GP_DEADZONE, now);
-                gpPollDirection('left', gamepadButtonPressed(gp, 14) || ax0 < -GP_DEADZONE, now);
-                gpPollDirection('right', gamepadButtonPressed(gp, 15) || ax0 > GP_DEADZONE, now);
+                var up = gamepadButtonPressed(gp, 12) || ax1 < -GP_DEADZONE;
+                var down = gamepadButtonPressed(gp, 13) || ax1 > GP_DEADZONE;
+                var left = gamepadButtonPressed(gp, 14) || ax0 < -GP_DEADZONE;
+                var right = gamepadButtonPressed(gp, 15) || ax0 > GP_DEADZONE;
+                // Mesma lógica do "known" acima: numa primeira leitura com a
+                // direção já segurada, só registra o estado (o gpPollDirection
+                // com isPressed=false zera o contador) em vez de disparar.
+                gpPollDirection('up', known && up, now);
+                gpPollDirection('down', known && down, now);
+                gpPollDirection('left', known && left, now);
+                gpPollDirection('right', known && right, now);
             }
             gpRAF = requestAnimationFrame(pollGamepad);
         }
@@ -4491,22 +4877,33 @@
         var gpVendor = null, gpHintsActive = false;
         function detectGpVendor(id) {
             var s = (id || '').toLowerCase();
-            if (s.indexOf('xbox') !== -1 || s.indexOf('xinput') !== -1) return 'xbox';
             if (s.indexOf('054c') !== -1 || s.indexOf('playstation') !== -1 || s.indexOf('dualshock') !== -1 || s.indexOf('dualsense') !== -1) return 'ps';
-            return null;
+            if (s.indexOf('xbox') !== -1 || s.indexOf('xinput') !== -1 || s.indexOf('045e') !== -1) return 'xbox';
+            // Controle não reconhecido ainda assim recebe os rótulos padrão
+            // do layout "standard" (que é o que o navegador está reportando)
+            // — antes ficava sem hint NENHUM, que é pior que um rótulo
+            // genérico levemente errado.
+            return 'xbox';
         }
         // v0.13.2: depois da unificação do foco in-game, quase todo botão
         // deixou de ter tecla dedicada (é navegar+confirmar) — só Esconder
         // e Menu de Pausa continuam com hotkey própria, então só eles têm
         // hint de gamepad. A/B (confirmar/voltar) não precisam de hint
         // porque o PRÓPRIO .gp-focus já mostra qual botão vai ser ativado.
+        // "☰" é o símbolo impresso no botão Menu do controle de Xbox (as três
+        // linhas); no DualShock/DualSense o botão equivalente é escrito
+        // "OPTIONS". R1/RB seguem o silkscreen de cada um.
         var GP_HINT_MAP = {
             'E': { xbox: 'RB', ps: 'R1' },
-            'ESC': { xbox: 'MENU', ps: 'OPTIONS' }
+            'ESC': { xbox: '☰', ps: 'OPTIONS' }
         };
+        // Varre TODOS os .key-box da página, não só os de dentro do
+        // #action-bar: o botão Esconder mora dentro da .table, fora da barra,
+        // e por causa desse escopo errado ele nunca recebia o hint (bug
+        // reportado três vezes até a v0.13.3).
         function applyGpHints() {
             if (!gpVendor) return;
-            var boxes = document.querySelectorAll('#action-bar .key-box');
+            var boxes = document.querySelectorAll('.key-box');
             for (var i = 0; i < boxes.length; i++) {
                 var box = boxes[i];
                 var letter = box.getAttribute('data-key-letter') || box.textContent.trim();
@@ -4516,10 +4913,14 @@
                 box.textContent = (gpVendor === 'xbox') ? hint.xbox : hint.ps;
             }
         }
+        // Reaplica se os hints estiverem ativos — chamada de onde quer que a
+        // UI possa ter sido redesenhada por baixo (setBottomGroup), pra um
+        // hint nunca "voltar pra letra" sozinho.
+        function syncGpHints() { if (gpHintsActive) applyGpHints(); }
         function revertGpHints() {
             if (!gpHintsActive) return;
             gpHintsActive = false;
-            var boxes = document.querySelectorAll('#action-bar .key-box[data-key-letter]');
+            var boxes = document.querySelectorAll('.key-box[data-key-letter]');
             for (var i = 0; i < boxes.length; i++) boxes[i].textContent = boxes[i].getAttribute('data-key-letter');
         }
 
