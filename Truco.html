@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Truco - v0.14.0</title>
+    <title>Truco - v0.14.1</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♣</text></svg>">
     <style>
         /* THEME VARIABLES */
@@ -486,7 +486,9 @@
         body.reduced-motion .card.winner-anim { animation: none !important; border: 3px solid var(--warn); box-shadow: 0 0 20px var(--warn); }
         /* O foco do gamepad continua respirando, só mais devagar e com
            menos amplitude — é ele que diz onde o jogador está. */
-        body.reduced-motion .gp-focus::after { animation: gpFocusIn 0.16s ease-out, gpBreatheSoft 2.2s ease-in-out infinite alternate; }
+        /* v0.14.1: sem o gpFocusIn (fade de entrada) — com ele o anel parecia
+           "escorregar" de um botão pro outro. Só a respiração continua. */
+        body.reduced-motion .gp-focus::after { animation: gpBreatheSoft 2.2s ease-in-out infinite alternate; }
         @keyframes gpBreatheSoft {
             from { box-shadow: inset 0 0 0 2px var(--gp-ring), inset 0 0 9px var(--gp-glow); }
             to   { box-shadow: inset 0 0 0 2px var(--gp-ring), inset 0 0 14px var(--gp-glow-peak); }
@@ -549,6 +551,23 @@
         .a11y-option .section-label { margin-bottom: 2px; }
         .a11y-option .diff-selector { margin-bottom: 0; }
         .a11y-hint { font-size: 0.72rem; color: var(--txt-d); text-align: left; line-height: 1.4; padding: 0 2px; }
+
+        /* Barra de rolagem própria (v0.14.1): a do sistema muda de cara em
+           cada SO/navegador e não combinava com o resto. Aparece só quando o
+           painel passa da altura da tela — Estatísticas com histórico longo é
+           o caso comum. O truque da borda transparente + background-clip dá
+           um polegar mais fino que a pista, sem precisar de div nenhuma. */
+        body.theme-dark { --scroll-thumb: rgba(248, 250, 252, 0.22); --scroll-thumb-hov: rgba(248, 250, 252, 0.4); }
+        body.theme-light { --scroll-thumb: rgba(15, 23, 42, 0.22); --scroll-thumb-hov: rgba(15, 23, 42, 0.4); }
+        .panel { scrollbar-width: thin; scrollbar-color: var(--scroll-thumb) transparent; }
+        .panel::-webkit-scrollbar { width: 10px; }
+        .panel::-webkit-scrollbar-track { background: transparent; }
+        .panel::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 10px; border: 3px solid transparent; background-clip: padding-box; }
+        .panel::-webkit-scrollbar-thumb:hover { background: var(--scroll-thumb-hov); background-clip: padding-box; }
+
+        /* Os três botões de Ritmo não cabem em uma linha cada em tela
+           estreita com o tamanho padrão do .diff-btn ("MAIS CALMO" quebrava). */
+        .a11y-option .diff-btn { font-size: 0.72rem; white-space: nowrap; }
 
         /* Confirmar Jogada: carta "armada" pelo 1º toque, esperando o 2º. */
         #box-my .card-wrapper.armed, #box-my .card-wrapper.armed:hover { transform: translateY(-16px); z-index: 16; }
@@ -645,10 +664,6 @@
     <div id="scr-a11y" class="panel hidden">
         <h2>ACESSIBILIDADE</h2>
         <div class="a11y-option">
-            <button class="btn-s" id="btn-reduced-motion" onclick="toggleReducedMotion()">🎞️ MOVIMENTO REDUZIDO: DESATIVADO</button>
-            <div class="a11y-hint">Tira as animações dos botões, das notificações e das cartas. Os destaques continuam.</div>
-        </div>
-        <div class="a11y-option">
             <div class="section-label">Ritmo de jogo</div>
             <div class="diff-selector">
                 <button class="diff-btn active" id="btn-pace-padrao" onclick="setPace('padrao')">PADRÃO</button>
@@ -658,8 +673,16 @@
             <div class="a11y-hint">Tempo da IA, da vaza e das notificações. No multiplayer é sempre o Padrão.</div>
         </div>
         <div class="a11y-option">
-            <button class="btn-s" id="btn-confirm-play" onclick="toggleConfirmPlay()">👆 CONFIRMAR JOGADA: DESATIVADO</button>
-            <div class="a11y-hint">No mouse ou no toque, o primeiro toque escolhe a carta e o segundo joga.</div>
+            <button class="choice-card" id="btn-reduced-motion" onclick="toggleReducedMotion()">
+                <span class="choice-title" id="btn-reduced-motion-title">🎞️ MOVIMENTO REDUZIDO</span>
+                <span class="choice-desc" id="btn-reduced-motion-desc">Tira as animações dos botões, das notificações e das cartas. Os destaques continuam.</span>
+            </button>
+        </div>
+        <div class="a11y-option">
+            <button class="choice-card" id="btn-confirm-play" onclick="toggleConfirmPlay()">
+                <span class="choice-title" id="btn-confirm-play-title">👆 CONFIRMAR JOGADA: DESATIVADO</span>
+                <span class="choice-desc">No mouse ou no toque, o primeiro toque escolhe a carta e o segundo joga.</span>
+            </button>
         </div>
         <button class="btn-s danger" data-nav-back style="width: 100%;" onclick="nav('scr-a11y', 'scr-options')">VOLTAR</button>
     </div>
@@ -1005,10 +1028,10 @@
         <h2>ESTATÍSTICAS</h2>
 
         <div class="diff-selector">
-            <button class="diff-btn active" id="tab-stats-sp" onclick="setStatsTab('sp')">SINGLE</button>
+            <button class="diff-btn active" id="tab-stats-perfil" onclick="setStatsTab('perfil')">PERFIL</button>
+            <button class="diff-btn" id="tab-stats-sp" onclick="setStatsTab('sp')">SINGLE</button>
             <button class="diff-btn" id="tab-stats-mpOnline" onclick="setStatsTab('mpOnline')">ONLINE</button>
             <button class="diff-btn" id="tab-stats-mpLocal" onclick="setStatsTab('mpLocal')">LOCAL</button>
-            <button class="diff-btn" id="tab-stats-perfil" onclick="setStatsTab('perfil')">PERFIL</button>
         </div>
 
         <div id="stats-body" class="stats-section"></div>
@@ -1141,6 +1164,7 @@
             <p id="end-msg">Você venceu a partida!</p>
             <div class="btn-stack" style="max-width: 250px; margin: 0 auto;">
                 <button class="btn-p" style="background: var(--prim); color: white;" onclick="playAgain()">JOGAR NOVAMENTE</button>
+                <button class="btn-s hidden" id="btn-end-reroll" onclick="rerollQuickGame()">🎲 SORTEAR NOVAMENTE</button>
                 <button class="btn-s" onclick="location.reload()">MENU PRINCIPAL</button>
             </div>
         </div>
@@ -1153,7 +1177,7 @@
         var SUITS = ['♦', '♠', '♥', '♣']; 
         var VALS_SUJO = ['4', '5', '6', '7', 'Q', 'J', 'K', 'A', '2', '3'];
         var VALS_LIMPO = ['Q', 'J', 'K', 'A', '2', '3'];
-        var APP_VERSION = '0.14.0';
+        var APP_VERSION = '0.14.1';
 
         // ═══════════════════════════════════════════════════════════════
         // FORMATO DE `st` (estado sincronizado entre jogadores)
@@ -1272,6 +1296,9 @@
             getEl('sp-other-modes-wrap').classList.remove('closed');
         };
 
+        // A tela de fim de jogo do Jogo Rápido tem uma opção a mais ("Sortear
+        // Novamente"), então precisa saber por onde esta partida começou.
+        var lastStartWasQuick = false;
         window.startQuickGame = function() {
             pendingRules = pendingQuickRules;
             var formats = ['1v1', '2v2', '3v3'];
@@ -1283,6 +1310,15 @@
             resetSpChoiceScreen();
             nav('scr-sp-choice', 'scr-game');
             startGame('pc', 1);
+            lastStartWasQuick = true; // depois do startGame, que zera a marca
+        };
+
+        // "Jogar Novamente" repete as MESMAS regras (playAgain); este sorteia
+        // formato, baralho e dificuldade de novo sem passar pelo menu. A região
+        // continua a que o jogador escolheu no Jogo Rápido.
+        window.rerollQuickGame = function() {
+            getEl('scr-end').className = '';
+            startQuickGame();
         };
 
         window.toggleTheme = function() {
@@ -1352,8 +1388,18 @@
             document.body.classList.toggle('lite-mode', prefs.lite);
             document.body.classList.toggle('reduced-motion', prefs.reducedMotion);
             var b = getEl('btn-lite-mode'); if (b) b.innerText = '🍃 MODO LEVE: ' + onOffLabel(prefs.lite);
-            b = getEl('btn-reduced-motion'); if (b) b.innerText = '🎞️ MOVIMENTO REDUZIDO: ' + onOffLabel(prefs.reducedMotion);
-            b = getEl('btn-confirm-play'); if (b) b.innerText = '👆 CONFIRMAR JOGADA: ' + onOffLabel(prefs.confirmPlay);
+            // Os dois botões da tela de Acessibilidade são .choice-card
+            // (título + descrição dentro do botão), então aqui só o <span> do
+            // título muda — reescrever o innerText do botão apagaria a
+            // descrição junto. O rótulo do movimento é a AÇÃO do clique
+            // ("Movimento Padrão" quando o reduzido está ligado), igual ao
+            // botão de tema.
+            b = getEl('btn-reduced-motion-title'); if (b) b.innerText = prefs.reducedMotion ? '🎞️ MOVIMENTO PADRÃO' : '🎞️ MOVIMENTO REDUZIDO';
+            b = getEl('btn-reduced-motion-desc'); if (b) b.innerText = prefs.reducedMotion
+                ? 'Devolve as animações completas do jogo.'
+                : 'Tira as animações dos botões, das notificações e das cartas. Os destaques continuam.';
+            b = getEl('btn-confirm-play-title'); if (b) b.innerText = '👆 CONFIRMAR JOGADA: ' + onOffLabel(prefs.confirmPlay);
+            b = getEl('btn-confirm-play'); if (b) b.classList.toggle('active', prefs.confirmPlay);
             Object.keys(PACES).forEach(function(p) { var pb = getEl('btn-pace-' + p); if (pb) pb.classList.toggle('active', p === prefs.pace); });
         }
         window.toggleLiteMode = function() { prefs.lite = !prefs.lite; savePrefs(); applyPrefs(); };
@@ -1695,6 +1741,12 @@
         // PRÓPRIO normal mas fica de fato invisível por causa do pai.
         function isReallyVisible(el) {
             if (el.disabled) return false;
+            // Botão "apagado" mas ainda no layout não deve receber foco —
+            // clicar nele não faz nada. É o caso do JOGAR NOVAMENTE que vira
+            // AGUARDANDO... no Online (opacity 0.5 + pointer-events none) e do
+            // botão de tema da barra enquanto o Menu de Pausa está fechado.
+            var csSelf = getComputedStyle(el);
+            if (csSelf.pointerEvents === 'none' || csSelf.opacity === '0' || csSelf.visibility === 'hidden') return false;
             var rect = el.getBoundingClientRect();
             if (rect.width <= 0 || rect.height <= 0) return false;
             if (el.offsetParent === null && getComputedStyle(el).position !== 'fixed') return false;
@@ -1968,23 +2020,28 @@
             new MutationObserver(function() { refreshMenuFocus(); calibrateSpOtherModesHeight(); }).observe(el, { attributes: true, attributeFilter: ['class'] });
         });
 
+        var ARROW_DIRS = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' };
+        var WASD_DIRS = { w: 'up', s: 'down', a: 'left', d: 'right' };
         function handleMenuKey(e) {
             if (e.key === 'Escape') { menuBack(); e.preventDefault(); return; }
             var active = document.activeElement;
-            if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) {
+            var typing = !!active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA');
+            var dir = ARROW_DIRS[e.key] || null;
+            // WASD como alternativa às setas (v0.14.1). Num campo de texto
+            // essas teclas são LETRAS, então lá só as setas navegam — senão
+            // não daria pra digitar um nick com "w" ou "a".
+            if (!dir && !typing && !e.ctrlKey && !e.altKey && !e.metaKey) dir = WASD_DIRS[e.key.toLowerCase()] || null;
+            if (typing) {
                 // Digitando num campo de texto: esquerda/direita continuam
                 // sendo do campo (mover o cursor), mas cima/baixo e Enter
                 // SAEM do campo — antes o campo virava uma armadilha, só
                 // dava pra sair com o mouse ou abandonando a tela no Escape.
-                if (e.key === 'ArrowUp') { revealGpFocus(); moveMenuFocus('up'); e.preventDefault(); }
-                else if (e.key === 'ArrowDown' || e.key === 'Enter') { revealGpFocus(); moveMenuFocus('down'); e.preventDefault(); }
+                if (dir === 'up') { revealGpFocus(); moveMenuFocus('up'); e.preventDefault(); }
+                else if (dir === 'down' || e.key === 'Enter') { revealGpFocus(); moveMenuFocus('down'); e.preventDefault(); }
                 return;
             }
-            if (e.key === 'ArrowDown') { revealGpFocus(); moveMenuFocus('down'); e.preventDefault(); }
-            else if (e.key === 'ArrowUp') { revealGpFocus(); moveMenuFocus('up'); e.preventDefault(); }
-            else if (e.key === 'ArrowLeft') { revealGpFocus(); moveMenuFocus('left'); e.preventDefault(); }
-            else if (e.key === 'ArrowRight') { revealGpFocus(); moveMenuFocus('right'); e.preventDefault(); }
-            else if (e.key === 'Enter' || e.key === ' ') { confirmMenuFocus(); e.preventDefault(); }
+            if (dir) { revealGpFocus(); moveMenuFocus(dir); e.preventDefault(); return; }
+            if (e.key === 'Enter' || e.key === ' ') { confirmMenuFocus(); e.preventDefault(); }
         }
 
         // Cartas da mão, em ordem de DOM (== ordem de índice em st.hands[myPID]
@@ -2002,8 +2059,16 @@
         // se está num menu ou dentro do jogo. Só sobram tecla própria mesmo:
         // Esconder (E) e Menu de Pausa (Escape, tratado dentro de menuBack).
         document.addEventListener('keydown', function(e) {
-            if (isInGameScreen() && animLock && st.trucoState !== 'mao11') return;
-            if (isInGameScreen() && e.key.toUpperCase() === 'E') {
+            // A tela de fim de jogo é um overlay por cima do #scr-game, que
+            // continua visível atrás — e quando uma partida termina o animLock
+            // quase sempre está ligado (a última vaza acabou de resolver).
+            // Sem esta checagem o portão de animLock engolia TODAS as teclas
+            // ali, e a navegação da tela de fim funcionava ou não dependendo
+            // de COMO a partida tinha acabado (v0.14.1).
+            var endScr = getEl('scr-end');
+            var onEndScreen = !!endScr && endScr.classList.contains('show');
+            if (!onEndScreen && isInGameScreen() && animLock && st.trucoState !== 'mao11') return;
+            if (!onEndScreen && isInGameScreen() && e.key.toUpperCase() === 'E') {
                 if (st.turn === myPID && st.trucoState === 'none' && !getEl('btn-hide-card').hasAttribute('disabled')) toggleHide();
                 e.preventDefault();
                 return;
@@ -2030,9 +2095,12 @@
         // Estatísticas (trucoStatsV2): três baldes independentes — sp (Single
         // Player, Personalizado e Rápido juntos), mpOnline (WebSocket) e
         // mpLocal (Arquivo na Rede + Conexão Direta juntos, mesma natureza
-        // "sem servidor"). Em multiplayer só grava se EU estiver no assento 1
-        // neste dispositivo — os outros assentos não geram estatística pra
-        // ninguém aqui, por decisão explícita (evita ambiguidade de dono).
+        // "sem servidor"). Cada aparelho grava a estatística do SEU assento —
+        // até a v0.14.0 só o assento 1 gravava, e quem entrasse como convidado
+        // jogava sem registrar nada (bug reportado em cima da v0.14.0). Um
+        // aparelho ocupa um assento humano só, então não existe ambiguidade de
+        // dono; os assentos de IA que o coordenador simula nunca passam por
+        // aqui (aiDecideTruco/aiPlay não chamam nada de estatística).
         //
         // Formato v2 (trocou a chave, NÃO migra o v1 — só a v0.13 tem
         // estatística e ela ainda não saiu da máquina do autor, então valeu
@@ -2046,9 +2114,10 @@
         var RECENT_KEEP = 20;   // guarda 20 e exibe 10: folga barata pra testar
         var RECENT_SHOW = 10;   // outra janela depois sem precisar recoletar
         function statsBucketFor() {
+            if (myPID === 0) return null; // espectador não joga
             if (gameMode === 'pc') return 'sp';
-            if (gameMode === 'ws') return myPID === 1 ? 'mpOnline' : null;
-            if (gameMode === 'json' || gameMode === 'webrtc') return myPID === 1 ? 'mpLocal' : null;
+            if (gameMode === 'ws') return 'mpOnline';
+            if (gameMode === 'json' || gameMode === 'webrtc') return 'mpLocal';
             return null;
         }
         function loadStats() {
@@ -2203,8 +2272,8 @@
         }
 
         // Aba ativa da tela de Estatísticas (só estado de UI, não é salvo).
-        var STATS_TABS = ['sp', 'mpOnline', 'mpLocal', 'perfil'];
-        var statsTab = 'sp';
+        var STATS_TABS = ['perfil', 'sp', 'mpOnline', 'mpLocal'];
+        var statsTab = 'perfil';
         window.setStatsTab = function(tab) {
             statsTab = tab;
             STATS_TABS.forEach(function(t) {
@@ -2341,7 +2410,7 @@
                 var lw = 0;
                 for (var i = 0; i < last.length; i++) { if (last[i].w) lw++; }
                 html += '<div class="section-label" style="margin:12px 0 4px; text-align:left;">Desempenho recente</div>';
-                html += statLine('Últimas ' + last.length, lw + 'V-' + (last.length - lw) + 'D · ' + statPct(lw, last.length) + '%', false);
+                html += statLine(last.length === 1 ? 'Última partida' : 'Últimas ' + last.length, lw + 'V-' + (last.length - lw) + 'D · ' + statPct(lw, last.length) + '%', false);
                 // Tons mais escuros que a paleta de propósito: com letra branca
                 // por cima, o verde translúcido ficava em ~2:1 de contraste no
                 // tema claro.
@@ -2351,7 +2420,8 @@
                         + (m.w ? '#047857' : '#b91c1c') + ';">' + (m.w ? 'V' : 'D') + '</span>';
                 });
                 html += '<div style="display:flex; gap:4px; flex-wrap:wrap; padding:4px 0 2px;">' + dots + '</div>';
-                html += '<div style="font-size:0.65rem; color:var(--txt-d); opacity:0.7; padding-bottom:2px;">mais antiga → mais recente</div>';
+                // Com uma partida só não existe ordem pra explicar.
+                if (last.length > 1) html += '<div style="font-size:0.65rem; color:var(--txt-d); opacity:0.7; padding-bottom:2px;">mais antiga → mais recente</div>';
             }
 
             // Margem: base numérica pro rebalanceamento da IA (v0.15/v0.16).
@@ -2382,7 +2452,7 @@
             if (agg.hands) {
                 html += '<div class="section-label" style="margin:12px 0 4px; text-align:left;">Mãos</div>';
                 html += statLine('Jogadas', agg.hands, false);
-                html += statLine('Descartadas', agg.folds + ' <span style="opacity:0.6">(' + statPct(agg.folds, agg.hands) + '%)</span>', false);
+                html += statLine('Desistidas', agg.folds + ' <span style="opacity:0.6">(' + statPct(agg.folds, agg.hands) + '%)</span>', false);
             }
 
             if (rows.length) {
@@ -2413,7 +2483,7 @@
         function renderPerfilBody(el) {
             var info = PERFIL_COLS.map(function(c) { return aggregateBucket(c.k); });
             if (!info[0].matches && !info[1].matches && !info[2].matches) {
-                el.innerHTML = '<div class="static-info" style="justify-content:center; padding:14px 0;">Nenhuma partida registrada ainda.</div>';
+                el.innerHTML = '<div class="static-info" style="justify-content:center; padding:14px 0;">Jogue algumas partidas para montar seu perfil!</div>';
                 return;
             }
 
@@ -2458,10 +2528,15 @@
             // Estilo geral = média simples dos modos que já têm estilo: cada
             // contexto (IA, online, local) pesa igual, em vez de o modo mais
             // jogado dominar o resultado.
+            // Desde a v0.14.1 o estilo geral exige os DOIS lados (IA e gente):
+            // com dados de um lado só, o "geral" era só o estilo daquele modo
+            // com outro nome — e o ponto da aba é justamente comparar.
             var styled = [];
-            info.forEach(function(i, n) { var s = playStyleOf(i); if (s) styled.push({ s: s, name: PERFIL_COLS[n].name }); });
+            info.forEach(function(i, n) { var s = playStyleOf(i); if (s) styled.push({ s: s, name: PERFIL_COLS[n].name, sp: PERFIL_COLS[n].k === 'sp' }); });
+            var hasSp = styled.some(function(x) { return x.sp; });
+            var hasMp = styled.some(function(x) { return !x.sp; });
             var styleHtml = '<div style="font-size:0.66rem; font-weight:bold; letter-spacing:1px; text-transform:uppercase;">Estilo geral</div>';
-            if (styled.length) {
+            if (hasSp && hasMp) {
                 var avg = 0;
                 styled.forEach(function(x) { avg += x.s.score; });
                 var overall = styleFromScore(avg / styled.length);
@@ -2469,7 +2544,7 @@
                     + styleScaleHtml(overall)
                     + '<div style="font-size:0.66rem; margin-top:4px; opacity:0.8;">Média de: ' + styled.map(function(x) { return x.name; }).join(', ') + '</div>';
             } else {
-                styleHtml += '<div style="margin-top:2px;">Em formação — precisa de 5 partidas num modo, com trucos pedidos e respondidos.</div>';
+                styleHtml += '<div style="margin-top:2px;">Em formação — precisa de 5 partidas no Single Player e 5 no Multiplayer.</div>';
             }
             html += '<div style="margin-top:12px; padding:9px 11px; border-radius:10px; background:var(--btn-s-bg); border:1px solid var(--glass-border); font-size:0.73rem; color:var(--txt-d); line-height:1.45;">'
                 + styleHtml + '<div style="border-top:1px solid var(--glass-border); margin:9px 0 7px;"></div>' + reading + '</div>';
@@ -2539,6 +2614,11 @@
                 if(st.gameFormat === '1v1') { msg = isWin ? "Você dominou a mesa e venceu!" : "O rival levou a melhor dessa vez."; }
                 else { msg = isWin ? "Sua equipe dominou a mesa e venceu!" : "Os rivais levaram a melhor dessa vez."; }
                 getEl('end-msg').innerText = msg;
+
+                // "Sortear Novamente" só faz sentido no Jogo Rápido: é a única
+                // entrada que sorteia formato/baralho/dificuldade.
+                var rerollBtn = getEl('btn-end-reroll');
+                if (rerollBtn) rerollBtn.classList.toggle('hidden', !(gameMode === 'pc' && lastStartWasQuick));
                 
             }, 800);
         }
@@ -2628,7 +2708,7 @@
                     if (isArmedCard(idx)) w.classList.add('armed');
                 }
             }
-            if(isVira && !st.viraRevealed) d.classList.add('back');
+            if(isVira && !st.viraRevealed && !viraLocalReveal) d.classList.add('back');
             w.appendChild(d);
             return w;
         }
@@ -3053,7 +3133,7 @@
                 mHtml += '</div>';
                 mCard.innerHTML = mHtml;
             } else {
-                if (st.viraRevealed && st.manilha) {
+                if ((st.viraRevealed || viraLocalReveal) && st.manilha) {
                     gmContainer.classList.remove('hidden');
                     mCard.innerHTML = '<span style="font-size: 1.3rem; font-weight: 900; line-height: 1;">'+st.manilha+'</span>' +
                                       '<div style="display:flex; gap:3px; font-size:0.6rem; margin-top:4px; white-space:nowrap;">' +
@@ -3369,8 +3449,23 @@
             refreshMenuFocus();
         }
 
+        // Revelação LOCAL da Vira/Dica de Manilha (Movimento Reduzido) — ver
+        // animDeal. Vale só pra este aparelho, fora do estado sincronizado.
+        var viraLocalReveal = false;
         function animDeal() {
             animLock = true; 
+
+            // Movimento Reduzido: nada voa nem vira — as cartas já aparecem no
+            // lugar. O cronograma (atraso acumulado, destravar no fim) segue
+            // igual, então a opção não muda o ritmo do jogo nem dessincroniza
+            // de quem está com movimento normal.
+            var calm = prefs.reducedMotion;
+            // v0.14.1: com movimento reduzido, a Vira e a Dica de Manilha só
+            // apareciam no FIM do cronograma (~1s de mesa sem manilha). Este
+            // sinal é local de propósito: `st.viraRevealed` viaja no estado
+            // sincronizado, e antecipá-lo lá faria o outro jogador (com
+            // movimento normal) perder a virada da carta.
+            viraLocalReveal = calm;
 
             // Se a Mão de 11 anterior deixou alguma caixa de mão "revelada"
             // (show-partner-cards), limpa isso SEM transição antes de medir
@@ -3399,10 +3494,6 @@
             var delay = 0;
             var rotMap = { 'box-my': 0, 'box-top': 0, 'box-left': 90, 'box-left2': 90, 'box-right': -90, 'box-right2': -90 };
 
-            // Movimento Reduzido: nada voa nem vira — as cartas já aparecem no
-            // lugar. O cronograma (atraso acumulado, destravar no fim) segue
-            // igual, então a opção não muda o ritmo do jogo.
-            var calm = prefs.reducedMotion;
             allWrappers.forEach(w => {
                 var c = w.querySelector('.card');
                 var isVira = c && c.id === 'vira-anim-target';
@@ -3481,6 +3572,7 @@
         }
 
         window.startGame = function(modeStr, playerID) {
+            lastStartWasQuick = false;
             gameMode = modeStr; myPID = playerID; 
             st.gameFormat = pendingFormat;
             st.rules = pendingRules;
@@ -3611,6 +3703,9 @@
                 unlockAnim(); autoSave();
                 checkAiTurn();
             } else {
+                // Correr da Mão de 11/10 é desistir da mão igual ao Descartar
+                // (item pedido na v0.14.1) — entra no mesmo contador.
+                if (myPID !== 0) recordTrucoEvent('folds');
                 var msgRej = st.gameFormat === '1v1' ? "Você Correu da Mão de "+txt+"!" : "Vocês Correram da Mão de "+txt+"!";
                 showMsg(msgRej, 'neg'); 
                 st.trucoState = 'none'; 
