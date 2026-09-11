@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Truco - v0.13.3</title>
+    <title>Truco - v0.14.0</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♣</text></svg>">
     <style>
         /* THEME VARIABLES */
@@ -468,6 +468,92 @@
         .hand-left2 .nick-tooltip { left: 40px; top: 50%; transform: translateY(-50%); }
         .hand-right2 .nick-tooltip { right: 40px; top: 50%; transform: translateY(-50%); }
 
+        /* ═══ v0.14.0 — MODO LEVE e MOVIMENTO REDUZIDO ═══
+           Tudo abaixo depende de uma classe no <body> (lite-mode /
+           reduced-motion): com as duas opções desligadas nenhuma dessas
+           regras casa e o jogo fica idêntico ao de antes. */
+
+        /* Movimento Reduzido: tira deslocamento e escala animados. Cor
+           continua mudando suave (fade não é movimento). */
+        body.reduced-motion .panel, body.reduced-motion .glass-panel, body.reduced-motion .btn-s, body.reduced-motion .btn-p, body.reduced-motion .action-btn, body.reduced-motion .choice-card, body.reduced-motion #ui-val, body.reduced-motion .stadium-display, body.reduced-motion .key-box, body.reduced-motion .card, body.reduced-motion .card-wrapper, body.reduced-motion #btn-hide-card, body.reduced-motion #ghost-m-card {
+            transition: background 0.6s ease, background-color 0.6s ease, border-color 0.6s ease, color 0.6s ease, box-shadow 0.6s ease;
+        }
+        body.reduced-motion .btn-p:hover, body.reduced-motion .btn-s:hover, body.reduced-motion .choice-card:hover, body.reduced-motion .action-btn:hover, body.reduced-motion #btn-hide-card:hover:not(:disabled) { transform: none; }
+        body.reduced-motion .legend-group.active, body.reduced-motion .btn-theme-pause.visible { animation: none; }
+        body.reduced-motion .hud-content, body.reduced-motion #quick-game-wrap, body.reduced-motion #sp-other-modes-wrap, body.reduced-motion .hand-top, body.reduced-motion .hand-left2, body.reduced-motion .hand-right2, body.reduced-motion .end-content { transition: none; }
+        body.reduced-motion .hud-container.show-msg .hud-content { transform: none; }
+        /* A carta vencedora continua destacada, só não cresce nem sobe. */
+        body.reduced-motion .card.winner-anim { animation: none !important; border: 3px solid var(--warn); box-shadow: 0 0 20px var(--warn); }
+        /* O foco do gamepad continua respirando, só mais devagar e com
+           menos amplitude — é ele que diz onde o jogador está. */
+        body.reduced-motion .gp-focus::after { animation: gpFocusIn 0.16s ease-out, gpBreatheSoft 2.2s ease-in-out infinite alternate; }
+        @keyframes gpBreatheSoft {
+            from { box-shadow: inset 0 0 0 2px var(--gp-ring), inset 0 0 9px var(--gp-glow); }
+            to   { box-shadow: inset 0 0 0 2px var(--gp-ring), inset 0 0 14px var(--gp-glow-peak); }
+        }
+        /* Barra inferior: o pulso vira destaque fixo — continua puxando a
+           atenção pra lá, sem a luz piscando. */
+        body.reduced-motion .danger-zone { animation: none; border-color: rgba(234, 179, 8, 1); box-shadow: 0 0 22px rgba(234, 179, 8, 0.45); }
+        body.reduced-motion .exit-zone { animation: none; border-color: rgba(239, 68, 68, 1); box-shadow: 0 0 22px rgba(239, 68, 68, 0.45); }
+
+        /* Modo Leve: sem vidro, sem blur, sem sombra decorativa e sem
+           transição de cor (tema, notificações). Movimento continua — isso
+           é do Movimento Reduzido. O que carrega informação fica: foco do
+           gamepad respirando, carta vencedora, contorno de vez, barra
+           inferior destacada (parada) e a cor de fundo da dificuldade. */
+        body.lite-mode.theme-dark { --glass-bg: rgba(15, 23, 42, 0.94); }
+        body.lite-mode.theme-light { --glass-bg: rgba(248, 250, 252, 0.94); }
+        body.lite-mode .panel, body.lite-mode .glass-panel, body.lite-mode .stadium-display, body.lite-mode #version-warn-banner, body.lite-mode #ghost-m-card, body.lite-mode #btn-hide-card, body.lite-mode #sync-ui, body.lite-mode #scr-end {
+            backdrop-filter: none; -webkit-backdrop-filter: none;
+        }
+        body.lite-mode .panel, body.lite-mode .glass-panel, body.lite-mode #version-warn-banner, body.lite-mode .card, body.lite-mode .card.active-turn, body.lite-mode #deck-pile, body.lite-mode #ghost-m-card, body.lite-mode .end-content, body.lite-mode .nick-tooltip, body.lite-mode .vaza-pip.win, body.lite-mode .diff-btn.active, body.lite-mode .action-btn:hover, body.lite-mode .hud-container.notify-pos, body.lite-mode .hud-container.notify-neg, body.lite-mode .hud-container.notify-neu, body.lite-mode .hud-container.notify-sys, body.lite-mode.theme-dark #btn-hide-card.escondendo, body.lite-mode.theme-light #btn-hide-card.escondendo, body.lite-mode #webrtc-status-box .webrtc-status-dot {
+            box-shadow: none;
+        }
+        body.lite-mode .end-content h1 { text-shadow: none; }
+        body.lite-mode, body.lite-mode .theme-bg, body.lite-mode::before, body.lite-mode::after, body.lite-mode .legend-container { transition: none; }
+        body.lite-mode .panel, body.lite-mode .glass-panel, body.lite-mode .btn-s, body.lite-mode .btn-p, body.lite-mode .action-btn, body.lite-mode .choice-card, body.lite-mode #ui-val, body.lite-mode .key-box, body.lite-mode .card, body.lite-mode .card-wrapper, body.lite-mode #btn-hide-card, body.lite-mode #ghost-m-card {
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        /* As duas opções juntas: nem cor nem movimento. */
+        body.lite-mode.reduced-motion .panel, body.lite-mode.reduced-motion .glass-panel, body.lite-mode.reduced-motion .btn-s, body.lite-mode.reduced-motion .btn-p, body.lite-mode.reduced-motion .action-btn, body.lite-mode.reduced-motion .choice-card, body.lite-mode.reduced-motion #ui-val, body.lite-mode.reduced-motion .stadium-display, body.lite-mode.reduced-motion .key-box, body.lite-mode.reduced-motion .card, body.lite-mode.reduced-motion .card-wrapper, body.lite-mode.reduced-motion #btn-hide-card, body.lite-mode.reduced-motion #ghost-m-card {
+            transition: none;
+        }
+        /* Brilho de fundo da dificuldade: o filter:blur(80px) em dois
+           círculos de 60vw era o efeito mais caro do jogo. Um degradê radial
+           desenha um disco suave parecido sem filtro nenhum. O blur espalha a
+           cor ~160px além do círculo, e esse espalhamento é em pixels, não
+           proporcional à tela — por isso a caixa cresce 160px pra cada lado
+           e o degradê usa distâncias absolutas: um degradê só em % ficava
+           forte demais no celular e fraco demais no desktop. */
+        body.lite-mode::before, body.lite-mode::after { filter: none; width: calc(60vw + 320px); height: calc(60vw + 320px); }
+        body.lite-mode::before { top: calc(-20% - 160px); right: calc(-20% - 160px); }
+        body.lite-mode::after { bottom: calc(-20% - 160px); left: calc(-20% - 160px); }
+        body.lite-mode.diff-1::before, body.lite-mode.diff-1::after { background: radial-gradient(closest-side, var(--glow-facil) calc(100% - 280px), transparent calc(100% - 40px)); }
+        body.lite-mode.diff-2::before, body.lite-mode.diff-2::after { background: radial-gradient(closest-side, var(--glow-normal) calc(100% - 280px), transparent calc(100% - 40px)); }
+        body.lite-mode.diff-3::before, body.lite-mode.diff-3::after { background: radial-gradient(closest-side, var(--glow-dificil) calc(100% - 280px), transparent calc(100% - 40px)); }
+        body.lite-mode.diff-4::before, body.lite-mode.diff-4::after { background: radial-gradient(closest-side, var(--glow-insano) calc(100% - 280px), transparent calc(100% - 40px)); }
+        /* Barra inferior: pulso parado, destaque firme — anel interno no
+           lugar do brilho externo (que é sombra). */
+        body.lite-mode .danger-zone { animation: none; border-color: rgba(234, 179, 8, 1); box-shadow: inset 0 0 0 1px rgba(234, 179, 8, 1); }
+        body.lite-mode .exit-zone { animation: none; border-color: rgba(239, 68, 68, 1); box-shadow: inset 0 0 0 1px rgba(239, 68, 68, 1); }
+        body.lite-mode.theme-dark .pause-zone, body.lite-mode.theme-light .pause-zone { box-shadow: inset 0 0 0 1px var(--txt); }
+        /* Sem o blur por trás, a mesa aparecia demais através da tela
+           final — um pouco mais de opacidade compensa. */
+        body.lite-mode .end-win { background: rgba(16, 185, 129, 0.85); }
+        body.lite-mode .end-loss { background: rgba(239, 68, 68, 0.85); }
+
+        /* Tela de Acessibilidade: cada opção com uma linha explicando o
+           efeito — são opções que o jogador liga sem saber de antemão o que
+           mudam (diferente de tema ou dica de manilha). */
+        .a11y-option { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+        .a11y-option .section-label { margin-bottom: 2px; }
+        .a11y-option .diff-selector { margin-bottom: 0; }
+        .a11y-hint { font-size: 0.72rem; color: var(--txt-d); text-align: left; line-height: 1.4; padding: 0 2px; }
+
+        /* Confirmar Jogada: carta "armada" pelo 1º toque, esperando o 2º. */
+        #box-my .card-wrapper.armed, #box-my .card-wrapper.armed:hover { transform: translateY(-16px); z-index: 16; }
+        #box-my .card-wrapper.armed .card { outline: 3px solid var(--prim); outline-offset: 2px; }
+
         @media (max-width: 768px), (pointer: coarse) {
             /* Item 10 (v0.12.7): o brilho de fundo por dificuldade ficava quase
                imperceptível no mobile — aumenta 35% a opacidade aqui (só nessa
@@ -546,12 +632,36 @@
     <div id="scr-options" class="panel hidden">
         <h2>OPÇÕES</h2>
         <div class="btn-stack">
+            <button class="btn-s" onclick="nav('scr-options', 'scr-a11y')">♿ ACESSIBILIDADE</button>
+            <button class="btn-s" id="btn-lite-mode" onclick="toggleLiteMode()">🍃 MODO LEVE: DESATIVADO</button>
             <button class="btn-s" id="btn-theme-toggle" onclick="toggleTheme()">☀️ MODO CLARO</button>
             <button class="btn-s" id="btn-manilha-hint" onclick="toggleManilhaHint()">🃏 COM DICA DE MANILHA</button>
             <button class="btn-s options-divider" onclick="refreshStatsScreen(); nav('scr-options', 'scr-stats')">📊 ESTATÍSTICAS</button>
         </div>
         <button class="btn-s danger" data-nav-back style="width: 100%; margin-top: 15px;" onclick="nav('scr-options', 'scr-start')">VOLTAR</button>
         <div id="options-version-tag"></div>
+    </div>
+
+    <div id="scr-a11y" class="panel hidden">
+        <h2>ACESSIBILIDADE</h2>
+        <div class="a11y-option">
+            <button class="btn-s" id="btn-reduced-motion" onclick="toggleReducedMotion()">🎞️ MOVIMENTO REDUZIDO: DESATIVADO</button>
+            <div class="a11y-hint">Tira as animações dos botões, das notificações e das cartas. Os destaques continuam.</div>
+        </div>
+        <div class="a11y-option">
+            <div class="section-label">Ritmo de jogo</div>
+            <div class="diff-selector">
+                <button class="diff-btn active" id="btn-pace-padrao" onclick="setPace('padrao')">PADRÃO</button>
+                <button class="diff-btn" id="btn-pace-calmo" onclick="setPace('calmo')">MAIS CALMO</button>
+                <button class="diff-btn" id="btn-pace-acelerado" onclick="setPace('acelerado')">ACELERADO</button>
+            </div>
+            <div class="a11y-hint">Tempo da IA, da vaza e das notificações. No multiplayer é sempre o Padrão.</div>
+        </div>
+        <div class="a11y-option">
+            <button class="btn-s" id="btn-confirm-play" onclick="toggleConfirmPlay()">👆 CONFIRMAR JOGADA: DESATIVADO</button>
+            <div class="a11y-hint">No mouse ou no toque, o primeiro toque escolhe a carta e o segundo joga.</div>
+        </div>
+        <button class="btn-s danger" data-nav-back style="width: 100%;" onclick="nav('scr-a11y', 'scr-options')">VOLTAR</button>
     </div>
 
     <div id="scr-multi-choice" class="panel hidden">
@@ -1043,7 +1153,7 @@
         var SUITS = ['♦', '♠', '♥', '♣']; 
         var VALS_SUJO = ['4', '5', '6', '7', 'Q', 'J', 'K', 'A', '2', '3'];
         var VALS_LIMPO = ['Q', 'J', 'K', 'A', '2', '3'];
-        var APP_VERSION = '0.13.3';
+        var APP_VERSION = '0.14.0';
 
         // ═══════════════════════════════════════════════════════════════
         // FORMATO DE `st` (estado sincronizado entre jogadores)
@@ -1203,6 +1313,53 @@
             try { localStorage.setItem('trucoHideManilhaHint', manilhaHintHidden ? '1' : '0'); } catch(e) {}
             updateGhostManilha();
         };
+
+        // ═══ Preferências de acessibilidade (v0.14.0) ═══
+        // Só deste aparelho: nunca entram no `st` nem sincronizam. Chave
+        // única com versão no nome — se o formato mudar, a chave nova convive
+        // com a antiga em vez de interpretá-la errado.
+        //
+        // O Ritmo só vale no Single Player: no multiplayer a IA dos assentos
+        // vagos é simulada por um dos jogadores, e o ritmo dele acabaria
+        // imposto a todo mundo na mesa.
+        var PACES = {
+            padrao:    { ai: 1200, trick: 1300 },
+            calmo:     { ai: 2300, trick: 1800 },
+            acelerado: { ai: 800,  trick: 800 }
+        };
+        function isPace(p) { return Object.prototype.hasOwnProperty.call(PACES, p); }
+        var prefs = { lite: false, reducedMotion: false, pace: 'padrao', confirmPlay: false };
+        function currentPace() { return (gameMode === 'pc' && isPace(prefs.pace)) ? PACES[prefs.pace] : PACES.padrao; }
+        // Notificações e a pausa antes do resultado da vaza acompanham o
+        // tempo da vaza, na mesma proporção.
+        function paceScale() { return currentPace().trick / PACES.padrao.trick; }
+        function loadPrefs() {
+            try {
+                var raw = JSON.parse(localStorage.getItem('trucoPrefsV1'));
+                if (raw && typeof raw === 'object') {
+                    prefs.lite = !!raw.lite;
+                    prefs.reducedMotion = !!raw.reducedMotion;
+                    prefs.pace = isPace(raw.pace) ? raw.pace : 'padrao';
+                    prefs.confirmPlay = !!raw.confirmPlay;
+                }
+            } catch(e) {}
+        }
+        function savePrefs() {
+            try { localStorage.setItem('trucoPrefsV1', JSON.stringify({ v: 1, lite: prefs.lite, reducedMotion: prefs.reducedMotion, pace: prefs.pace, confirmPlay: prefs.confirmPlay })); } catch(e) {}
+        }
+        function onOffLabel(on) { return on ? 'ATIVADO' : 'DESATIVADO'; }
+        function applyPrefs() {
+            document.body.classList.toggle('lite-mode', prefs.lite);
+            document.body.classList.toggle('reduced-motion', prefs.reducedMotion);
+            var b = getEl('btn-lite-mode'); if (b) b.innerText = '🍃 MODO LEVE: ' + onOffLabel(prefs.lite);
+            b = getEl('btn-reduced-motion'); if (b) b.innerText = '🎞️ MOVIMENTO REDUZIDO: ' + onOffLabel(prefs.reducedMotion);
+            b = getEl('btn-confirm-play'); if (b) b.innerText = '👆 CONFIRMAR JOGADA: ' + onOffLabel(prefs.confirmPlay);
+            Object.keys(PACES).forEach(function(p) { var pb = getEl('btn-pace-' + p); if (pb) pb.classList.toggle('active', p === prefs.pace); });
+        }
+        window.toggleLiteMode = function() { prefs.lite = !prefs.lite; savePrefs(); applyPrefs(); };
+        window.toggleReducedMotion = function() { prefs.reducedMotion = !prefs.reducedMotion; savePrefs(); applyPrefs(); };
+        window.setPace = function(p) { if (!isPace(p)) return; prefs.pace = p; savePrefs(); applyPrefs(); };
+        window.toggleConfirmPlay = function() { prefs.confirmPlay = !prefs.confirmPlay; if (!prefs.confirmPlay) disarmHandCard(); savePrefs(); applyPrefs(); };
 
         function updateBodyDiffClass() {
             var body = document.body;
@@ -1418,6 +1575,7 @@
             // Mesmo motivo: é o ponto que roda em toda transição de estado
             // nos três modos, então serve de relógio pro desfecho do truco.
             settleTrucoAsk();
+            countHandIfNew();
         }
 
         // Estado (só de UI, não faz parte de st) do Menu de Pausa — ver
@@ -1865,7 +2023,7 @@
             else { hud.classList.add('notify-neu'); display.style.color = 'var(--warn)'; }
             hud.classList.add('show-msg');
             
-            var duration = durOverride || 1300;
+            var duration = Math.round((durOverride || 1300) * paceScale());
             msgTimeout = setTimeout(function() { hud.classList.remove('show-msg', 'notify-pos', 'notify-neg', 'notify-neu', 'notify-sys'); }, duration); 
         }
 
@@ -1913,6 +2071,7 @@
                      marginWinSum: 0, marginLossSum: 0,
                      askTotal: 0, askHit: 0, askRanFromRaise: 0, askLost: 0,
                      respAccepted: 0, respRan: 0,
+                     hands: 0, folds: 0,
                      streak: 0, bestStreak: 0 };
         }
         function statsBucketOf(data, bucket) {
@@ -2024,6 +2183,17 @@
             askWatch = null;
         }
 
+        // Mãos jogadas: base da taxa de descarte do Estilo de jogo. Conta no
+        // começo de cada mão nova (roundId novo), pelo mesmo chokepoint do
+        // settleTrucoAsk — cobre os três modos, inclusive o convidado em
+        // multiplayer, que nunca executa startRound().
+        var lastCountedRoundId = null;
+        function countHandIfNew() {
+            if (myPID === 0 || matchResultRecorded || !st.roundId || st.roundId === lastCountedRoundId || !isInGameScreen()) return;
+            lastCountedRoundId = st.roundId;
+            recordTrucoEvent('hands');
+        }
+
         function formatStatsKey(key) {
             var parts = key.split('|');
             var fmtLabel = { '1v1': '1x1', '2v2': 'Duplas', '3v3': 'Trios' }[parts[0]] || parts[0];
@@ -2057,7 +2227,7 @@
 
         // Soma todas as configurações de um balde num registro único, e de
         // quebra devolve as linhas por configuração já ordenadas.
-        var AGG_FIELDS = ['w','l','quit','marginWinSum','marginLossSum','askTotal','askHit','askRanFromRaise','askLost','respAccepted','respRan'];
+        var AGG_FIELDS = ['w','l','quit','marginWinSum','marginLossSum','askTotal','askHit','askRanFromRaise','askLost','respAccepted','respRan','hands','folds'];
         function aggregateBucket(bucket) {
             var b = (loadStats().buckets || {})[bucket] || null;
             var agg = emptyStatsRecord();
@@ -2072,6 +2242,64 @@
             }
             rows.sort(function(a, b2) { return (b2.w + b2.l) - (a.w + a.l); });
             return { agg: agg, rows: rows, recent: (b && b.recent) ? b.recent : [], matches: agg.w + agg.l };
+        }
+
+        // ═══ Estilo de jogo (v0.14.0) ═══
+        // Cada indicador vira um número de 0 (seguro) a 1 (agressivo), e o
+        // estilo é a média dos que já têm amostra. As réguas são a calibração
+        // inicial, feita sem dados de muitos jogadores ainda — ajustar aqui:
+        //   blefe     % dos meus pedidos em que corri do aumento   35%+ = 1
+        //   acerto    % dos meus pedidos em que ganhei a mão       85%+ = 0 · 40%- = 1
+        //   fuga      % dos pedidos do rival de que corri          65%+ = 0 · 15%- = 1
+        //   descarte  % das mãos que descartei                     10%+ = 0 · 0% = 1
+        //   pedidos   pedidos por mão                              0.5+ = 1
+        var STYLE_MIN_MATCHES = 5, STYLE_MIN_SIGNALS = 3;
+        var STYLE_LEVELS = [
+            { max: 20, label: 'Seguro+' },
+            { max: 40, label: 'Seguro' },
+            { max: 60, label: 'Estrategista' },
+            { max: 80, label: 'Agressivo' },
+            { max: Infinity, label: 'Agressivo+' }
+        ];
+        function clamp01(x) { return x < 0 ? 0 : (x > 1 ? 1 : x); }
+        function styleSignals(a) {
+            var s = [];
+            var decided = askDecided(a);
+            if (decided >= 5) {
+                s.push(clamp01((a.askRanFromRaise / decided) / 0.35));
+                s.push(clamp01((0.85 - a.askHit / decided) / 0.45));
+            }
+            var resp = a.respAccepted + a.respRan;
+            if (resp >= 5) s.push(clamp01((0.65 - a.respRan / resp) / 0.50));
+            if (a.hands >= 15) {
+                s.push(clamp01(1 - (a.folds / a.hands) / 0.10));
+                s.push(clamp01((a.askTotal / a.hands) / 0.50));
+            }
+            return s;
+        }
+        function styleFromScore(score) {
+            for (var i = 0; i < STYLE_LEVELS.length; i++) {
+                if (score < STYLE_LEVELS[i].max) return { score: score, level: i, label: STYLE_LEVELS[i].label };
+            }
+        }
+        // null = ainda não dá pra dizer (poucas partidas ou poucos sinais).
+        function playStyleOf(info) {
+            if (info.matches < STYLE_MIN_MATCHES) return null;
+            var s = styleSignals(info.agg);
+            if (s.length < STYLE_MIN_SIGNALS) return null;
+            var sum = 0;
+            for (var i = 0; i < s.length; i++) sum += s[i];
+            return styleFromScore(sum / s.length * 100);
+        }
+        function styleScaleHtml(style) {
+            var segs = '';
+            for (var i = 0; i < STYLE_LEVELS.length; i++) {
+                var on = (style.level === i);
+                segs += '<span style="flex:1; height:6px; border-radius:3px; background:' + (on ? 'var(--prim)' : 'var(--btn-s-bg)')
+                    + '; border:1px solid ' + (on ? 'var(--prim)' : 'var(--glass-border)') + ';"></span>';
+            }
+            return '<div style="display:flex; gap:3px; margin-top:6px;">' + segs + '</div>'
+                + '<div style="display:flex; justify-content:space-between; font-size:0.65rem; color:var(--txt-d); opacity:0.75; margin-top:3px;"><span>Seguro</span><span>Agressivo</span></div>';
         }
 
         function renderStatsBody() {
@@ -2095,6 +2323,17 @@
             html += statLine('Desistências', agg.quit, false);
             html += statLine('Melhor sequência', agg.bestStreak > 0 ? ('🔥 ' + agg.bestStreak) : '—', false);
 
+            var style = playStyleOf(info);
+            html += '<div class="section-label" style="margin:12px 0 4px; text-align:left;">Estilo de jogo</div>';
+            if (style) {
+                html += '<div style="font-size:1rem; font-weight:900; color:var(--txt);">' + style.label + '</div>' + styleScaleHtml(style);
+            } else {
+                var missing = STYLE_MIN_MATCHES - total;
+                html += '<div style="color:var(--txt-d); padding:3px 0;">Em formação — '
+                    + (missing > 0 ? (missing === 1 ? 'falta 1 partida' : 'faltam ' + missing + ' partidas') + ' nesse modo.' : 'peça e responda mais trucos pra definir.')
+                    + '</div>';
+            }
+
             // Janela móvel: é ela (e não o acumulado da vida toda) que vai
             // servir de insumo pra Dificuldade Adaptativa mais pra frente.
             var last = info.recent.slice(-RECENT_SHOW);
@@ -2103,10 +2342,13 @@
                 for (var i = 0; i < last.length; i++) { if (last[i].w) lw++; }
                 html += '<div class="section-label" style="margin:12px 0 4px; text-align:left;">Desempenho recente</div>';
                 html += statLine('Últimas ' + last.length, lw + 'V-' + (last.length - lw) + 'D · ' + statPct(lw, last.length) + '%', false);
+                // Tons mais escuros que a paleta de propósito: com letra branca
+                // por cima, o verde translúcido ficava em ~2:1 de contraste no
+                // tema claro.
                 var dots = '';
                 last.forEach(function(m) {
                     dots += '<span style="display:inline-block; width:15px; height:15px; line-height:15px; text-align:center; border-radius:4px; font-size:0.58rem; font-weight:bold; color:#fff; background:'
-                        + (m.w ? 'rgba(16,185,129,0.75)' : 'rgba(239,68,68,0.7)') + ';">' + (m.w ? 'V' : 'D') + '</span>';
+                        + (m.w ? '#047857' : '#b91c1c') + ';">' + (m.w ? 'V' : 'D') + '</span>';
                 });
                 html += '<div style="display:flex; gap:4px; flex-wrap:wrap; padding:4px 0 2px;">' + dots + '</div>';
                 html += '<div style="font-size:0.65rem; color:var(--txt-d); opacity:0.7; padding-bottom:2px;">mais antiga → mais recente</div>';
@@ -2136,6 +2378,13 @@
             html += statLine('Corridos', agg.respRan, false);
             if (trucoResp) html += statLine('Taxa de aceite', statPct(agg.respAccepted, trucoResp) + '%', false);
 
+            // Só existe a partir da v0.14.0 — em dados mais antigos a seção some.
+            if (agg.hands) {
+                html += '<div class="section-label" style="margin:12px 0 4px; text-align:left;">Mãos</div>';
+                html += statLine('Jogadas', agg.hands, false);
+                html += statLine('Descartadas', agg.folds + ' <span style="opacity:0.6">(' + statPct(agg.folds, agg.hands) + '%)</span>', false);
+            }
+
             if (rows.length) {
                 html += '<div class="section-label" style="margin:12px 0 4px; text-align:left;">Por configuração</div>';
                 rows.forEach(function(row) {
@@ -2152,7 +2401,7 @@
         // A hipótese que motivou isso é que quase todo mundo joga mais solto
         // contra bot ("bot é fácil") e mais estratégico contra humano — se o
         // número confirmar isso, ele vira alvo de calibração de IA depois.
-        var PERFIL_COLS = [ { k: 'sp', label: 'SINGLE' }, { k: 'mpOnline', label: 'ONLINE' }, { k: 'mpLocal', label: 'LOCAL' } ];
+        var PERFIL_COLS = [ { k: 'sp', label: 'SINGLE', name: 'Single' }, { k: 'mpOnline', label: 'ONLINE', name: 'Online' }, { k: 'mpLocal', label: 'LOCAL', name: 'Local' } ];
         var PERFIL_ROWS = [
             { label: 'Partidas', get: function(i) { return i.matches ? String(i.matches) : '—'; } },
             { label: 'Pedidos por partida', get: function(i) { return i.matches ? (i.agg.askTotal / i.matches).toFixed(1) : '—'; } },
@@ -2206,8 +2455,24 @@
                     else reading = 'Você pede ' + (-diff) + '% menos truco contra a IA do que contra humanos.';
                 }
             }
+            // Estilo geral = média simples dos modos que já têm estilo: cada
+            // contexto (IA, online, local) pesa igual, em vez de o modo mais
+            // jogado dominar o resultado.
+            var styled = [];
+            info.forEach(function(i, n) { var s = playStyleOf(i); if (s) styled.push({ s: s, name: PERFIL_COLS[n].name }); });
+            var styleHtml = '<div style="font-size:0.66rem; font-weight:bold; letter-spacing:1px; text-transform:uppercase;">Estilo geral</div>';
+            if (styled.length) {
+                var avg = 0;
+                styled.forEach(function(x) { avg += x.s.score; });
+                var overall = styleFromScore(avg / styled.length);
+                styleHtml += '<div style="font-size:1.05rem; font-weight:900; color:var(--txt); margin-top:2px;">' + overall.label + '</div>'
+                    + styleScaleHtml(overall)
+                    + '<div style="font-size:0.66rem; margin-top:4px; opacity:0.8;">Média de: ' + styled.map(function(x) { return x.name; }).join(', ') + '</div>';
+            } else {
+                styleHtml += '<div style="margin-top:2px;">Em formação — precisa de 5 partidas num modo, com trucos pedidos e respondidos.</div>';
+            }
             html += '<div style="margin-top:12px; padding:9px 11px; border-radius:10px; background:var(--btn-s-bg); border:1px solid var(--glass-border); font-size:0.73rem; color:var(--txt-d); line-height:1.45;">'
-                + reading + '</div>';
+                + styleHtml + '<div style="border-top:1px solid var(--glass-border); margin:9px 0 7px;"></div>' + reading + '</div>';
 
             el.innerHTML = html;
         }
@@ -2315,6 +2580,39 @@
             startRound(st.firstPlayerOfRound);
         };
 
+        // Confirmar Jogada (v0.14.0): com a opção ligada, o primeiro toque só
+        // "arma" a carta (sobe e ganha contorno) e o segundo NA MESMA carta
+        // joga. Vale só pra mouse/toque — no teclado e no gamepad escolher
+        // (foco) e confirmar já são dois passos, por isso confirmMenuFocus()
+        // continua chamando playCard() direto. O roundId guardado junto
+        // impede uma carta armada de "sobreviver" à mão seguinte (convidado
+        // em multiplayer nunca passa por startRound()).
+        var armedCard = null; // { idx, round }
+        function isArmedCard(idx) { return !!armedCard && armedCard.idx === idx && armedCard.round === st.roundId; }
+        function markArmedCard() {
+            var ws = getEl('box-my').querySelectorAll('.card-wrapper');
+            for (var i = 0; i < ws.length; i++) ws[i].classList.toggle('armed', isArmedCard(i));
+        }
+        function disarmHandCard() {
+            if (!armedCard) return;
+            armedCard = null;
+            markArmedCard();
+        }
+        function onHandCardTap(idx) {
+            if (!prefs.confirmPlay || isArmedCard(idx)) { playCard(idx); return; }
+            if (animLock || st.turn !== myPID || (st.trucoState !== 'none' && st.trucoState !== 'pending') || isPaused) return;
+            armedCard = { idx: idx, round: st.roundId };
+            markArmedCard();
+        }
+        // Tocar fora da mão desarma. O Esconder não conta: dá pra armar a
+        // carta, ligar o Esconder e só então confirmar.
+        document.addEventListener('pointerdown', function(e) {
+            if (!armedCard) return;
+            var t = e.target;
+            if (t && t.closest && (t.closest('#box-my .card-wrapper') || t.closest('#btn-hide-card'))) return;
+            disarmHandCard();
+        }, true);
+
         function createCardDOM(c, isBack, isInteractive, idx, isVira, posContext) {
             var w = document.createElement('div');
             w.className = 'card-wrapper' + (isInteractive ? ' interactive' : '');
@@ -2326,7 +2624,8 @@
                 if(isRed) d.className += ' red';
                 d.innerHTML = '<span>'+c.v+'</span><small class="'+(isRed?'':'black-suit')+'">'+c.s+'</small>';
                 if(isInteractive) {
-                    w.onclick = function() { playCard(idx); };
+                    w.onclick = function() { onHandCardTap(idx); };
+                    if (isArmedCard(idx)) w.classList.add('armed');
                 }
             }
             if(isVira && !st.viraRevealed) d.classList.add('back');
@@ -3043,7 +3342,8 @@
                 viraDest.innerHTML = '';
             }
 
-            if (animOriginPID && bTb.children.length > 0) {
+            // Movimento Reduzido: a carta aparece direto no lugar, sem voar.
+            if (animOriginPID && bTb.children.length > 0 && !prefs.reducedMotion) {
                 var lastCard = bTb.children[bTb.children.length - 1];
                 var origPos = getUIPos(animOriginPID);
                 var startTrans = '';
@@ -3099,12 +3399,23 @@
             var delay = 0;
             var rotMap = { 'box-my': 0, 'box-top': 0, 'box-left': 90, 'box-left2': 90, 'box-right': -90, 'box-right2': -90 };
 
+            // Movimento Reduzido: nada voa nem vira — as cartas já aparecem no
+            // lugar. O cronograma (atraso acumulado, destravar no fim) segue
+            // igual, então a opção não muda o ritmo do jogo.
+            var calm = prefs.reducedMotion;
             allWrappers.forEach(w => {
                 var c = w.querySelector('.card');
                 var isVira = c && c.id === 'vira-anim-target';
                 var parentId = w.parentElement.id;
                 var isMy = parentId === 'box-my';
                 var rotDeg = rotMap[parentId] || 0;
+
+                if (calm) {
+                    w.style.opacity = '1';
+                    flyCards.push({ fly: null, target: w, isMy: isMy, isVira: isVira });
+                    delay += 70;
+                    return;
+                }
 
                 var flyCard = document.createElement('div');
                 flyCard.className = 'card back';
@@ -3135,12 +3446,13 @@
                 st.viraRevealed = true; 
                 
                 flyCards.forEach(item => {
-                    item.fly.remove(); 
+                    if (item.fly) item.fly.remove(); 
                     item.target.style.opacity = '1'; 
                     
                     var innerCard = item.target.querySelector('.card');
                     if(innerCard && (item.isMy || item.isVira)) {
                         innerCard.classList.remove('back');
+                        if (calm) return;
                         innerCard.style.transition = 'none';
                         innerCard.style.transform = 'rotateY(180deg)';
                         void innerCard.offsetWidth; 
@@ -3352,6 +3664,7 @@
         window.executeFold = function() { 
             cancelFold();
             if(animLock || st.turn !== myPID || st.trucoState !== 'none') return;
+            if (myPID !== 0) recordTrucoEvent('folds');
             showMsg(st.gameFormat === '1v1' ? "Você correu!" : "Vocês correram!", 'neg'); st.scores[getOppTeam(getTeam(myPID))] += st.handVal;
             st.nextRoundFoldBy = myPID;
             if(st.scores[getOppTeam(getTeam(myPID))] >= 12) { autoSave(); triggerEndGame(false); return; }
@@ -3364,6 +3677,7 @@
             if(accept) {
                 showMsg("Vocês correram!", 'neg');
                 st.trucoState = 'none';
+                if (myPID !== 0) recordTrucoEvent('folds');
                 var oppT2 = getOppTeam(getTeam(myPID));
                 st.scores[oppT2] += st.handVal;
                 st.nextRoundFoldBy = myPID;
@@ -3383,6 +3697,7 @@
 		window.playCard = function(idx) {
             if(animLock || st.turn !== myPID || (st.trucoState !== 'none' && st.trucoState !== 'pending') || isPaused) return;
             
+            armedCard = null;
             var isHid = window.isHiding;
             var c = st.hands[myPID].splice(idx, 1)[0];
             st.aiJustAccepted = false; // Reset da trava de truco
@@ -3392,7 +3707,7 @@
             renderMesa(null, myPID); 
             
             if(st.table.length === getNumPlayers()) { 
-                updateUI(); animLock = true; autoSave(); setTimeout(resolveTrick, 1500); 
+                updateUI(); animLock = true; autoSave(); setTimeout(resolveTrick, Math.round(1500 * paceScale())); 
             } else { 
                 st.turn = getNextTurn(st.turn); updateUI(); autoSave(); checkAiTurn();
             }
@@ -3477,7 +3792,7 @@
                 } else { 
                     st.turn = nextTurn; animLock = false; updateUI(); autoSave(); checkAiTurn(); 
                 }
-            }, 1300); 
+            }, currentPace().trick);
         }
 
         window.requestTruco = function() {
@@ -3553,7 +3868,7 @@
                 if(myPID === lowestHuman && !isHumanSeat(t)) isAi = true;
             } 
             
-            if(isAi) { animLock = true; setTimeout(() => aiPlay(t), 1200); }
+            if(isAi) { animLock = true; setTimeout(() => aiPlay(t), currentPace().ai); }
         }
 
         function checkAiTrucoDecision() {
@@ -3806,7 +4121,7 @@
             renderMesa(null, pid);
 
             if(st.table.length === getNumPlayers()) {
-                updateUI(); animLock = true; autoSave(); setTimeout(resolveTrick, 1500);
+                updateUI(); animLock = true; autoSave(); setTimeout(resolveTrick, Math.round(1500 * paceScale()));
             } else {
                 st.turn = getNextTurn(st.turn); unlockAnim(); autoSave(); checkAiTurn();
             }
@@ -4717,6 +5032,9 @@
                 if (manilhaBtn) manilhaBtn.innerText = "🃏 SEM DICA DE MANILHA";
             }
         } catch(e) {}
+
+        loadPrefs();
+        applyPrefs();
 
         var versionTagEl = getEl('options-version-tag');
         if (versionTagEl) versionTagEl.innerText = 'v' + APP_VERSION;
