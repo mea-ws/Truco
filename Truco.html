@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Truco - v0.13.1</title>
+    <title>Truco - v0.13.2</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♣</text></svg>">
     <style>
         /* THEME VARIABLES */
@@ -148,13 +148,15 @@
            #quick-game-wrap (Jogo Rápido) continua como gaveta, mas o cálculo
            de visibilidade em getFocusableList() agora considera o corte por
            overflow dos ancestrais, então o mesmo bug não se repete lá. */
+        /* v0.13.2: os botões de scr-options passaram a usar .btn-s puro (sem
+           override de largura/raio/padding) — mesmo padrão retangular que
+           todo o resto do app usa em telas de menu, em vez do pill pequeno
+           herdado da extinta gaveta de Opções. */
         #options-version-tag { margin-top: 14px; text-align: center; font-size: 0.65rem; color: var(--txt-d); opacity: 0.35; }
-        #scr-options .btn-theme { width: 100%; border-radius: 10px; padding: 12px 16px; font-size: 0.9rem; }
         /* Separa visualmente o botão de Estatísticas dos demais (mesma cor
            de borda usada em todo o resto da UI) — ele leva a uma tela com
            uma ação sensível (apagar dados), então precisa se destacar como
-           "categoria à parte". Só margem (não padding-top) pra não brigar
-           com o padding uniforme de #scr-options .btn-theme acima. */
+           "categoria à parte". */
         .options-divider { border-top: 1px solid var(--glass-border); margin-top: 14px; }
 
         /* Gaveta colapsável (max-height 0->N + overflow:hidden) pro mini-painel
@@ -243,10 +245,15 @@
            "sai" pra fora da própria caixa) pelo mesmo motivo: um outer-glow
            pode ser cortado por overflow:hidden/auto de um ancestral (painel
            rolável, gaveta colapsável) mesmo quando o elemento em si está
-           visível — inset nunca depende do que o ancestral deixa vazar. */
-        .gp-focus { position: relative; z-index: 5; transition: box-shadow 0.15s ease, transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        body.theme-dark .gp-focus { box-shadow: inset 0 0 0 2px rgba(248, 250, 252, 0.85), inset 0 0 12px rgba(248, 250, 252, 0.45); transform: scale(1.035); }
-        body.theme-light .gp-focus { box-shadow: inset 0 0 0 2px rgba(15, 23, 42, 0.75), inset 0 0 12px rgba(15, 23, 42, 0.28); transform: scale(1.035); }
+           visível — inset nunca depende do que o ancestral deixa vazar.
+           SEM transform:scale (v0.13.2) — mesmo pequeno, ainda fazia a caixa
+           RENDERIZADA crescer um pouco além do layout, e isso sozinho já
+           bastava pra ser cortado quando o container estava calibrado bem
+           justo ao conteúdo (#sp-other-modes-wrap, .panel com scroll) —
+           box-shadow inset sozinho não tem como vazar de jeito nenhum. */
+        .gp-focus { position: relative; z-index: 5; transition: box-shadow 0.15s ease; }
+        body.theme-dark .gp-focus { box-shadow: inset 0 0 0 2px rgba(248, 250, 252, 0.85), inset 0 0 12px rgba(248, 250, 252, 0.45); }
+        body.theme-light .gp-focus { box-shadow: inset 0 0 0 2px rgba(15, 23, 42, 0.75), inset 0 0 12px rgba(15, 23, 42, 0.28); }
 
         @keyframes winnerPulse {
             0% { transform: scale(1) translateY(0); box-shadow: 0 6px 15px rgba(0,0,0,0.3); border: 1px solid var(--glass-border); }
@@ -257,7 +264,6 @@
 
         .card-wrapper { position: relative; cursor: pointer; }
         .card-wrapper.interactive:hover { transform: translateY(-10px); z-index: 15; }
-        .key-hint { position: absolute; bottom: -22px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.6); color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; border: 1px solid rgba(255,255,255,0.2); pointer-events: none; }
 
         .hand-my { display: flex; justify-content: center; gap: 15px; height: 105px; width: 100%; margin-bottom: 5px; z-index: 15; }
         .hand-top { position: absolute; top: -35px; left: 50%; transform: translateX(-50%); display: flex; justify-content: center; gap: 8px; z-index: 5; transition: top 0.4s ease; }
@@ -332,14 +338,11 @@
            é reservado pra Descartar/Correr). */
         .action-btn.warn { background: rgba(234, 179, 8, 0.15); border-color: var(--warn); color: var(--txt); }
         .action-btn.warn:hover { background: rgba(234, 179, 8, 0.3); }
-        /* Sem key-box pra ancorar o tamanho (só texto curto "SAIR"), esse
-           botão sentia mais o delta de padding/font-size que a media query
-           mobile aplica a todo .action-btn — ficava visivelmente menor no
-           desktop e maior no mobile. Uma largura mínima estabiliza o
-           tamanho nas duas telas, igual ao padrão dos outros botões. */
-        /* Nada de tamanho customizado aqui — o key-box invisível no HTML já
-           faz esse botão seguir o mesmo padrão de altura dos outros (ver
-           comentário no HTML do botão SAIR). */
+        /* Desde a v0.13.2 nenhum botão de legend-group tem key-box (a
+           navegação por foco substituiu as teclas diretas — ver seção de
+           navegação in-game) — todos ficam consistentes entre si por
+           estarem todos no mesmo caso agora, não mais por causa de um
+           key-box ancorando a altura só do SAIR como antes. */
 
         .btn-esc { position: absolute; right: 15px; opacity: 0.5; }
         .btn-esc:hover { opacity: 1; }
@@ -464,7 +467,7 @@
                 --glow-insano: rgba(147,51,234,0.47);
             }
 
-            .key-box, .key-hint { display: none !important; }
+            .key-box { display: none !important; }
             .action-btn { padding: 10px 12px; font-size: 0.85rem; border-radius: 10px; }
             .card { width: 55px; height: 85px; } 
             .hand-my { height: 85px; gap: 10px; }
@@ -524,12 +527,12 @@
     <div id="scr-options" class="panel hidden">
         <h2>OPÇÕES</h2>
         <div class="btn-stack">
-            <button class="btn-theme" onclick="toggleTheme()">☀️ MODO CLARO</button>
-            <button class="btn-theme" id="btn-manilha-hint" onclick="toggleManilhaHint()">🃏 COM DICA DE MANILHA</button>
-            <button class="btn-theme options-divider" onclick="refreshStatsScreen(); nav('scr-options', 'scr-stats')">📊 ESTATÍSTICAS</button>
+            <button class="btn-s" id="btn-theme-toggle" onclick="toggleTheme()">☀️ MODO CLARO</button>
+            <button class="btn-s" id="btn-manilha-hint" onclick="toggleManilhaHint()">🃏 COM DICA DE MANILHA</button>
+            <button class="btn-s options-divider" onclick="refreshStatsScreen(); nav('scr-options', 'scr-stats')">📊 ESTATÍSTICAS</button>
         </div>
-        <div id="options-version-tag"></div>
         <button class="btn-s danger" data-nav-back style="width: 100%; margin-top: 15px;" onclick="nav('scr-options', 'scr-start')">VOLTAR</button>
+        <div id="options-version-tag"></div>
     </div>
 
     <div id="scr-multi-choice" class="panel hidden">
@@ -884,7 +887,7 @@
         <button id="btn-reset-stats" class="action-btn danger hold-reset-btn" style="margin-top:18px;"
             onpointerdown="holdResetPointerDown()" onpointerup="holdResetPointerUp()" onpointerleave="holdResetPointerUp()" onpointercancel="holdResetPointerUp()">
             <div id="reset-stats-fill" class="hold-reset-fill"></div>
-            <span>🗑️ SEGURE 3s PARA APAGAR TUDO</span>
+            <span>🗑️ APAGAR DADOS SALVOS</span>
         </button>
 
         <button class="btn-s danger" data-nav-back style="width: 100%; margin-top: 15px;" onclick="nav('scr-stats', 'scr-options')">VOLTAR</button>
@@ -949,44 +952,43 @@
         <div id="action-bar" class="glass-panel legend-container">
 
             <div id="grp-normal" class="legend-group active">
-                <div class="static-info"><span class="key-box">1</span><span class="key-box">2</span><span class="key-box">3</span> <span class="play-text">JOGAR CARTA</span></div>
-                <button id="cmd-truco" class="action-btn warn hidden" onclick="requestTruco()"><span class="key-box warn-highlight">T</span> TRUCO!</button>
-                <button id="cmd-fold" class="action-btn danger hidden" onclick="requestFold()"><span class="key-box highlight">D</span> DESCARTAR</button>
+                <button id="cmd-truco" class="action-btn warn hidden" onclick="requestTruco()">TRUCO!</button>
+                <button id="cmd-fold" class="action-btn danger hidden" onclick="requestFold()">DESCARTAR</button>
             </div>
-            
+
             <div id="grp-respond" class="legend-group">
-                <button class="action-btn primary" onclick="respondTruco(true)"><span class="key-box" style="color: var(--prim); border-color: var(--prim); background: rgba(255,255,255,0.8);">A</span> ACEITAR</button>
-                <button id="cmd-raise" class="action-btn warn hidden" onclick="requestTruco()"><span class="key-box warn-highlight">T</span> SEIS!</button>
-                <button class="action-btn danger" onclick="respondTruco(false)"><span class="key-box highlight">C</span> CORRER</button>
+                <button class="action-btn primary" onclick="respondTruco(true)">ACEITAR</button>
+                <button id="cmd-raise" class="action-btn warn hidden" onclick="requestTruco()">SEIS!</button>
+                <button class="action-btn danger" onclick="respondTruco(false)">CORRER</button>
             </div>
 
             <div id="grp-confirm-fold" class="legend-group">
                 <span class="static-info" style="color: var(--warn); font-weight: bold;">Tem certeza?</span>
-                <button class="action-btn danger" onclick="executeFold()"><span class="key-box highlight">S</span> SIM</button>
-                <button class="action-btn" onclick="cancelFold()"><span class="key-box">N</span> NÃO</button>
+                <button class="action-btn danger" onclick="executeFold()">SIM</button>
+                <button class="action-btn" onclick="cancelFold()">NÃO</button>
             </div>
 
             <div id="grp-partner-fold" class="legend-group">
                 <span class="static-info" style="color: var(--warn); font-weight: bold;">Parceiro quer correr!</span>
-                <button class="action-btn danger" onclick="respondPartnerFold(true)"><span class="key-box highlight">S</span> CORRER</button>
-                <button class="action-btn primary" onclick="respondPartnerFold(false)"><span class="key-box">N</span> JOGAR</button>
+                <button class="action-btn danger" onclick="respondPartnerFold(true)">CORRER</button>
+                <button class="action-btn primary" onclick="respondPartnerFold(false)">JOGAR</button>
             </div>
 
             <div id="grp-mao11" class="legend-group">
                 <span id="txt-mao11-title" class="static-info" style="color: var(--warn); font-weight: bold;">Mão de 11!</span>
-                <button class="action-btn primary" onclick="respondMao11(true)"><span class="key-box highlight" style="color:var(--prim); border-color:var(--prim); background:rgba(255,255,255,0.8);">A</span> ACEITAR</button>
-                <button class="action-btn danger" onclick="respondMao11(false)"><span class="key-box highlight">C</span> CORRER</button>
+                <button class="action-btn primary" onclick="respondMao11(true)">ACEITAR</button>
+                <button class="action-btn danger" onclick="respondMao11(false)">CORRER</button>
             </div>
 
             <div id="grp-pause-menu" class="legend-group">
                 <button id="btn-invite-more" class="action-btn hidden" onclick="startInviteMoreFlow('scr-game')">➕ CONVIDAR</button>
-                <button id="btn-pause-exit" class="action-btn danger" onclick="requestExit()"><span class="key-box highlight">S</span> SAIR</button>
+                <button id="btn-pause-exit" class="action-btn danger" onclick="requestExit()">SAIR</button>
             </div>
 
             <div id="grp-confirm-exit" class="legend-group">
                 <span class="static-info" style="color: var(--warn); font-weight: bold;">Sair do Jogo?</span>
-                <button class="action-btn danger" onclick="location.reload()"><span class="key-box highlight">S</span> SIM</button>
-                <button class="action-btn" onclick="cancelExit()"><span class="key-box">N</span> NÃO</button>
+                <button class="action-btn danger" onclick="location.reload()">SIM</button>
+                <button class="action-btn" onclick="cancelExit()">NÃO</button>
             </div>
 
             <!-- Fica FORA do grp-pause-menu de propósito: esse grupo recebe a
@@ -995,8 +997,10 @@
                  — fazia esse botão nascer preso à posição do grupo animado e
                  só "pular" pra posição certa quando a animação terminava. Como
                  irmão direto do action-bar (igual ao botão ⋮), fica imune a
-                 isso. Visibilidade controlada por JS via syncThemeBtnVisibility(). -->
-            <button id="btn-theme-pause" class="action-btn btn-theme-pause" onclick="toggleTheme()"><span class="key-box">W</span> <span id="theme-pause-icon">☀️</span></button>
+                 isso. Visibilidade controlada por JS via syncThemeBtnVisibility().
+                 v0.13.2: entra na navegação por foco do Menu de Pausa (não é
+                 mais tecla direta W) — key-box removido. -->
+            <button id="btn-theme-pause" class="action-btn btn-theme-pause" onclick="toggleTheme()"><span id="theme-pause-icon">☀️</span></button>
 
             <button id="btn-pause-toggle" class="action-btn btn-esc" onclick="togglePauseMenu()"><span class="key-box">ESC</span> ⋮</button>
         </div>
@@ -1020,7 +1024,7 @@
         var SUITS = ['♦', '♠', '♥', '♣']; 
         var VALS_SUJO = ['4', '5', '6', '7', 'Q', 'J', 'K', 'A', '2', '3'];
         var VALS_LIMPO = ['Q', 'J', 'K', 'A', '2', '3'];
-        var APP_VERSION = '0.13.1';
+        var APP_VERSION = '0.13.2';
 
         // ═══════════════════════════════════════════════════════════════
         // FORMATO DE `st` (estado sincronizado entre jogadores)
@@ -1154,7 +1158,7 @@
 
         window.toggleTheme = function() {
             var body = document.body;
-            var btn = document.querySelector('.btn-theme');
+            var btn = getEl('btn-theme-toggle');
             var pauseIcon = getEl('theme-pause-icon');
             if (currentTheme === 'dark') {
                 currentTheme = 'light';
@@ -1386,6 +1390,11 @@
             // grupo), então sua visibilidade é sincronizada aqui, centralizado,
             // toda vez que o grupo ativo muda.
             getEl('btn-theme-pause').classList.toggle('visible', id === 'grp-pause-menu');
+            // v0.13.2: todo ponto que muda o "sub-estado" in-game (pausar,
+            // responder truco, jogar carta, etc.) passa por aqui, direto ou
+            // via updateUI() — um recalculo de foco aqui cobre isso tudo de
+            // uma vez, sem precisar caçar cada função que muda estado.
+            refreshMenuFocus();
         }
 
         // Estado (só de UI, não faz parte de st) do Menu de Pausa — ver
@@ -1564,7 +1573,13 @@
         }
 
         function setGpFocus(el) {
-            if (gpFocusedEl && gpFocusedEl !== el) gpFocusedEl.classList.remove('gp-focus');
+            if (gpFocusedEl && gpFocusedEl !== el) {
+                gpFocusedEl.classList.remove('gp-focus');
+                // Segurança extra pro bug do botão de apagar dados: se o foco
+                // sai dele por QUALQUER motivo (troca de tela, navegação),
+                // cancela um hold em andamento em vez de deixar preso.
+                if (gpFocusedEl.id === 'btn-reset-stats') cancelHoldReset();
+            }
             gpFocusedEl = el || null;
             if (gpFocusedEl) {
                 if (gpFocusVisible) gpFocusedEl.classList.add('gp-focus');
@@ -1572,21 +1587,82 @@
             }
         }
 
-        // Chamado pelo MutationObserver sempre que uma tela troca de visível
-        // pra escondida (ou vice-versa) — reseta o foco pro primeiro elemento
-        // SÓ se o foco atual não pertence mais à tela ativa (evita reset
-        // indesejado por churn de DOM dentro da própria tela).
+        // ---- Escopo único de foco (v0.13.2): banner de versão > in-game > menu ----
+        // Antes disso, moveMenuFocus/refreshMenuFocus chamavam
+        // getFocusableRows(getActiveMenuScreen()) direto — só cobria menus.
+        // getActiveFocusRows() decide QUAL conjunto de linhas vale agora,
+        // com prioridade fixa: se o aviso de mismatch de versão estiver
+        // ativo, só o botão de fechar dele é alcançável (não dá pra navegar
+        // pra mais nada por trás — um jogador de console tem que conseguir
+        // fechar o aviso); senão, se estiver em #scr-game, usa as linhas
+        // do jogo; senão, o comportamento de sempre nos menus.
+        function getActiveFocusRows() {
+            var banner = getEl('version-warn-banner');
+            if (banner && !banner.classList.contains('hidden')) {
+                var btn = banner.querySelector('button');
+                return btn ? [[btn]] : [];
+            }
+            if (isInGameScreen()) return getInGameFocusRows();
+            return getFocusableRows(getActiveMenuScreen());
+        }
+
+        // Junta botões visíveis de uma lista de nós (cada nó é um container,
+        // cujos <button> descendentes entram todos, ou já é o próprio
+        // <button>) — mesmo filtro/ordenação de getFocusableRows, só que a
+        // ENTRADA já vem pronta (um grupo do action-bar) em vez de escanear
+        // uma tela inteira.
+        function collectVisibleButtons(nodes) {
+            var candidates = [];
+            nodes.forEach(function(n) {
+                if (!n) return;
+                if (n.tagName === 'BUTTON') candidates.push(n);
+                else candidates = candidates.concat(Array.from(n.querySelectorAll('button')));
+            });
+            var list = candidates.filter(isReallyVisible);
+            list.sort(function(a, b) { return a.getBoundingClientRect().left - b.getBoundingClientRect().left; });
+            return list;
+        }
+
+        // Espelha exatamente os mesmos estados/prioridade que o antigo
+        // handleGameKey distinguia por tecla — só troca "que tecla faz o
+        // quê" por "que botões formam a linha navegável agora". Primeira
+        // linha centraliza o gate de animLock que antes estava espalhado
+        // (handleGameKey, gpInGameGateOpen, keydown) num lugar só.
+        function getInGameFocusRows() {
+            if (animLock && st.trucoState !== 'mao11') return [];
+            if (getEl('grp-confirm-exit').classList.contains('active')) return [collectVisibleButtons([getEl('grp-confirm-exit')])];
+            if (isPaused) return [collectVisibleButtons([getEl('btn-theme-pause'), getEl('grp-pause-menu')])];
+            if (getEl('grp-confirm-fold').classList.contains('active')) return [collectVisibleButtons([getEl('grp-confirm-fold')])];
+            if (st.trucoState === 'partner_fold') return [collectVisibleButtons([getEl('grp-partner-fold')])];
+            if (st.trucoState === 'mao11' && st.maoDeXTeam === getTeam(myPID) && myPID !== 0) return [collectVisibleButtons([getEl('grp-mao11')])];
+            if (st.trucoState === 'pending') {
+                if (getTeam(st.trucoBy) !== getTeam(myPID) && myPID !== 0) return [collectVisibleButtons([getEl('grp-respond')])];
+                return [];
+            }
+            if (st.turn === myPID && st.trucoState === 'none') {
+                var rows = [];
+                var cardEls = Array.from(getHandCardEls());
+                if (cardEls.length) rows.push(cardEls);
+                var actionRow = collectVisibleButtons([getEl('grp-normal')]);
+                if (actionRow.length) rows.push(actionRow);
+                return rows;
+            }
+            return [];
+        }
+
+        // Chamado pelo MutationObserver de tela E por setBottomGroup (toda
+        // vez que o "sub-estado" dentro de #scr-game muda) — reseta o foco
+        // pro primeiro elemento SÓ se o foco atual não pertence mais ao
+        // conjunto ativo (evita reset indesejado por churn de DOM à toa).
         function refreshMenuFocus() {
-            var screen = getActiveMenuScreen();
-            var rows = getFocusableRows(screen);
+            var rows = getActiveFocusRows();
             if (!rows.length) { setGpFocus(null); return; }
             if (gpFocusedEl && findRowCol(rows, gpFocusedEl)) return;
             setGpFocus(rows[0][0]);
         }
 
         function moveMenuFocus(dir) {
-            var screen = getActiveMenuScreen();
-            var rows = getFocusableRows(screen);
+            var rows = getActiveFocusRows();
             if (!rows.length) return;
             var pos = gpFocusedEl ? findRowCol(rows, gpFocusedEl) : null;
             if (!pos) { setGpFocus(rows[0][0]); return; }
@@ -1600,20 +1676,35 @@
             setGpFocus(rows[r][c]);
         }
 
+        // Cartas não são <button> (só o .card-wrapper tem onclick, não o
+        // .card onde o .gp-focus é aplicado — ver createCardDOM) — por isso
+        // precisam de um caso à parte antes do .click() genérico, calculando
+        // o índice pela posição atual na mão em vez de disparar clique.
         function confirmMenuFocus() {
             if (!gpFocusedEl) return;
             if (gpFocusedEl.id === 'btn-reset-stats') { window.holdResetPointerDown(); return; }
+            if (gpFocusedEl.classList.contains('card')) {
+                var idx = Array.from(getHandCardEls()).indexOf(gpFocusedEl);
+                if (idx !== -1) playCard(idx);
+                return;
+            }
             if (typeof gpFocusedEl.click === 'function') gpFocusedEl.click();
         }
         function releaseMenuFocusHold() {
             if (gpFocusedEl && gpFocusedEl.id === 'btn-reset-stats') window.holdResetPointerUp();
         }
 
-        // Prioridade: gaveta aberta na tela atual fecha primeiro; senão,
-        // clica no botão marcado [data-nav-back] daquela tela (marcado
-        // explicitamente — reconhecer por classe/cor quebraria em telas como
+        // Prioridade: aviso de versão ativo fecha primeiro (B/Escape também
+        // dispensam ele, de brinde); senão, in-game sempre pausa/despausa
+        // (mesmo botão cobre Escape no teclado e B no gamepad); senão, nos
+        // menus, gaveta aberta na tela atual fecha primeiro, senão clica no
+        // botão marcado [data-nav-back] daquela tela (marcado explicitamente
+        // — reconhecer por classe/cor quebraria em telas como
         // scr-webrtc-invite-more, cujo botão de voltar não usa .danger).
         function menuBack() {
+            var banner = getEl('version-warn-banner');
+            if (banner && !banner.classList.contains('hidden')) { dismissVersionWarning(); return; }
+            if (isInGameScreen()) { togglePauseMenu(); return; }
             var screen = getActiveMenuScreen();
             if (!screen) return;
             if (screen.querySelector('#quick-game-wrap.open')) { toggleQuickGamePanel(); return; }
@@ -1654,95 +1745,28 @@
             else if (e.key === 'Enter' || e.key === ' ') { confirmMenuFocus(); e.preventDefault(); }
         }
 
-        // ---- Seleção de carta por direção (in-game, turno normal) ----
-        // Jogar carta nunca teve tecla de seta (é 1/2/3 direto) — pro gamepad,
-        // amarrar carta a botão de face fixo colidiria com A/B/X/Y (seção de
-        // mapeamento abaixo), então usa o mesmo modelo do menu: destacar com
-        // direção, confirmar com A.
-        var gpCardIdx = 0;
+        // Cartas da mão, em ordem de DOM (== ordem de índice em st.hands[myPID]
+        // — cada carta é criada com seu índice fechado em playCard(idx), ver
+        // createCardDOM) — usado tanto por getInGameFocusRows() (linha de
+        // cartas) quanto por confirmMenuFocus() (calcular qual índice jogar).
         function getHandCardEls() { var my = getEl('box-my'); return my ? my.querySelectorAll('.card') : []; }
-        function updateGpCardHighlight() {
-            var els = getHandCardEls();
-            for (var i = 0; i < els.length; i++) els[i].classList.toggle('gp-focus', i === gpCardIdx);
-        }
-        function moveGpCardSelection(dir) {
-            var els = getHandCardEls();
-            if (!els.length) return;
-            if (gpCardIdx >= els.length) gpCardIdx = 0;
-            gpCardIdx = (dir === 'next') ? (gpCardIdx + 1) % els.length : (gpCardIdx - 1 + els.length) % els.length;
-            updateGpCardHighlight();
-        }
-        function confirmGpCardSelection() {
-            var els = getHandCardEls();
-            if (!els.length) return;
-            playCard(Math.min(gpCardIdx, els.length - 1));
-        }
 
-        // ---- Mirror de teclado in-game (v0.13.0) ----
-        // Corpo idêntico ao keydown original, só extraído pra função própria:
-        // o gamepad sintetiza chamadas aqui com a(s) letra(s) do botão
-        // pressionado, reaproveitando o MESMO caminho já testado do teclado
-        // — os estados são mutuamente exclusivos, então uma letra que não
-        // bate com o estado atual simplesmente não faz nada.
-        function handleGameKey(key) {
-            if (key === 'ESCAPE') {
-                togglePauseMenu();
-                return;
-            }
-
-            if (getEl('grp-confirm-exit').classList.contains('active')) {
-                if (key === 'S') location.reload();
-                else if (key === 'N') cancelExit();
-                return;
-            }
-
-            if (isPaused) {
-                if (key === 'W') toggleTheme();
-                else if (key === 'S') requestExit();
-                return;
-            }
-
-            if (getEl('grp-confirm-fold').classList.contains('active')) {
-                if (key === 'S') executeFold();
-                else if (key === 'N') cancelFold();
-                return;
-            }
-
-            if (st.trucoState === 'partner_fold') {
-                if (key === 'S') respondPartnerFold(true);
-                else if (key === 'N') respondPartnerFold(false);
-                return;
-            }
-
-            if (st.trucoState === 'mao11' && st.maoDeXTeam === getTeam(myPID) && myPID !== 0) {
-                if (key === 'A') respondMao11(true);
-                else if (key === 'C') respondMao11(false);
-                return;
-            }
-
-            if (st.trucoState === 'pending') {
-                if (getTeam(st.trucoBy) !== getTeam(myPID) && myPID !== 0) {
-                    if (key === 'A') respondTruco(true);
-                    else if (key === 'C') respondTruco(false);
-                    else if (key === 'T' && !getEl('cmd-raise').classList.contains('hidden')) requestTruco();
-                }
-            } else if (st.turn === myPID && st.trucoState === 'none') {
-                if (['1', '2', '3'].includes(key)) {
-                    var idx = parseInt(key) - 1;
-                    if (idx < st.hands[myPID].length) playCard(idx);
-                }
-                else if (key === 'E') {
-                    if (!getEl('btn-hide-card').hasAttribute('disabled')) toggleHide();
-                }
-                else if (key === 'T' && !getEl('cmd-truco').classList.contains('hidden')) requestTruco();
-                else if (key === 'D' && !getEl('cmd-fold').classList.contains('hidden')) requestFold();
-            }
-        }
-
+        // ---- Teclado in-game (v0.13.2) ----
+        // Antes disso existia um handleGameKey(letra) com uma ramificação por
+        // tecla (A/C/S/N/T/D/1/2/3) — removido por completo. In-game agora é
+        // só mais um escopo do MESMO sistema de foco por linhas dos menus
+        // (getInGameFocusRows/moveMenuFocus/confirmMenuFocus/menuBack) —
+        // handleMenuKey já cobre setas+Enter/Espaço+Escape sem precisar saber
+        // se está num menu ou dentro do jogo. Só sobram tecla própria mesmo:
+        // Esconder (E) e Menu de Pausa (Escape, tratado dentro de menuBack).
         document.addEventListener('keydown', function(e) {
-            if (!isInGameScreen()) { handleMenuKey(e); return; }
-            if (animLock && st.trucoState !== 'mao11') return;
-            handleGameKey(e.key.toUpperCase());
+            if (isInGameScreen() && animLock && st.trucoState !== 'mao11') return;
+            if (isInGameScreen() && e.key.toUpperCase() === 'E') {
+                if (st.turn === myPID && st.trucoState === 'none' && !getEl('btn-hide-card').hasAttribute('disabled')) toggleHide();
+                e.preventDefault();
+                return;
+            }
+            handleMenuKey(e);
         });
 
         function showMsg(m, type, durOverride) {
@@ -1847,9 +1871,15 @@
 
         // Botão de apagar tudo: mesma técnica do #sync-bar-fill (barra que
         // enche via width%), mas aqui o tempo de pressão é que enche a barra
-        // (não um timer de sincronismo) — soltar antes dos 3s cancela sem
+        // (não um timer de sincronismo) — soltar antes dos 5s cancela sem
         // apagar nada. Também acionável segurando "confirmar" com o botão
         // focado pelo sistema de foco/gamepad (ver seção de navegação).
+        // v0.13.2 — bug crítico corrigido: só existiam pointerup/pointerleave
+        // pra soltar o botão (mouse/touch/gamepad via releaseMenuFocusHold),
+        // NENHUM keyup — segurar Enter/Espaço enchia a barra sozinha até
+        // apagar tudo mesmo soltando a tecla ou saindo da tela. Agora tem
+        // keyup, blur/visibilitychange (aba perde foco) e troca de foco
+        // (setGpFocus) todos cancelando o hold em andamento.
         var holdResetRAF = null, holdResetStart = 0;
         function cancelHoldReset() {
             if (holdResetRAF) { cancelAnimationFrame(holdResetRAF); holdResetRAF = null; }
@@ -1866,13 +1896,16 @@
             holdResetStart = Date.now();
             var fill = getEl('reset-stats-fill');
             (function tick() {
-                var pct = Math.min(100, ((Date.now() - holdResetStart) / 3000) * 100);
+                var pct = Math.min(100, ((Date.now() - holdResetStart) / 5000) * 100);
                 if (fill) fill.style.width = pct + '%';
                 if (pct >= 100) { executeFullReset(); return; }
                 holdResetRAF = requestAnimationFrame(tick);
             })();
         };
         window.holdResetPointerUp = function() { cancelHoldReset(); };
+        document.addEventListener('keyup', function(e) { if (e.key === 'Enter' || e.key === ' ') cancelHoldReset(); });
+        window.addEventListener('blur', cancelHoldReset);
+        document.addEventListener('visibilitychange', function() { if (document.hidden) cancelHoldReset(); });
 
         var matchResultRecorded = false;
         function triggerEndGame(isWin) {
@@ -1942,9 +1975,6 @@
                 d.innerHTML = '<span>'+c.v+'</span><small class="'+(isRed?'':'black-suit')+'">'+c.s+'</small>';
                 if(isInteractive) {
                     w.onclick = function() { playCard(idx); };
-                    var hint = document.createElement('div');
-                    hint.className = 'key-hint'; hint.innerText = (idx + 1);
-                    w.appendChild(hint);
                 }
             }
             if(isVira && !st.viraRevealed) d.classList.add('back');
@@ -2500,7 +2530,7 @@
                     if(st.proposedVal < 12 && !meX && getTeam(st.lastTruco) !== getTeam(myPID)) { 
                         var nextVal = getNextTrucoVal(st.proposedVal);
                         btnRaise.classList.remove('hidden'); 
-                        btnRaise.innerHTML = '<span class="key-box warn-highlight">T</span> ' + getTrucoName(nextVal) + '!'; 
+                        btnRaise.innerHTML = getTrucoName(nextVal) + '!';
                     } else { btnRaise.classList.add('hidden'); }
                 } else {
                     if(!isExiting && !isPaused) { setBottomGroup(null); actionBar.classList.remove('danger-zone'); }
@@ -2518,7 +2548,7 @@
                 if(isMyTurn && st.handVal < 12 && !meX && !st.maoDeFerro && !st.isMaoDeX && st.table.length < getNumPlayers() && getTeam(st.lastTruco) !== getTeam(myPID)) {
                     var nextVal = getNextTrucoVal(st.handVal);
                     btnTruco.classList.remove('hidden'); 
-                    btnTruco.innerHTML = '<span class="key-box warn-highlight">T</span> ' + getTrucoName(nextVal) + '!';
+                    btnTruco.innerHTML = getTrucoName(nextVal) + '!';
                 } else { btnTruco.classList.add('hidden'); }
                 
                 if(isMyTurn && !st.maoDeFerro) btnFold.classList.remove('hidden'); else btnFold.classList.add('hidden');
@@ -4299,7 +4329,7 @@
                 document.body.classList.remove('theme-dark');
                 document.body.classList.add('theme-light');
                 currentTheme = 'light';
-                var themeBtn = document.querySelector('.btn-theme');
+                var themeBtn = getEl('btn-theme-toggle');
                 if (themeBtn) themeBtn.innerText = "🌙 MODO ESCURO";
                 var pauseIconInit = getEl('theme-pause-icon');
                 if (pauseIconInit) pauseIconInit.innerText = "🌙";
@@ -4353,22 +4383,19 @@
         })();
 
         // ═══════════════════════════════════════════════════════════════
-        // GAMEPAD — v0.13.0
+        // GAMEPAD — v0.13.2
         // Layout "standard" da Gamepad API (controles fora desse padrão são
-        // uma limitação conhecida). Cada botão só sintetiza chamadas nas
-        // funções que já existem (handleGameKey/moveMenuFocus/confirmMenuFocus/
-        // menuBack/seleção de carta) — nenhuma regra de jogo nova aqui.
+        // uma limitação conhecida). Mapeamento simplificado depois da
+        // unificação do foco in-game: A confirma o que estiver focado
+        // (carta ou botão, menu ou jogo), B é "voltar" universal (mesma
+        // função do Escape — fecha aviso de versão / pausa-despausa / volta
+        // de tela), R1 continua Esconder (única tecla própria in-game além
+        // do Menu de Pausa), D-pad/analógico move o foco. X/Y (2, 3) ficam
+        // livres, sem ação — nenhuma regra de jogo nova aqui, só síntese de
+        // chamadas nas funções que já existem.
         // ═══════════════════════════════════════════════════════════════
-        var GP_BUTTON_KEYS = {
-            1: ['C', 'N'],  // B / ○
-            2: ['D', 'C'],  // X / □ — descartar (turno normal) ou correr (resposta de truco)
-            3: ['T'],       // Y / △ — truco/aumentar
-            5: ['E']        // R1 — esconder
-        };
         var GP_DEADZONE = 0.5;
         var GP_DIR_INITIAL_DELAY = 350, GP_DIR_REPEAT_MS = 150;
-
-        function gpInGameGateOpen() { return !(animLock && st.trucoState !== 'mao11'); }
 
         function gamepadButtonPressed(gp, idx) {
             var b = gp.buttons[idx];
@@ -4376,43 +4403,25 @@
             return (typeof b === 'object') ? !!b.pressed : (b === 1);
         }
 
-        function gpFireConfirm() {
-            if (isInGameScreen()) {
-                if (!gpInGameGateOpen()) return;
-                if (st.turn === myPID && st.trucoState === 'none') confirmGpCardSelection();
-                else handleGameKey('A');
-            } else {
-                confirmMenuFocus();
-            }
-        }
-        function gpReleaseConfirm() { if (!isInGameScreen()) releaseMenuFocusHold(); }
+        function gpFireConfirm() { confirmMenuFocus(); }
+        function gpReleaseConfirm() { releaseMenuFocusHold(); }
 
         function gpFireDirection(name) {
-            if (isInGameScreen()) {
-                if (!gpInGameGateOpen()) return;
-                if (st.turn === myPID && st.trucoState === 'none') {
-                    var cardDir = (name === 'up' || name === 'left') ? 'prev' : 'next';
-                    moveGpCardSelection(cardDir);
-                }
-            } else {
-                revealGpFocus();
-                moveMenuFocus(name);
-            }
+            revealGpFocus();
+            moveMenuFocus(name);
         }
 
         function gpOnButtonDown(idx) {
             if (!gpHintsActive) { gpHintsActive = true; applyGpHints(); }
             revealGpFocus();
             if (idx === 0) { gpFireConfirm(); return; }
-            if (isInGameScreen()) {
-                if (!gpInGameGateOpen()) return;
-                var keys = GP_BUTTON_KEYS[idx];
-                if (keys) keys.forEach(function(k) { handleGameKey(k); });
-            } else if (idx === 1) {
-                menuBack();
+            if (idx === 1) { menuBack(); return; }
+            if (idx === 5 && isInGameScreen()) {
+                if (!(animLock && st.trucoState !== 'mao11') && st.turn === myPID && st.trucoState === 'none' && !getEl('btn-hide-card').hasAttribute('disabled')) toggleHide();
             }
             // Start (9) é tratado à parte em pollGamepad() — só faz sentido
             // dentro de uma partida (não há o que pausar navegando por menus).
+            // X/Y (2, 3) sem ação por enquanto.
         }
         function gpOnButtonUp(idx) { if (idx === 0) gpReleaseConfirm(); }
 
@@ -4486,11 +4495,12 @@
             if (s.indexOf('054c') !== -1 || s.indexOf('playstation') !== -1 || s.indexOf('dualshock') !== -1 || s.indexOf('dualsense') !== -1) return 'ps';
             return null;
         }
+        // v0.13.2: depois da unificação do foco in-game, quase todo botão
+        // deixou de ter tecla dedicada (é navegar+confirmar) — só Esconder
+        // e Menu de Pausa continuam com hotkey própria, então só eles têm
+        // hint de gamepad. A/B (confirmar/voltar) não precisam de hint
+        // porque o PRÓPRIO .gp-focus já mostra qual botão vai ser ativado.
         var GP_HINT_MAP = {
-            'A': { xbox: 'A', ps: '✕' }, 'S': { xbox: 'A', ps: '✕' },
-            'C': { xbox: 'B', ps: '○' }, 'N': { xbox: 'B', ps: '○' },
-            'D': { xbox: 'X', ps: '□' },
-            'T': { xbox: 'Y', ps: '△' },
             'E': { xbox: 'RB', ps: 'R1' },
             'ESC': { xbox: 'MENU', ps: 'OPTIONS' }
         };
