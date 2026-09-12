@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Truco - v0.14.1</title>
+    <title>Truco - v0.14.2</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♣</text></svg>">
     <style>
         /* THEME VARIABLES */
@@ -569,6 +569,45 @@
            estreita com o tamanho padrão do .diff-btn ("MAIS CALMO" quebrava). */
         .a11y-option .diff-btn { font-size: 0.72rem; white-space: nowrap; }
 
+        /* Estatísticas (v0.14.2): título+abas e os dois botões de baixo ficam
+           parados, e só os dados rolam — antes o painel inteiro rolava e a
+           barra de rolagem atravessava título e botões. O min-height:0 é o que
+           deixa o miolo encolher dentro do flex; sem ele o conteúdo empurra o
+           painel e nada rola. */
+        #scr-stats { display: flex; flex-direction: column; overflow: hidden; }
+        #stats-head, #stats-foot { flex: 0 0 auto; }
+        #stats-foot { display: flex; flex-direction: column; gap: 10px; border-top: 1px solid var(--glass-border); margin-top: 14px; padding-top: 14px; }
+        #stats-scroll {
+            flex: 1 1 auto; min-height: 0; overflow-y: auto; padding-right: 6px;
+            scrollbar-width: thin; scrollbar-color: var(--scroll-thumb) transparent;
+        }
+        #stats-scroll::-webkit-scrollbar { width: 10px; }
+        #stats-scroll::-webkit-scrollbar-track { background: transparent; }
+        #stats-scroll::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 10px; border: 3px solid transparent; background-clip: padding-box; }
+        #stats-scroll::-webkit-scrollbar-thumb:hover { background: var(--scroll-thumb-hov); background-clip: padding-box; }
+
+        /* Opção ligada = botão verde, o mesmo sinal que o .choice-card.active
+           já dava — usado no Modo Leve, dentro de Opções (v0.14.2). */
+        .btn-s.active { background: rgba(16, 185, 129, 0.2); border-color: var(--prim); }
+        .btn-s.active:hover { background: rgba(16, 185, 129, 0.3); }
+
+        /* Modo Leve não tem blur, e estes dois dependiam dele: o Esconder
+           ATIVADO (branco translúcido) e a Dica de Manilha (fundo de botão,
+           quase transparente) ficavam sem fundo visível sobre a mesa. O
+           degradê chapado por cima do --glass-bg devolve o contraste sem
+           perder o tom do tema (v0.14.2). */
+        body.lite-mode #ghost-m-card { background: var(--glass-bg); }
+        /* O :hover entra aqui porque o hover genérico do botão troca o fundo
+           por --btn-s-hov (bem translúcido) — sem blur por trás, isso
+           "apagava" o fundo de novo ao passar o mouse. O estado ATIVADO tem
+           seu próprio :hover pra não perder força quando o mouse está em cima. */
+        body.lite-mode.theme-dark #btn-hide-card:hover:not(:disabled) { background: linear-gradient(rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.12)), var(--glass-bg); }
+        body.lite-mode.theme-light #btn-hide-card:hover:not(:disabled) { background: linear-gradient(rgba(15, 23, 42, 0.1), rgba(15, 23, 42, 0.1)), var(--glass-bg); }
+        body.lite-mode.theme-dark #btn-hide-card.escondendo,
+        body.lite-mode.theme-dark #btn-hide-card.escondendo:hover:not(:disabled) { background: linear-gradient(rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.22)), var(--glass-bg); }
+        body.lite-mode.theme-light #btn-hide-card.escondendo,
+        body.lite-mode.theme-light #btn-hide-card.escondendo:hover:not(:disabled) { background: linear-gradient(rgba(15, 23, 42, 0.18), rgba(15, 23, 42, 0.18)), var(--glass-bg); }
+
         /* Confirmar Jogada: carta "armada" pelo 1º toque, esperando o 2º. */
         #box-my .card-wrapper.armed, #box-my .card-wrapper.armed:hover { transform: translateY(-16px); z-index: 16; }
         #box-my .card-wrapper.armed .card { outline: 3px solid var(--prim); outline-offset: 2px; }
@@ -674,8 +713,8 @@
         </div>
         <div class="a11y-option">
             <button class="choice-card" id="btn-reduced-motion" onclick="toggleReducedMotion()">
-                <span class="choice-title" id="btn-reduced-motion-title">🎞️ MOVIMENTO REDUZIDO</span>
-                <span class="choice-desc" id="btn-reduced-motion-desc">Tira as animações dos botões, das notificações e das cartas. Os destaques continuam.</span>
+                <span class="choice-title" id="btn-reduced-motion-title">🎞️ MOVIMENTO REDUZIDO: DESATIVADO</span>
+                <span class="choice-desc">Tira as animações dos botões, das notificações e das cartas. Alguns destaques continuam.</span>
             </button>
         </div>
         <div class="a11y-option">
@@ -1025,24 +1064,33 @@
     </div>
 
     <div id="scr-stats" class="panel hidden">
-        <h2>ESTATÍSTICAS</h2>
+        <div id="stats-head">
+            <h2>ESTATÍSTICAS</h2>
 
-        <div class="diff-selector">
-            <button class="diff-btn active" id="tab-stats-perfil" onclick="setStatsTab('perfil')">PERFIL</button>
-            <button class="diff-btn" id="tab-stats-sp" onclick="setStatsTab('sp')">SINGLE</button>
-            <button class="diff-btn" id="tab-stats-mpOnline" onclick="setStatsTab('mpOnline')">ONLINE</button>
-            <button class="diff-btn" id="tab-stats-mpLocal" onclick="setStatsTab('mpLocal')">LOCAL</button>
+            <div class="diff-selector">
+                <button class="diff-btn active" id="tab-stats-perfil" onclick="setStatsTab('perfil')">PERFIL</button>
+                <button class="diff-btn" id="tab-stats-sp" onclick="setStatsTab('sp')">SINGLE</button>
+                <button class="diff-btn" id="tab-stats-mpOnline" onclick="setStatsTab('mpOnline')">ONLINE</button>
+                <button class="diff-btn" id="tab-stats-mpLocal" onclick="setStatsTab('mpLocal')">LOCAL</button>
+            </div>
         </div>
 
-        <div id="stats-body" class="stats-section"></div>
+        <!-- data-gp-scroll marca este miolo como o alvo do analógico direito
+             do controle (ver getGpScrollTarget) — qualquer tela nova que role
+             conteúdo pode usar a mesma marca. -->
+        <div id="stats-scroll" data-gp-scroll>
+            <div id="stats-body" class="stats-section"></div>
+        </div>
 
-        <button id="btn-reset-stats" class="action-btn danger hold-reset-btn" style="margin-top:18px;"
-            onpointerdown="holdResetPointerDown()" onpointerup="holdResetPointerUp()" onpointerleave="holdResetPointerUp()" onpointercancel="holdResetPointerUp()">
-            <div id="reset-stats-fill" class="hold-reset-fill"></div>
-            <span>🗑️ APAGAR DADOS SALVOS</span>
-        </button>
+        <div id="stats-foot">
+            <button id="btn-reset-stats" class="action-btn danger hold-reset-btn"
+                onpointerdown="holdResetPointerDown()" onpointerup="holdResetPointerUp()" onpointerleave="holdResetPointerUp()" onpointercancel="holdResetPointerUp()">
+                <div id="reset-stats-fill" class="hold-reset-fill"></div>
+                <span>🗑️ APAGAR DADOS SALVOS</span>
+            </button>
 
-        <button class="btn-s danger" data-nav-back style="width: 100%; margin-top: 15px;" onclick="nav('scr-stats', 'scr-options')">VOLTAR</button>
+            <button class="btn-s danger" data-nav-back style="width: 100%;" onclick="nav('scr-stats', 'scr-options')">VOLTAR</button>
+        </div>
     </div>
 
     <div id="scr-game" class="game-area hidden">
@@ -1177,7 +1225,7 @@
         var SUITS = ['♦', '♠', '♥', '♣']; 
         var VALS_SUJO = ['4', '5', '6', '7', 'Q', 'J', 'K', 'A', '2', '3'];
         var VALS_LIMPO = ['Q', 'J', 'K', 'A', '2', '3'];
-        var APP_VERSION = '0.14.1';
+        var APP_VERSION = '0.14.2';
 
         // ═══════════════════════════════════════════════════════════════
         // FORMATO DE `st` (estado sincronizado entre jogadores)
@@ -1387,17 +1435,17 @@
         function applyPrefs() {
             document.body.classList.toggle('lite-mode', prefs.lite);
             document.body.classList.toggle('reduced-motion', prefs.reducedMotion);
-            var b = getEl('btn-lite-mode'); if (b) b.innerText = '🍃 MODO LEVE: ' + onOffLabel(prefs.lite);
+            // Opção ligada = botão verde nos três (v0.14.2): o rótulo diz o
+            // estado e a cor confirma, sem precisar interpretar se o texto é
+            // o estado atual ou a ação do clique.
+            var b = getEl('btn-lite-mode');
+            if (b) { b.innerText = '🍃 MODO LEVE: ' + onOffLabel(prefs.lite); b.classList.toggle('active', prefs.lite); }
             // Os dois botões da tela de Acessibilidade são .choice-card
             // (título + descrição dentro do botão), então aqui só o <span> do
             // título muda — reescrever o innerText do botão apagaria a
-            // descrição junto. O rótulo do movimento é a AÇÃO do clique
-            // ("Movimento Padrão" quando o reduzido está ligado), igual ao
-            // botão de tema.
-            b = getEl('btn-reduced-motion-title'); if (b) b.innerText = prefs.reducedMotion ? '🎞️ MOVIMENTO PADRÃO' : '🎞️ MOVIMENTO REDUZIDO';
-            b = getEl('btn-reduced-motion-desc'); if (b) b.innerText = prefs.reducedMotion
-                ? 'Devolve as animações completas do jogo.'
-                : 'Tira as animações dos botões, das notificações e das cartas. Os destaques continuam.';
+            // descrição junto.
+            b = getEl('btn-reduced-motion-title'); if (b) b.innerText = '🎞️ MOVIMENTO REDUZIDO: ' + onOffLabel(prefs.reducedMotion);
+            b = getEl('btn-reduced-motion'); if (b) b.classList.toggle('active', prefs.reducedMotion);
             b = getEl('btn-confirm-play-title'); if (b) b.innerText = '👆 CONFIRMAR JOGADA: ' + onOffLabel(prefs.confirmPlay);
             b = getEl('btn-confirm-play'); if (b) b.classList.toggle('active', prefs.confirmPlay);
             Object.keys(PACES).forEach(function(p) { var pb = getEl('btn-pace-' + p); if (pb) pb.classList.toggle('active', p === prefs.pace); });
@@ -2130,7 +2178,12 @@
         function saveStats(data) {
             try { localStorage.setItem('trucoStatsV2', JSON.stringify(data)); } catch(e) {}
         }
-        function statsKey() { return st.gameFormat + '|' + st.rules + '|' + aiDifficulty; }
+        // Chave de configuração na MESMA ordem em que o jogador escolhe as
+        // regras (região, mesa, baralho, dificuldade). Até a v0.14.2 era
+        // formato|regiao|dificuldade, sem o baralho: registros antigos
+        // continuam aparecendo (formatStatsKey entende as duas formas), só sem
+        // o baralho — não há como adivinhar qual foi usado, então não migram.
+        function statsKey() { return st.rules + '|' + st.gameFormat + '|' + (st.deckMode || 'sujo') + '|' + aiDifficulty; }
         // askTotal conta CADA pedido meu (um mesmo jogador pode retrucar por
         // cima do aumento do rival dentro da mesma mão); askHit/askRanFromRaise/
         // askLost contam DESFECHO de mão, no máximo um por mão — por isso a
@@ -2263,12 +2316,18 @@
             recordTrucoEvent('hands');
         }
 
+        var STATS_REGION_LABEL = { 'paulista': 'Paulista', 'mineiro': 'Mineiro', 'goiano': 'Goiano' };
+        var STATS_FORMAT_LABEL = { '1v1': '1x1', '2v2': 'Duplas', '3v3': 'Trios' };
+        var STATS_DECK_LABEL = { 'sujo': 'Sujo', 'limpo': 'Limpo' };
         function formatStatsKey(key) {
             var parts = key.split('|');
-            var fmtLabel = { '1v1': '1x1', '2v2': 'Duplas', '3v3': 'Trios' }[parts[0]] || parts[0];
-            var regionLabel = { 'paulista': 'Paulista', 'mineiro': 'Mineiro', 'goiano': 'Goiano' }[parts[1]] || parts[1];
-            var diffLabel = (AI_PROFILES[parts[2]] && AI_PROFILES[parts[2]].label) || parts[2];
-            return fmtLabel + ' · ' + regionLabel + ' · ' + diffLabel;
+            var region, format, deck, diff;
+            if (parts.length >= 4) { region = parts[0]; format = parts[1]; deck = parts[2]; diff = parts[3]; }
+            else { format = parts[0]; region = parts[1]; diff = parts[2]; } // chave anterior à v0.14.2
+            var out = [STATS_REGION_LABEL[region] || region, STATS_FORMAT_LABEL[format] || format];
+            if (deck) out.push(STATS_DECK_LABEL[deck] || deck);
+            out.push((AI_PROFILES[diff] && AI_PROFILES[diff].label) || diff);
+            return out.join(' · ');
         }
 
         // Aba ativa da tela de Estatísticas (só estado de UI, não é salvo).
@@ -2281,6 +2340,10 @@
                 if (b) b.classList.toggle('active', t === tab);
             });
             renderStatsBody();
+            // Trocar de aba volta pro topo: a aba nova pode ser bem mais curta
+            // que a anterior, e a rolagem antiga ficava "no vazio".
+            var sc = getEl('stats-scroll');
+            if (sc) sc.scrollTop = 0;
         };
 
         function statLine(label, value, strong) {
@@ -2459,9 +2522,11 @@
                 html += '<div class="section-label" style="margin:12px 0 4px; text-align:left;">Por configuração</div>';
                 rows.forEach(function(row) {
                     var extra = (row.bestStreak > 1 ? ' · 🔥' + row.bestStreak : '') + (row.quit ? ' · ' + row.quit + '✖' : '');
-                    html += '<div style="display:flex; justify-content:space-between; font-size:0.72rem; color:var(--txt-d); padding:4px 0; border-top:1px solid var(--glass-border);">'
+                    // O rótulo da configuração cresceu (ganhou o baralho), então
+                    // o placar não encolhe: quem quebra linha é o rótulo.
+                    html += '<div style="display:flex; justify-content:space-between; gap:8px; font-size:0.72rem; color:var(--txt-d); padding:4px 0; border-top:1px solid var(--glass-border);">'
                         + '<span>' + formatStatsKey(row.key) + '</span>'
-                        + '<span>' + row.w + 'V-' + row.l + 'D' + extra + '</span></div>';
+                        + '<span style="flex-shrink:0;">' + row.w + 'V-' + row.l + 'D' + extra + '</span></div>';
                 });
             }
             el.innerHTML = html;
@@ -2535,19 +2600,23 @@
             info.forEach(function(i, n) { var s = playStyleOf(i); if (s) styled.push({ s: s, name: PERFIL_COLS[n].name, sp: PERFIL_COLS[n].k === 'sp' }); });
             var hasSp = styled.some(function(x) { return x.sp; });
             var hasMp = styled.some(function(x) { return !x.sp; });
-            var styleHtml = '<div style="font-size:0.66rem; font-weight:bold; letter-spacing:1px; text-transform:uppercase;">Estilo geral</div>';
+            // Sem estilo geral ainda, a caixa mostra SÓ a linha de leitura: o
+            // "Em formação — precisa de 5 partidas..." repetia, com outras
+            // palavras, exatamente o que ela já diz (v0.14.2). O requisito em
+            // si continua o mesmo — o que sai é o texto duplicado.
+            var styleHtml = '';
             if (hasSp && hasMp) {
                 var avg = 0;
                 styled.forEach(function(x) { avg += x.s.score; });
                 var overall = styleFromScore(avg / styled.length);
-                styleHtml += '<div style="font-size:1.05rem; font-weight:900; color:var(--txt); margin-top:2px;">' + overall.label + '</div>'
+                styleHtml = '<div style="font-size:0.66rem; font-weight:bold; letter-spacing:1px; text-transform:uppercase;">Estilo geral</div>'
+                    + '<div style="font-size:1.05rem; font-weight:900; color:var(--txt); margin-top:2px;">' + overall.label + '</div>'
                     + styleScaleHtml(overall)
-                    + '<div style="font-size:0.66rem; margin-top:4px; opacity:0.8;">Média de: ' + styled.map(function(x) { return x.name; }).join(', ') + '</div>';
-            } else {
-                styleHtml += '<div style="margin-top:2px;">Em formação — precisa de 5 partidas no Single Player e 5 no Multiplayer.</div>';
+                    + '<div style="font-size:0.66rem; margin-top:4px; opacity:0.8;">Média de: ' + styled.map(function(x) { return x.name; }).join(', ') + '</div>'
+                    + '<div style="border-top:1px solid var(--glass-border); margin:9px 0 7px;"></div>';
             }
             html += '<div style="margin-top:12px; padding:9px 11px; border-radius:10px; background:var(--btn-s-bg); border:1px solid var(--glass-border); font-size:0.73rem; color:var(--txt-d); line-height:1.45;">'
-                + styleHtml + '<div style="border-top:1px solid var(--glass-border); margin:9px 0 7px;"></div>' + reading + '</div>';
+                + styleHtml + reading + '</div>';
 
             el.innerHTML = html;
         }
@@ -3373,23 +3442,47 @@
                 var dom = createCardDOM(tblCard.c, tblCard.hidden, false, 0, false, 'table');
                 dom.style.position = 'absolute';
                 
-                var posOffset = st.gameFormat === '3v3' ? {
-                    // Trios: 6 cartas na mesa — leque hexagonal bem mais espaçado
-                    // pra dar pra identificar cada carta sem precisar adivinhar.
-                    'left': 'translate(-72px, 40px) rotate(-25deg)',
-                    'right': 'translate(72px, 40px) rotate(25deg)',
-                    'top': 'translate(0px, -72px) rotate(6deg)',
-                    'my': 'translate(0px, 68px) rotate(-8deg)',
-                    'left2': 'translate(-62px, -55px) rotate(-15deg)',
-                    'right2': 'translate(62px, -55px) rotate(15deg)'
-                } : {
-                    'left': 'translate(-55px, -10px) rotate(-20deg)',
-                    'right': 'translate(55px, 10px) rotate(20deg)',
-                    'top': 'translate(10px, -50px) rotate(10deg)',
-                    'my': 'translate(-10px, 50px) rotate(-10deg)',
-                    'left2': 'translate(-45px, -65px) rotate(-15deg)',
-                    'right2': 'translate(45px, -65px) rotate(15deg)'
-                };
+                // Os deslocamentos são em px fixos, e a carta muda de tamanho
+                // por media query (70x105 no desktop, 55x85 em tela pequena ou
+                // com toque). Com o MESMO leque nos dois, na tela grande as
+                // cartas ficavam apertadas e uma cobria o centro da outra —
+                // justo onde ficam valor e naipe (2v2 no desktop era o pior
+                // caso). Daí um conjunto por tamanho de carta, decidido pela
+                // MESMA condição da media query (v0.14.2).
+                var bigCards = window.innerWidth > 768 && !(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+                var posOffset = st.gameFormat === '3v3'
+                    // Trios: 6 cartas na mesa — leque hexagonal bem mais
+                    // espaçado pra dar pra identificar cada carta.
+                    ? (bigCards ? {
+                        'left': 'translate(-84px, 45px) rotate(-25deg)',
+                        'right': 'translate(84px, 45px) rotate(25deg)',
+                        'top': 'translate(0px, -80px) rotate(6deg)',
+                        'my': 'translate(0px, 76px) rotate(-8deg)',
+                        'left2': 'translate(-72px, -62px) rotate(-15deg)',
+                        'right2': 'translate(72px, -62px) rotate(15deg)'
+                    } : {
+                        'left': 'translate(-72px, 40px) rotate(-25deg)',
+                        'right': 'translate(72px, 40px) rotate(25deg)',
+                        'top': 'translate(0px, -72px) rotate(6deg)',
+                        'my': 'translate(0px, 68px) rotate(-8deg)',
+                        'left2': 'translate(-62px, -55px) rotate(-15deg)',
+                        'right2': 'translate(62px, -55px) rotate(15deg)'
+                    })
+                    : (bigCards ? {
+                        'left': 'translate(-85px, -18px) rotate(-20deg)',
+                        'right': 'translate(85px, 18px) rotate(20deg)',
+                        'top': 'translate(14px, -72px) rotate(10deg)',
+                        'my': 'translate(-14px, 72px) rotate(-10deg)',
+                        'left2': 'translate(-70px, -80px) rotate(-15deg)',
+                        'right2': 'translate(70px, -80px) rotate(15deg)'
+                    } : {
+                        'left': 'translate(-55px, -10px) rotate(-20deg)',
+                        'right': 'translate(55px, 10px) rotate(20deg)',
+                        'top': 'translate(10px, -50px) rotate(10deg)',
+                        'my': 'translate(-10px, 50px) rotate(-10deg)',
+                        'left2': 'translate(-45px, -65px) rotate(-15deg)',
+                        'right2': 'translate(45px, -65px) rotate(15deg)'
+                    });
                 var zIndexMap = { 'top': 1, 'left': 2, 'right': 3, 'my': 4, 'left2': 2, 'right2': 3 };
                 
                 dom.style.transform = posOffset[tPos];
@@ -5178,6 +5271,21 @@
         // ═══════════════════════════════════════════════════════════════
         var GP_DEADZONE = 0.5;
         var GP_DIR_INITIAL_DELAY = 350, GP_DIR_REPEAT_MS = 150;
+        // Analógico DIREITO rola a área de dados (v0.14.2): o esquerdo e o
+        // d-pad já movem o foco, então sobrou o direito pra rolagem — é o que
+        // menu de console costuma fazer. Zona morta menor que a do foco (não
+        // precisa de gesto deliberado pra rolar), mas longe de zero: repouso
+        // levemente torto viraria rolagem sozinha.
+        var GP_SCROLL_DEADZONE = 0.25, GP_SCROLL_SPEED = 16;
+        // Rola o miolo marcado com [data-gp-scroll] na tela ativa (hoje só a
+        // de Estatísticas) ou o próprio painel, quando é ele que rola. In-game
+        // não há painel visível, então devolve null e o stick não faz nada.
+        function getGpScrollTarget() {
+            var screen = getActiveMenuScreen();
+            if (!screen) return null;
+            var el = screen.querySelector('[data-gp-scroll]') || screen;
+            return (el.scrollHeight > el.clientHeight + 1) ? el : null;
+        }
 
         function gamepadButtonPressed(gp, idx) {
             var b = gp.buttons[idx];
@@ -5259,6 +5367,12 @@
                 gpPollDirection('down', known && down, now);
                 gpPollDirection('left', known && left, now);
                 gpPollDirection('right', known && right, now);
+
+                var ry = gp.axes.length > 3 ? (gp.axes[3] || 0) : 0;
+                if (known && Math.abs(ry) > GP_SCROLL_DEADZONE) {
+                    var scrollEl = getGpScrollTarget();
+                    if (scrollEl) scrollEl.scrollTop += ry * GP_SCROLL_SPEED;
+                }
             }
             gpRAF = requestAnimationFrame(pollGamepad);
         }
