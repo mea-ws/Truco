@@ -3340,20 +3340,25 @@
                 if (!grpConfirmFold.classList.contains('active') && !isExiting && !isPaused && myPID !== 0) { setBottomGroup('grp-normal'); actionBar.classList.remove('danger-zone'); }
                 if (myPID === 0 && !isExiting && !isPaused) { setBottomGroup(null); actionBar.classList.remove('danger-zone'); }
                 
-                if (st.maoDeFerro) { uiTurn.innerText = isMyTurn ? "SUA VEZ (MÃO DE FERRO)" : ("VEZ " + turnOfLabel(st.turn)); }
+                // Na própria vez, mas com a mesa travada (pausa da vaza, fim da mão,
+                // distribuição, espera depois de uma corrida), o jogo ignora qualquer
+                // jogada — então a barra não diz que é a vez nem oferece botão.
+                var canPlayNow = isMyTurn && !animLock;
+                if (isMyTurn && animLock) { uiTurn.innerText = "AGUARDE..."; }
+                else if (st.maoDeFerro) { uiTurn.innerText = isMyTurn ? "SUA VEZ (MÃO DE FERRO)" : ("VEZ " + turnOfLabel(st.turn)); }
                 else { uiTurn.innerText = isMyTurn ? "SUA VEZ JOGAR" : ("VEZ " + turnOfLabel(st.turn)); }
                 
-                uiTurn.style.color = isMyTurn ? "var(--prim)" : "var(--txt-d)";
+                uiTurn.style.color = canPlayNow ? "var(--prim)" : "var(--txt-d)";
                 
-                if(isMyTurn && st.handVal < 12 && !meX && !st.maoDeFerro && !st.isMaoDeX && st.table.length < getNumPlayers() && getTeam(st.lastTruco) !== getTeam(myPID)) {
+                if(canPlayNow && st.handVal < 12 && !meX && !st.maoDeFerro && !st.isMaoDeX && st.table.length < getNumPlayers() && getTeam(st.lastTruco) !== getTeam(myPID)) {
                     var nextVal = getNextTrucoVal(st.handVal);
                     btnTruco.classList.remove('hidden'); 
                     btnTruco.innerHTML = getTrucoName(nextVal) + '!';
                 } else { btnTruco.classList.add('hidden'); }
                 
-                if(isMyTurn && !st.maoDeFerro) btnFold.classList.remove('hidden'); else btnFold.classList.add('hidden');
+                if(canPlayNow && !st.maoDeFerro) btnFold.classList.remove('hidden'); else btnFold.classList.add('hidden');
 
-                if (isMyTurn && !st.maoDeFerro && !st.isMaoDeX) {
+                if (canPlayNow && !st.maoDeFerro && !st.isMaoDeX) {
                     var canHide = (st.trickResults.length > 0); 
                     if (canHide) {
                         btnHide.removeAttribute('disabled');
@@ -3686,6 +3691,17 @@
             }
         };
 
+        // Depois que alguém corre (do truco ou da Mão de 11) ou vai ao baralho,
+        // a mão seguinte espera o aviso ser lido — e a mesa fica travada até ela
+        // começar. Destravada, uma carta clicada nessa espera entrava na mão que
+        // já tinha acabado, e a vaza dela caía em cima da mão nova. A espera
+        // acompanha o Ritmo, como as notificações (2 s no Padrão).
+        function scheduleNextRoundAfterRun() {
+            animLock = true;
+            updateUI();
+            setTimeout(function(){ startRound(getNextTurn(st.firstPlayerOfRound)); }, Math.round(2000 * paceScale()));
+        }
+
         function startRound(firstPlayer) {
             var deck = []; window.lastAdviceLevel = 0; st.humanAccepted = false; resetHideBtn();
             var activeVals = getActiveVals();
@@ -3751,6 +3767,9 @@
             }
             
             getEl('box-table').innerHTML = '';
+            // A distribuição já é uma pausa (o animDeal trava logo em seguida);
+            // travando antes, a barra não oferece jogada enquanto as cartas voam.
+            animLock = true;
             updateUI(); animDeal(); autoSave(); 
         }
 
@@ -3836,7 +3855,7 @@
                 st.scores[getOppTeam(decidingTeam)] += st.rules === 'mineiro' ? 2 : 1;
                 autoSave();
                 if(st.scores[getOppTeam(decidingTeam)] >= 12) { triggerEndGame(getTeam(myPID) === getOppTeam(decidingTeam)); return; }
-                setTimeout(function(){ startRound(getNextTurn(st.firstPlayerOfRound)); }, 2000);
+                scheduleNextRoundAfterRun();
             }
         }
 
@@ -3894,8 +3913,10 @@
             resetHideBtn();
             renderMesa(null, myPID); 
             
-            if(st.table.length === getNumPlayers()) { 
-                updateUI(); animLock = true; autoSave(); setTimeout(resolveTrick, Math.round(1500 * paceScale())); 
+            if(st.table.length === getNumPlayers()) {
+                // Trava antes do updateUI: com a mesa cheia o jogo ignora jogada
+                // até o resultado da vaza, e a barra não pode seguir dizendo que é a vez.
+                animLock = true; updateUI(); autoSave(); setTimeout(resolveTrick, Math.round(1500 * paceScale())); 
             } else { 
                 st.turn = getNextTurn(st.turn); updateUI(); autoSave(); checkAiTurn();
             }
@@ -3969,6 +3990,8 @@
                 if(roundWinner !== 0) {
                     if (roundWinner === 3) { showMsg("Rodada Empatada! Ninguém pontua.", 'warn', 2000); } 
                     else { st.scores[roundWinner] += st.handVal; }
+                    // O ponto já aparece no placar durante a pausa até a mão seguinte.
+                    updateUI();
                     
                     if(st.scores[1] >= 12 || st.scores[2] >= 12) {
                         var iWon = st.scores[getTeam(refPID)] >= 12; autoSave(); triggerEndGame(iWon);
@@ -4134,10 +4157,10 @@
                 showMsg(trucoActionText(pid, 'CORREU', 'CORRERAM'), isMyTeamResponding ? 'neg' : 'pos');
                 st.trucoState = 'none';
                 var pts = st.handVal;
-                st.scores[getOppTeam(myTeam)] += pts; animLock = false;
+                st.scores[getOppTeam(myTeam)] += pts;
                 autoSave();
-                if(st.scores[getOppTeam(myTeam)] >= 12) { triggerEndGame(getTeam(myPID) === getOppTeam(myTeam)); return; }
-                setTimeout(function(){ startRound(getNextTurn(st.firstPlayerOfRound)); }, 2000);
+                if(st.scores[getOppTeam(myTeam)] >= 12) { animLock = false; triggerEndGame(getTeam(myPID) === getOppTeam(myTeam)); return; }
+                scheduleNextRoundAfterRun();
             }
         }
 
@@ -4294,7 +4317,7 @@
                         showMsg(fMsg, 'pos');
                         st.scores[oppTeam] += st.handVal;
                         if(st.scores[oppTeam] >= 12) { animLock = false; triggerEndGame(getTeam(myPID) === oppTeam); return; }
-                        animLock = false; setTimeout(function(){ startRound(getNextTurn(st.firstPlayerOfRound)); }, 2000); return;
+                        scheduleNextRoundAfterRun(); return;
                     } else if (!st.partnerForcedPlay) {
                         st.trucoState = 'partner_fold'; st.partnerFoldPid = pid;
                         showMsg("Parceiro quer ir ao baralho!", 'warn');
