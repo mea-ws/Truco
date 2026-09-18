@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Truco - v0.15.0</title>
+    <title>Truco - v0.15.0a</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♣</text></svg>">
     <style>
         /* THEME VARIABLES */
@@ -101,6 +101,9 @@
         }
         .panel h1 { font-size: 2.5rem; margin: 0 0 1.5rem; font-weight: 900; letter-spacing: -2px; color: var(--txt); }
         .btn-stack { display: flex; flex-direction: column; gap: 10px; }
+        /* Nas telas de Regras, o botão que começa a partida ganha mais ar que os
+           10px do gap: encostado no último seletor, ele parecia parte dele. */
+        .btn-stack.rules-actions { margin-top: 26px; }
         
         button { padding: 12px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; font-size: 0.95rem; text-transform: uppercase; }
         .btn-p { background: var(--prim); color: white; }
@@ -612,6 +615,8 @@
         /* Confirmar Jogada: carta "armada" pelo 1º toque, esperando o 2º. */
         #box-my .card-wrapper.armed, #box-my .card-wrapper.armed:hover { transform: translateY(-16px); z-index: 16; }
         #box-my .card-wrapper.armed .card { outline: 3px solid var(--prim); outline-offset: 2px; }
+        /* Botão da barra esperando a confirmação: mesmo contorno da carta armada. */
+        #action-bar .action-btn.armed { outline: 3px solid var(--prim); outline-offset: 2px; }
 
         @media (max-width: 768px), (pointer: coarse) {
             /* Item 10 (v0.12.7): o brilho de fundo por dificuldade ficava quase
@@ -788,17 +793,17 @@
             <button class="diff-btn" id="btn-rules-goiano-sp" onclick="setRules('goiano', 'sp')">GOIANO</button>
         </div>
 
+        <div class="section-label">Selecione o Baralho</div>
+        <div class="diff-selector">
+            <button class="diff-btn active" id="btn-deck-sujo-sp" onclick="setPendingDeck('sujo', 'sp')">BARALHO SUJO</button>
+            <button class="diff-btn" id="btn-deck-limpo-sp" onclick="setPendingDeck('limpo', 'sp')">BARALHO LIMPO</button>
+        </div>
+
         <div class="section-label">Formato de Mesa</div>
         <div class="diff-selector">
             <button class="diff-btn active" id="btn-fmt-1v1-sp" onclick="setPendingFormat('1v1', 'sp')">1 X 1</button>
             <button class="diff-btn" id="btn-fmt-2v2-sp" onclick="setPendingFormat('2v2', 'sp')">DUPLAS (2 X 2)</button>
             <button class="diff-btn" id="btn-fmt-3v3-sp" onclick="setPendingFormat('3v3', 'sp')">TRIOS (3 X 3)</button>
-        </div>
-
-        <div class="section-label">Selecione o Baralho</div>
-        <div class="diff-selector">
-            <button class="diff-btn active" id="btn-deck-sujo-sp" onclick="setPendingDeck('sujo', 'sp')">BARALHO SUJO</button>
-            <button class="diff-btn" id="btn-deck-limpo-sp" onclick="setPendingDeck('limpo', 'sp')">BARALHO LIMPO</button>
         </div>
 
         <div class="section-label">Dificuldade da IA:</div>
@@ -811,7 +816,7 @@
         <div class="diff-selector">
             <button class="diff-btn adaptativa" id="btn-diff-5-sp" disabled>ADAPTATIVA</button>
         </div>
-        <div class="btn-stack">
+        <div class="btn-stack rules-actions">
             <button class="btn-p" onclick="startGame('pc', 1)">JOGAR AGORA</button>
             <button class="btn-s danger" data-nav-back onclick="nav('scr-mode', 'scr-sp-choice')">VOLTAR</button>
         </div>
@@ -863,17 +868,17 @@
             <button class="diff-btn" id="btn-rules-goiano-mp" onclick="setRules('goiano', 'mp')">GOIANO</button>
         </div>
 
+        <div class="section-label">Selecione o Baralho</div>
+        <div class="diff-selector">
+            <button class="diff-btn active" id="btn-deck-sujo-mp" onclick="setPendingDeck('sujo', 'mp')">BARALHO SUJO</button>
+            <button class="diff-btn" id="btn-deck-limpo-mp" onclick="setPendingDeck('limpo', 'mp')">BARALHO LIMPO</button>
+        </div>
+
         <div class="section-label">Formato de Mesa</div>
         <div class="diff-selector">
             <button class="diff-btn active" id="btn-fmt-1v1-mp" onclick="setPendingFormat('1v1', 'mp')">1 X 1</button>
             <button class="diff-btn" id="btn-fmt-2v2-mp" onclick="setPendingFormat('2v2', 'mp')">DUPLAS (2 X 2)</button>
             <button class="diff-btn" id="btn-fmt-3v3-mp" onclick="setPendingFormat('3v3', 'mp')">TRIOS (3 X 3)</button>
-        </div>
-
-        <div class="section-label">Selecione o Baralho</div>
-        <div class="diff-selector">
-            <button class="diff-btn active" id="btn-deck-sujo-mp" onclick="setPendingDeck('sujo', 'mp')">BARALHO SUJO</button>
-            <button class="diff-btn" id="btn-deck-limpo-mp" onclick="setPendingDeck('limpo', 'mp')">BARALHO LIMPO</button>
         </div>
 
         <div class="section-label">Jogadores Humanos (o resto é IA)</div>
@@ -893,7 +898,7 @@
             <button class="diff-btn insano" id="btn-diff-4-mp" onclick="setDiff(4, 'mp')">INSANO</button>
         </div>
 
-        <div class="btn-stack" style="margin-top: 15px;">
+        <div class="btn-stack rules-actions">
             <button class="btn-p" id="btn-local-host" style="background: rgba(59, 130, 246, 0.8);" onclick="startLocalRole('host')">CRIAR ARQUIVO</button>
         </div>
 
@@ -1009,17 +1014,17 @@
             <button class="diff-btn" id="btn-rules-goiano-on" onclick="setRules('goiano', 'on')">GOIANO</button>
         </div>
 
+        <div class="section-label">Selecione o Baralho</div>
+        <div class="diff-selector">
+            <button class="diff-btn active" id="btn-deck-sujo-on" onclick="setPendingDeck('sujo', 'on')">BARALHO SUJO</button>
+            <button class="diff-btn" id="btn-deck-limpo-on" onclick="setPendingDeck('limpo', 'on')">BARALHO LIMPO</button>
+        </div>
+
         <div class="section-label">Formato de Mesa</div>
         <div class="diff-selector">
             <button class="diff-btn active" id="btn-fmt-1v1-on" onclick="setPendingFormat('1v1', 'on')">1 X 1</button>
             <button class="diff-btn" id="btn-fmt-2v2-on" onclick="setPendingFormat('2v2', 'on')">DUPLAS (2 X 2)</button>
             <button class="diff-btn" id="btn-fmt-3v3-on" onclick="setPendingFormat('3v3', 'on')">TRIOS (3 X 3)</button>
-        </div>
-
-        <div class="section-label">Selecione o Baralho</div>
-        <div class="diff-selector">
-            <button class="diff-btn active" id="btn-deck-sujo-on" onclick="setPendingDeck('sujo', 'on')">BARALHO SUJO</button>
-            <button class="diff-btn" id="btn-deck-limpo-on" onclick="setPendingDeck('limpo', 'on')">BARALHO LIMPO</button>
         </div>
 
         <div class="section-label">Jogadores Humanos (o resto é IA)</div>
@@ -1039,7 +1044,7 @@
             <button class="diff-btn insano" id="btn-diff-4-on" onclick="setDiff(4, 'on')">INSANO</button>
         </div>
 
-        <div class="btn-stack" style="margin-top:15px;">
+        <div class="btn-stack rules-actions">
             <button class="btn-p" onclick="startMultiplayer('host', 'ws')">CRIAR SALA</button>
         </div>
 
@@ -1156,14 +1161,14 @@
         <div id="action-bar" class="glass-panel legend-container">
 
             <div id="grp-normal" class="legend-group active">
-                <button id="cmd-truco" class="action-btn warn hidden" onclick="requestTruco()">TRUCO!</button>
+                <button id="cmd-truco" class="action-btn warn hidden" data-confirma onclick="requestTruco()">TRUCO!</button>
                 <button id="cmd-fold" class="action-btn danger hidden" onclick="requestFold()">DESCARTAR</button>
             </div>
 
             <div id="grp-respond" class="legend-group">
-                <button class="action-btn primary" onclick="respondTruco(true)">ACEITAR</button>
-                <button id="cmd-raise" class="action-btn warn hidden" onclick="requestTruco()">SEIS!</button>
-                <button class="action-btn danger" onclick="respondTruco(false)">CORRER</button>
+                <button class="action-btn primary" data-confirma onclick="respondTruco(true)">ACEITAR</button>
+                <button id="cmd-raise" class="action-btn warn hidden" data-confirma onclick="requestTruco()">SEIS!</button>
+                <button class="action-btn danger" data-confirma onclick="respondTruco(false)">CORRER</button>
             </div>
 
             <div id="grp-confirm-fold" class="legend-group">
@@ -1174,14 +1179,14 @@
 
             <div id="grp-partner-fold" class="legend-group">
                 <span class="static-info" style="color: var(--warn); font-weight: bold;">Parceiro quer correr!</span>
-                <button class="action-btn danger" onclick="respondPartnerFold(true)">CORRER</button>
-                <button class="action-btn primary" onclick="respondPartnerFold(false)">JOGAR</button>
+                <button class="action-btn danger" data-confirma onclick="respondPartnerFold(true)">CORRER</button>
+                <button class="action-btn primary" data-confirma onclick="respondPartnerFold(false)">JOGAR</button>
             </div>
 
             <div id="grp-mao11" class="legend-group">
                 <span id="txt-mao11-title" class="static-info" style="color: var(--warn); font-weight: bold;">Mão de 11!</span>
-                <button class="action-btn primary" onclick="respondMao11(true)">ACEITAR</button>
-                <button class="action-btn danger" onclick="respondMao11(false)">CORRER</button>
+                <button class="action-btn primary" data-confirma onclick="respondMao11(true)">ACEITAR</button>
+                <button class="action-btn danger" data-confirma onclick="respondMao11(false)">CORRER</button>
             </div>
 
             <div id="grp-pause-menu" class="legend-group">
@@ -1229,7 +1234,7 @@
         var SUITS = ['♦', '♠', '♥', '♣']; 
         var VALS_SUJO = ['4', '5', '6', '7', 'Q', 'J', 'K', 'A', '2', '3'];
         var VALS_LIMPO = ['Q', 'J', 'K', 'A', '2', '3'];
-        var APP_VERSION = '0.15.0';
+        var APP_VERSION = '0.15.0a';
 
         // ═══════════════════════════════════════════════════════════════
         // FORMATO DE `st` (estado sincronizado entre jogadores)
@@ -1457,7 +1462,7 @@
         window.toggleLiteMode = function() { prefs.lite = !prefs.lite; savePrefs(); applyPrefs(); };
         window.toggleReducedMotion = function() { prefs.reducedMotion = !prefs.reducedMotion; savePrefs(); applyPrefs(); };
         window.setPace = function(p) { if (!isPace(p)) return; prefs.pace = p; savePrefs(); applyPrefs(); };
-        window.toggleConfirmPlay = function() { prefs.confirmPlay = !prefs.confirmPlay; if (!prefs.confirmPlay) disarmHandCard(); savePrefs(); applyPrefs(); };
+        window.toggleConfirmPlay = function() { prefs.confirmPlay = !prefs.confirmPlay; if (!prefs.confirmPlay) { disarmHandCard(); disarmActionBtn(); } savePrefs(); applyPrefs(); };
 
         function updateBodyDiffClass() {
             var body = document.body;
@@ -1651,6 +1656,11 @@
         }
 
         function setBottomGroup(id) {
+            // Trocou o grupo de botões: o que estava armado não vale mais. Só na
+            // TROCA — o updateUI chama isto a cada atualização de tela, e desarmar
+            // sempre desfaria a confirmação antes de o jogador chegar nela.
+            var grupoAtual = document.querySelector('#action-bar .legend-group.active');
+            if (!grupoAtual || grupoAtual.id !== id) disarmActionBtn();
             getEl('grp-normal').classList.remove('active');
             getEl('grp-respond').classList.remove('active');
             getEl('grp-confirm-fold').classList.remove('active');
@@ -2018,7 +2028,9 @@
             if (gpFocusedEl.id === 'btn-reset-stats') { window.holdResetPointerDown(); return; }
             if (gpFocusedEl.classList.contains('card')) {
                 var idx = Array.from(getHandCardEls()).indexOf(gpFocusedEl);
-                if (idx !== -1) playCard(idx);
+                // Pelo mesmo caminho do toque: com Confirmar Jogada ligado, o
+                // primeiro Enter/A arma a carta e o segundo joga (v0.15.0a).
+                if (idx !== -1) onHandCardTap(idx);
                 return;
             }
             if (typeof gpFocusedEl.click === 'function') gpFocusedEl.click();
@@ -2741,9 +2753,9 @@
 
         // Confirmar Jogada (v0.14.0): com a opção ligada, o primeiro toque só
         // "arma" a carta (sobe e ganha contorno) e o segundo NA MESMA carta
-        // joga. Vale só pra mouse/toque — no teclado e no gamepad escolher
-        // (foco) e confirmar já são dois passos, por isso confirmMenuFocus()
-        // continua chamando playCard() direto. O roundId guardado junto
+        // joga. Desde a v0.15.0a vale também pro teclado e pro controle (pedido
+        // dele) — confirmMenuFocus() passa pelo mesmo caminho do toque, então o
+        // primeiro Enter/A arma e o segundo joga. O roundId guardado junto
         // impede uma carta armada de "sobreviver" à mão seguinte (convidado
         // em multiplayer nunca passa por startRound()).
         var armedCard = null; // { idx, round }
@@ -2763,13 +2775,48 @@
             armedCard = { idx: idx, round: st.roundId };
             markArmedCard();
         }
-        // Tocar fora da mão desarma. O Esconder não conta: dá pra armar a
+        // Confirmar Jogada nos botões da barra (v0.15.0a): TRUCO!, AUMENTAR,
+        // ACEITAR, CORRER, os pedidos de parceiro e a Mão de 11 também pedem dois
+        // toques. A trava guarda o CONTEXTO junto (rodada, estado do truco, valor
+        // em jogo, de quem é a vez e quantas mãos já saíram): se qualquer coisa
+        // mudou entre o primeiro toque e o segundo, o botão só rearma — uma
+        // confirmação atrasada nunca dispara a ação de outro momento, que é a
+        // armadilha do temporizador atrasado da IA (spec 14) em outra forma.
+        var armedBtn = null; // { el, ctx }
+        function acaoContexto() {
+            return [st.roundId, st.trucoState, st.proposedVal, st.handVal, st.turn, st.trickResults.length].join('|');
+        }
+        function markArmedBtn() {
+            var armados = document.querySelectorAll('#action-bar .action-btn.armed');
+            for (var i = 0; i < armados.length; i++) if (!armedBtn || armados[i] !== armedBtn.el) armados[i].classList.remove('armed');
+            if (armedBtn) armedBtn.el.classList.add('armed');
+        }
+        function disarmActionBtn() {
+            if (!armedBtn) return;
+            armedBtn = null;
+            markArmedBtn();
+        }
+        function isArmedBtn(el) { return !!armedBtn && armedBtn.el === el && armedBtn.ctx === acaoContexto(); }
+        // Ouvinte em captura: o primeiro clique arma e não deixa o onclick rodar; o
+        // segundo passa direto. Cobre mouse, toque, teclado e controle de uma vez,
+        // porque os quatro chegam aqui como clique no botão.
+        getEl('action-bar').addEventListener('click', function(e) {
+            if (!prefs.confirmPlay) return;
+            var el = e.target && e.target.closest ? e.target.closest('[data-confirma]') : null;
+            if (!el || el.disabled) return;
+            if (isArmedBtn(el)) { disarmActionBtn(); return; }
+            e.preventDefault();
+            e.stopPropagation();
+            armedBtn = { el: el, ctx: acaoContexto() };
+            markArmedBtn();
+        }, true);
+
+        // Tocar fora desarma. O Esconder não conta pra carta: dá pra armar a
         // carta, ligar o Esconder e só então confirmar.
         document.addEventListener('pointerdown', function(e) {
-            if (!armedCard) return;
-            var t = e.target;
-            if (t && t.closest && (t.closest('#box-my .card-wrapper') || t.closest('#btn-hide-card'))) return;
-            disarmHandCard();
+            var t = e.target, dentro = t && t.closest ? t : null;
+            if (armedCard && !(dentro && (dentro.closest('#box-my .card-wrapper') || dentro.closest('#btn-hide-card')))) disarmHandCard();
+            if (armedBtn && !(dentro && dentro.closest('[data-confirma]') === armedBtn.el)) disarmActionBtn();
         }, true);
 
         function createCardDOM(c, isBack, isInteractive, idx, isVira, posContext) {
@@ -2793,7 +2840,7 @@
         }
 
         // ====================================================================
-        // IA (v0.15.0) — nova estrutura
+        // IA (v0.15.0a) — nova estrutura
         // ----------------------------------------------------------------------
         // Toda decisão parte de aiView(pid): só o que um jogador naquele lugar
         // veria. As funções do motor nunca olham a mão de outro assento — a
@@ -2964,17 +3011,22 @@
             return Math.pow((beat + tie * 0.5) / poolPw.length, rivals);
         }
 
-        // Força das cartas sem sorteio: chance aproximada de fechar a rodada
-        // ganhando mais mãos do que perde. Serve pra Classificação da Mão e pra
-        // imaginar as cartas de quem pediu truco.
-        function aiHandScore(pws, poolPw, rivals, wins, losses) {
+        // Quantas mãos as cartas ganham sozinhas: a distribuição usada pelas duas
+        // contas de força abaixo. dist[x] = chance de ganharem exatamente x mãos.
+        function aiMaosGanhas(pws, poolPw, rivals) {
             var dist = [1];
             for (var c = 0; c < pws.length; c++) {
                 var q = aiCardValue(pws[c], poolPw, rivals), next = [];
                 for (var k = 0; k <= dist.length; k++) next[k] = (dist[k] || 0) * (1 - q) + (k ? dist[k - 1] * q : 0);
                 dist = next;
             }
-            var s = 0;
+            return dist;
+        }
+
+        // Força no 1x1: chance de fechar a rodada ganhando mais mãos do que perde.
+        // Lá essa é a pergunta certa — não existe parceiro pra cobrir ninguém.
+        function aiHandScore(pws, poolPw, rivals, wins, losses) {
+            var dist = aiMaosGanhas(pws, poolPw, rivals), s = 0;
             for (var x = 0; x < dist.length; x++) {
                 var w = wins + x, l = losses + (pws.length - x);
                 s += dist[x] * (w > l ? 1 : (w === l ? 0.5 : 0));
@@ -2982,11 +3034,123 @@
             return s;
         }
 
+        // ------------------------------------------- força das cartas nos times
+        // Nos times a pergunta do 1x1 é a errada: ninguém faz duas mãos sozinho, e
+        // ela chamava de Ruim 85% das cartas dos Trios (o 3 e o 2 do relato dele).
+        // Aqui a conta pesa GARANTIR A MÃO QUE FALTA — o que o time precisa de você
+        // — contra garantir todas sozinho, e o peso cresce com o número de rivais.
+        // Medido em testes/simulador/calibrar_forca.js contra a chance real do time
+        // (2.000 mãos por região e baralho): acerto na ordem 0,99 nas Duplas e 0,90
+        // nos Trios, onde a conta do 1x1 fazia 0,88 e 0,66.
+        var AI_PESO_TIME = { '2v2': 0.85, '3v3': 0.90 };
+        // `ganhas` são as mãos que o TIME já fez: com uma no bolso, falta só uma.
+        function aiForcaBruta(pws, poolPw, rivais, ganhas, peso) {
+            var dist = aiMaosGanhas(pws, poolPw, rivais);
+            var faltam = Math.max(1, 2 - ganhas), s = 0;
+            for (var x = 0; x < dist.length; x++) s += dist[x] * (x >= faltam ? 1 : (x === faltam - 1 ? peso : 0));
+            return s;
+        }
+
+        // Tabela de conversão: pra cada nível da escala do 1x1 (0,1 a 0,9), o valor
+        // da conta bruta que corresponde a ele naquele formato, região e baralho.
+        // É ela que faz "0,30 é blefe", "0,62 é quem pede truco" e os limites das
+        // classes quererem dizer a mesma coisa em qualquer modo — sem isso, cada
+        // formato tinha uma régua própria e os limites do 1x1 não serviam.
+        // GERADA por testes/simulador/calibrar_forca.js; não editar à mão.
+        var AI_FORCA_NIVEIS = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9];
+        var AI_FORCA_TABELA = {
+            '2v2': {
+                'paulista sujo':  [0.170, 0.346, 0.482, 0.614, 0.697, 0.770, 0.838, 0.889, 0.942],
+                'paulista limpo': [0.202, 0.316, 0.504, 0.591, 0.678, 0.769, 0.835, 0.903, 0.951],
+                'mineiro sujo':   [0.208, 0.342, 0.453, 0.561, 0.681, 0.752, 0.832, 0.897, 0.943],
+                'goiano sujo':    [0.170, 0.358, 0.482, 0.593, 0.691, 0.776, 0.836, 0.891, 0.937],
+                'goiano limpo':   [0.217, 0.383, 0.500, 0.580, 0.701, 0.789, 0.840, 0.903, 0.954]
+            },
+            '3v3': {
+                'paulista sujo':  [0.081, 0.189, 0.334, 0.453, 0.574, 0.673, 0.792, 0.875, 0.937],
+                'paulista limpo': [0.074, 0.180, 0.350, 0.423, 0.554, 0.673, 0.785, 0.900, 0.948],
+                'mineiro sujo':   [0.080, 0.172, 0.276, 0.398, 0.564, 0.674, 0.797, 0.884, 0.936],
+                'goiano sujo':    [0.046, 0.172, 0.280, 0.398, 0.564, 0.644, 0.755, 0.855, 0.920],
+                'goiano limpo':   [0.092, 0.203, 0.297, 0.436, 0.561, 0.706, 0.801, 0.903, 0.954]
+            }
+        };
+        function aiConverteForca(bruta, tabela) {
+            if (bruta <= tabela[0]) return (AI_FORCA_NIVEIS[0] * bruta) / (tabela[0] || 1);
+            for (var i = 1; i < tabela.length; i++) {
+                if (bruta <= tabela[i]) return AI_FORCA_NIVEIS[i - 1] + ((bruta - tabela[i - 1]) / (tabela[i] - tabela[i - 1])) * (AI_FORCA_NIVEIS[i] - AI_FORCA_NIVEIS[i - 1]);
+            }
+            var u = tabela.length - 1;
+            return AI_FORCA_NIVEIS[u] + ((bruta - tabela[u]) / ((1 - tabela[u]) || 1)) * (1 - AI_FORCA_NIVEIS[u]);
+        }
+
+        // A força que o motor usa em todo lugar: no 1x1, a conta de sempre; nos
+        // times, a conta nova já convertida pra mesma escala. `ganhas`/`perdidas`
+        // são as mãos decididas — entram onde a situação importa (prever se o rival
+        // corre), e ficam em zero onde o que interessa é só a força das cartas.
+        function aiForca(pws, poolPw, rivais, n, ganhas, perdidas) {
+            if (n === 2) return aiHandScore(pws, poolPw, rivais, ganhas, perdidas);
+            var porFormato = AI_FORCA_TABELA[st.gameFormat] || AI_FORCA_TABELA['2v2'];
+            // Mineiro não tem baralho limpo, mas estado vindo da rede pode trazer
+            // qualquer combinação: cai no sujo da mesma região em vez de quebrar.
+            var tabela = porFormato[st.rules + ' ' + st.deckMode] || porFormato[st.rules + ' sujo'] || porFormato['paulista sujo'];
+            return aiConverteForca(aiForcaBruta(pws, poolPw, rivais, ganhas, AI_PESO_TIME[st.gameFormat] || 0.85), tabela);
+        }
+
+        // ------------------------------------------- a leitura do time inteiro
+        // Nos times, quem responde a um pedido de truco é o time: cada um lê a
+        // rodada com as próprias cartas, confere com a Classificação que os
+        // outros anunciaram e o grupo decide junto (aiRespostaDoTime). Quem está
+        // do outro lado não vê as cartas deles — só consegue estimar a força de
+        // cada mão sorteada —, então precisa de duas conversões pra prever o que
+        // o grupo vai fazer, as duas medidas em calibrar_grupo.js:
+        //
+        //  1. Força do grupo: a média das mãos, puxada um quarto do caminho até a
+        //     melhor. Todos contam, e a mão mais forte conta um pouco mais —
+        //     é a mistura que mais acerta a leitura do grupo (erro 0,04 contra
+        //     0,08 da melhor mão sozinha, que é o que havia antes).
+        //  2. Força → chance: nos times a régua da força é escala de COMPARAÇÃO
+        //     (o quantil do 1x1), não uma chance, e quem responde decide pela
+        //     chance de vencer a rodada. A reta faz essa passagem; ela é a mesma
+        //     em toda região e baralho, porque a régua já é calibrada em cada um.
+        var AI_GRUPO_MELHOR = 0.25;
+        var AI_CHANCE_GRUPO = { '2v2': [0.111, 0.711], '3v3': [0.248, 0.445] };
+        function aiForcaDoGrupo(forcas) {
+            var soma = 0, melhor = 0;
+            for (var i = 0; i < forcas.length; i++) { soma += forcas[i]; if (forcas[i] > melhor) melhor = forcas[i]; }
+            var media = soma / forcas.length;
+            return media + AI_GRUPO_MELHOR * (melhor - media);
+        }
+        // Chance que um time vê na rodada, estimada pela força das mãos dele.
+        function aiChanceDoGrupo(forcas) {
+            if (!forcas.length) return 0.5;
+            var reta = AI_CHANCE_GRUPO[st.gameFormat] || AI_CHANCE_GRUPO['2v2'];
+            return aiClamp01(reta[0] + reta[1] * aiForcaDoGrupo(forcas));
+        }
+        // Uma mão só, na escala da chance: no 1x1 a força já é a chance da rodada.
+        function aiChanceDaForca(s) { return getNumPlayers() === 2 ? s : aiChanceDoGrupo([s]); }
+
         var AI_CLASSES = ['Ruim', 'OK', 'Excelente'];
-        function aiClassOf(score) { return score >= 0.68 ? 2 : (score >= 0.40 ? 1 : 0); }
+        // Limites das classes, na escala única da força. No 1x1 ninguém anuncia
+        // classificação (é uso interno); nos times os limites são de cada modo:
+        // nas Duplas você carrega metade do time, então "Ruim" precisa ser mais
+        // raro; nos Trios, com dois parceiros, admitir mão ruim custa menos e
+        // "Excelente" precisa valer mais. Proporções medidas: Duplas 39-41% Ruim,
+        // 36-41% OK, 21-23% Excelente; Trios 42-45% / 37-40% / 18-21%.
+        var AI_LIMITES_CLASSE = { '1v1': [0.40, 0.68], '2v2': [0.42, 0.75], '3v3': [0.45, 0.78] };
+        function aiLimitesClasse() { return AI_LIMITES_CLASSE[st.gameFormat] || AI_LIMITES_CLASSE['1v1']; }
+        function aiClassOf(forca) {
+            var lim = aiLimitesClasse();
+            return forca >= lim[1] ? 2 : (forca >= lim[0] ? 1 : 0);
+        }
+        // A Fácil enxerga a CHANCE da rodada em três níveis, não a força das cartas:
+        // essa conta é a mesma em qualquer formato, então os limites são fixos.
+        function aiClasseDaChance(p) { return p >= 0.68 ? 2 : (p >= 0.40 ? 1 : 0); }
+        // A classificação descreve só a força das cartas: as mãos já ganhas ou
+        // perdidas não entram, porque perder a 1ª mão não deixa as cartas ruins — a
+        // rodada é melhor de 3. As cartas que já saíram entram, porque mudam o valor
+        // do que sobrou (com as manilhas fora, um 3 passa a ser carta de ganhar).
         function aiOwnScore(v, poolPw) {
-            var rec = aiRecord(v);
-            return aiHandScore(v.hand.map(getPower), poolPw || aiUnseen(v).map(getPower), aiRivals(v), rec.w, rec.l);
+            return aiForca(v.hand.map(getPower), poolPw || aiUnseen(v).map(getPower), aiRivals(v), v.n, 0, 0);
         }
 
         // ------------------------------------------------------------ placar
@@ -3108,14 +3272,19 @@
             return Array.isArray(valor) ? valor[0] + aiClamp01(x) * (valor[1] - valor[0]) : valor;
         }
         function aiSigmoid(x) { return 1 / (1 + Math.exp(-x)); }
-        // Força a partir da qual o jogador costuma aceitar: quem corre muito só aceita forte.
+        // Chance a partir da qual o outro lado costuma aceitar um pedido: quem corre
+        // muito só paga pra ver com a rodada bem encaminhada. A escala aqui é a
+        // CHANCE de vencer a rodada — no 1x1 a força das cartas já é isso, e nos
+        // times quem faz a passagem é aiChanceDoGrupo, porque a decisão é do time.
         function aiAcceptPoint(m) { return 0.15 + 0.6 * m.corre; }
-        function aiRunChance(s, m, extra) { return 1 - aiSigmoid((s - aiAcceptPoint(m) + (extra || 0)) / 0.08); }
+        function aiRunChance(p, m, extra) { return 1 - aiSigmoid((p - aiAcceptPoint(m) + (extra || 0)) / 0.08); }
         // Quanto uma ação do rival combina com cartas de força s.
         function aiLikelihood(acao, s, m) {
             if (acao === 'pede') return m.blefe + (1 - m.blefe) * aiSigmoid((s - 0.62) / 0.07);
             if (acao === 'aumenta') return m.blefe * 0.6 + (1 - m.blefe * 0.6) * aiSigmoid((s - 0.72) / 0.07);
-            if (acao === 'aceita') return aiSigmoid((s - aiAcceptPoint(m)) / 0.08);
+            // Aceitar é decisão do time, tomada pela chance que ele vê: a força de
+            // uma mão só entra convertida, senão a leitura mediria outra coisa.
+            if (acao === 'aceita') return aiSigmoid((aiChanceDaForca(s) - aiAcceptPoint(m)) / 0.08);
             return 1;
         }
         // O rival que mais importa ler: uma pessoa, se houver no outro time.
@@ -3173,7 +3342,7 @@
                     var pool = buildDeck(st.rules, st.deckMode).filter(function(c) {
                         return !sameCard(st.vira, c) && !mostradas.some(function(x) { return sameCard(x.c, c); });
                     }).map(getPower);
-                    if (aiHandScore(mostradas.map(function(x) { return getPower(x.c); }), pool, Math.floor(getNumPlayers() / 2), 0, 0) < 0.30) r.blefes++;
+                    if (aiForca(mostradas.map(function(x) { return getPower(x.c); }), pool, Math.floor(getNumPlayers() / 2), getNumPlayers(), 0, 0) < 0.30) r.blefes++;
                 } else if (e.a === 'aceita' || e.a === 'corre') {
                     for (var i = idx - 1; i >= 0; i--) {
                         if (log[i].a !== 'pede' && log[i].a !== 'aumenta') continue;
@@ -3295,9 +3464,14 @@
                 }
                 var mao = maos[vez];
                 if (!mao || !mao.length) return 0.5; // acabaram as cartas sem decisão
-                var g2 = 0, p2 = 0;
-                for (var t = 0; t < tr.length; t++) { if (tr[t] > 0) g2++; else if (tr[t] < 0) p2++; }
-                var idx = aiJogaSimples(mao, mesa, vez, n, meuTime, g2, p2);
+                // Cada assento imaginado joga pelo PRÓPRIO time. Passando meuTime aqui,
+                // os rivais imaginados cobriam o parceiro do OUTRO time e entregavam a
+                // mão quando eram os últimos a jogar: a conta via 62-66% de chance onde
+                // o certo é ~50%, e o resultado da mesma rodada mudava conforme quem
+                // fazia a conta (a soma dos dois times dava 1,33 em vez de 1).
+                var timeDaVez = getTeam(vez), g2 = 0, p2 = 0;
+                for (var t = 0; t < tr.length; t++) { if (tr[t] !== 0) { if ((tr[t] > 0) === (timeDaVez === meuTime)) g2++; else p2++; } }
+                var idx = aiJogaSimples(mao, mesa, vez, n, timeDaVez, g2, p2);
                 mesa = mesa.concat([{ p: vez, pw: mao[idx] }]);
                 maos[vez] = mao.slice(0, idx).concat(mao.slice(idx + 1));
                 vez = (vez % n) + 1;
@@ -3306,10 +3480,11 @@
         }
 
         // Quanto uma mão sorteada combina com a Classificação que o parceiro anunciou.
-        // Os limites são os do aiClassOf, com borda macia: 0,41 não é "certamente OK",
-        // está quase na fronteira.
+        // Os limites são os do aiClassOf (por formato), com borda macia: quem está
+        // quase na fronteira não é "certamente OK".
         function aiClassLikelihood(cls, s) {
-            var baixo = aiSigmoid((s - 0.40) / 0.05), alto = aiSigmoid((s - 0.68) / 0.05);
+            var lim = aiLimitesClasse();
+            var baixo = aiSigmoid((s - lim[0]) / 0.05), alto = aiSigmoid((s - lim[1]) / 0.05);
             if (cls === 0) return 1 - baixo;
             if (cls === 2) return alto;
             return baixo * (1 - alto);
@@ -3333,8 +3508,10 @@
         // fizeram, e joga a rodada até o fim em cada um.
         function aiSampleTeam(v, prof, querCartas, pool, poolPw) {
             var meuTime = v.team, n = v.n, rivais = aiRivals(v), rec = aiRecord(v);
-            var m = aiPlayerModel(aiMainOpponent(v), prof);
             var pesoPedido = prof.pesoPedido === undefined ? 1 : prof.pesoPedido;
+            // Um modelo por assento lido: o de cada rival e o do parceiro humano.
+            var modelos = {};
+            function modeloDe(pid) { return modelos[pid] || (modelos[pid] = aiPlayerModel(pid, prof)); }
             var ocultos = [];
             for (var p = 1; p <= n; p++) {
                 if (p === v.pid || v.known[p]) continue;
@@ -3347,8 +3524,15 @@
             var minhas = v.hand.map(getPower), minhasOrd = minhas.slice().sort(aiNum);
             var conhecidas = {};
             for (var q = 1; q <= n; q++) if (v.known[q]) conhecidas[q] = v.known[q].map(getPower).sort(aiNum);
+            // O que os rivais fizeram nesta rodada pesa na leitura (quem pede truco
+            // tende a ter cartas melhores) — e, desde a v0.15.0a, o que um parceiro
+            // HUMANO fez também: é o único jeito de o parceiro-IA te ler, já que você
+            // não anuncia Classificação da Mão. Parceiro bot fica fora: ele anuncia a
+            // classe, e contar o pedido dele em cima disso seria contar duas vezes.
             var eventos = v.log.filter(function(e) {
-                return getTeam(e.p) !== meuTime && (e.a === 'pede' || e.a === 'aumenta' || e.a === 'aceita');
+                if (e.a !== 'pede' && e.a !== 'aumenta' && e.a !== 'aceita') return false;
+                if (e.p === v.pid) return false;
+                return getTeam(e.p) !== meuTime || isHumanSeat(e.p);
             });
 
             var buf = pool.slice(), soma = 0, pesos = 0, somaLivre = 0, lista = [];
@@ -3368,15 +3552,19 @@
                     }
                     maos[ocultos[o]] = mao.sort(aiNum);
                 }
-                var peso = 1, melhorRival = 0;
+                var peso = 1, forcasRivais = [];
                 for (var i2 = 0; i2 < ocultos.length; i2++) {
                     var pid2 = ocultos[i2];
                     if (getTeam(pid2) === meuTime) {
                         if (v.classes[pid2] === undefined) continue;
-                        peso *= aiClassLikelihood(v.classes[pid2], aiHandScore(maos[pid2], poolPw, rivais, rec.w, rec.l));
+                        // A mesma régua de quem anunciou: só a força das cartas.
+                        peso *= aiClassLikelihood(v.classes[pid2], aiForca(maos[pid2], poolPw, rivais, n, 0, 0));
                     } else {
-                        var sr = aiHandScore(maos[pid2], poolPw, rivais, rec.l, rec.w);
-                        if (sr > melhorRival) melhorRival = sr;
+                        // Aqui a situação da rodada entra: é pra prever se eles
+                        // correm de um pedido, e quem já fez uma mão corre menos
+                        // (o que eles ganharam é o que eu perdi, daí rec.l/rec.w).
+                        // Guarda a força de CADA um: a resposta ao truco é do time.
+                        forcasRivais.push(aiForca(maos[pid2], poolPw, rivais, n, rec.l, rec.w));
                     }
                 }
                 for (var e2 = 0; e2 < eventos.length; e2++) {
@@ -3385,11 +3573,11 @@
                         var jog = v.plays[x];
                         if (jog.p === ev.p && jog.seq >= ev.seq && jog.c) naMao.push(getPower(jog.c));
                     }
-                    peso *= Math.pow(aiLikelihood(ev.a, aiHandScore(naMao, poolPw, rivais, 0, 0), m), pesoPedido);
+                    peso *= Math.pow(aiLikelihood(ev.a, aiForca(naMao, poolPw, rivais, n, 0, 0), modeloDe(ev.p)), pesoPedido);
                 }
                 var val = aiSolveTeam(aiCopiaMaos(maos), mesa, tr, v.turn, n, meuTime);
                 soma += peso * val; pesos += peso; somaLivre += val;
-                lista.push({ w: peso, val: val, s: melhorRival });
+                lista.push({ w: peso, val: val, s: aiChanceDoGrupo(forcasRivais) });
                 if (cartas) {
                     for (var c2 = 0; c2 < minhas.length; c2++) {
                         var resto = minhas.slice(0, c2).concat(minhas.slice(c2 + 1)).sort(aiNum);
@@ -3430,8 +3618,10 @@
                 // e ela aceitava truco sem chance nenhuma — o contrário do "corre
                 // muito" dela. A leitura grosseira continua: 80% pra Excelente.
                 var sorteio = v.n === 2 ? aiSample1v1(v, prof, false, pool, poolPw) : aiSampleTeam(v, prof, false, pool, poolPw);
-                var cls = aiClassOf(sorteio.p);
-                est = { p: [0.25, 0.5, 0.8][cls], classe: cls, lista: null, cartas: null };
+                var cls = aiClasseDaChance(sorteio.p);
+                // `pRaw` é a chance antes de virar classe: é ela que se junta com a
+                // dos outros quando o time decide em grupo (aiRespostaDoTime).
+                est = { p: [0.25, 0.5, 0.8][cls], pRaw: sorteio.p, classe: cls, lista: null, cartas: null };
             } else if (v.n === 2) {
                 est = aiSample1v1(v, prof, querCartas, pool, poolPw);
             } else {
@@ -3527,9 +3717,9 @@
             return podeAumentar && aiRandom() < prof.resposta.aumenta[cls][d] ? 'aumenta' : 'aceita';
         }
 
-        function aiDecideResponse(pid) {
-            var v = aiView(pid), prof = aiPerfil(), est = aiEstimate(v, prof, false);
-            if (prof.resposta) return aiRespostaPorClasse(v, prof, est);
+        // A resposta pela conta da chance. Separada de aiDecideResponse porque nos
+        // times ela recebe a leitura do TIME (aiRespostaDoTime), não a de um assento.
+        function aiRespostaDaChance(v, prof, est) {
             var m = aiPlayerModel(v.trucoBy, prof), N = v.proposedVal, h = v.handVal;
             var uRun = aiUtility(v, prof, 0, h), uWin = aiUtility(v, prof, N, 0), uLose = aiUtility(v, prof, 0, N);
             // Folga pra aceitar: some contra quem blefa muito e cresce contra quem
@@ -3548,6 +3738,12 @@
                 if (uRaise > melhor) escolha = 'aumenta';
             }
             return escolha;
+        }
+
+        function aiDecideResponse(pid) {
+            var v = aiView(pid), prof = aiPerfil(), est = aiEstimate(v, prof, false);
+            if (prof.resposta) return aiRespostaPorClasse(v, prof, est);
+            return aiRespostaDaChance(v, prof, est);
         }
 
         function aiShouldFold(v, prof, est) {
@@ -3606,17 +3802,27 @@
             return { idx: melhor.i, hidden: esconder };
         }
 
+        // Topar a Mão de 11 também é decisão do grupo. Aqui o time vê as cartas de
+        // todos (regra do jogo), então cada um lê o mesmo cenário — o que muda é o
+        // erro de leitura de cada assento, e juntar as leituras é o time
+        // conferindo entre si antes de topar a rodada.
         function aiMao11Decision(team) {
-            var seats = getTeamPIDs(team).filter(function(p) { return !isHumanSeat(p); });
-            var v = aiView(seats.length ? seats[0] : getTeamPIDs(team)[0]), prof = aiPerfil();
-            var est = aiEstimate(v, prof, false);
-            if (prof.leitura === 'classe') return est.classe >= 1;
+            var seats = getTeamPIDs(team).filter(function (p) { return !isHumanSeat(p); });
+            if (!seats.length) seats = [getTeamPIDs(team)[0]];
+            var prof = aiPerfil(), v = aiView(seats[0]), soma = 0;
+            seats.forEach(function (p) {
+                var est = aiEstimate(p === seats[0] ? v : aiView(p), prof, false);
+                soma += est.pRaw === undefined ? est.p : est.pRaw;
+            });
+            var p = soma / seats.length;
+            if (prof.leitura === 'classe') return aiClasseDaChance(p) >= 1;
             var valor = st.rules === 'mineiro' ? 4 : 3, corre = st.rules === 'mineiro' ? 2 : 1;
-            return est.p * aiUtility(v, prof, valor, 0) + (1 - est.p) * aiUtility(v, prof, 0, valor) >= aiUtility(v, prof, 0, corre);
+            return p * aiUtility(v, prof, valor, 0) + (1 - p) * aiUtility(v, prof, 0, valor) >= aiUtility(v, prof, 0, corre);
         }
 
-        // Quem responde ao truco pelo time: o bot com a melhor classificação
-        // anunciada (sem espiar a mão de ninguém).
+        // Quem FALA pelo time ao responder um truco: o bot com a melhor
+        // classificação anunciada (sem espiar a mão de ninguém). Quem decide é o
+        // time inteiro — ver aiRespostaDoTime.
         function aiPickResponder(team) {
             var seats = getTeamPIDs(team).filter(function(p) { return !isHumanSeat(p); });
             var melhor = seats[0], melhorCls = -1;
@@ -3625,6 +3831,41 @@
                 if (cls > melhorCls) { melhorCls = cls; melhor = p; }
             });
             return melhor;
+        }
+
+        // Resposta ao truco nos times: a decisão é DO GRUPO, não da melhor mão.
+        // Cada bot lê a rodada com as próprias cartas e com a Classificação que os
+        // outros anunciaram — duas leituras do mesmo número (a chance do time na
+        // rodada), feitas com informações diferentes. O time junta as leituras
+        // numa só e decide com ela; quem fala continua sendo o de melhor
+        // classificação, mas ele não decide sozinho. É o que se faz na mesa:
+        // "a minha tá boa" / "aqui não dá" e o time resolve junto.
+        // Medido: essa leitura do grupo fica em 0,50 quando a rodada de verdade
+        // está 0,50 — a melhor mão sozinha enxergava 0,62 e o time pagava pra ver
+        // o que não dava.
+        function aiRespostaDoTime(team, fala) {
+            var prof = aiPerfil();
+            var seats = getTeamPIDs(team).filter(function (p) { return !isHumanSeat(p); });
+            if (getNumPlayers() === 2 || seats.length < 2) return aiDecideResponse(fala);
+            var minha = null, soma = 0;
+            seats.forEach(function (p) {
+                var v = aiView(p), est = aiEstimate(v, prof, false);
+                soma += est.pRaw === undefined ? est.p : est.pRaw;
+                if (p === fala) minha = { v: v, est: est };
+            });
+            var pGrupo = soma / seats.length;
+            if (!minha) return aiDecideResponse(fala);
+            if (prof.resposta) {
+                minha.est.classe = aiClasseDaChance(pGrupo);
+                return aiRespostaPorClasse(minha.v, prof, minha.est);
+            }
+            // A leitura do grupo entra na conta de quem fala pelo mesmo caminho do
+            // erro de leitura (`vies`), pra que a conta de aumentar — que olha
+            // sorteio por sorteio — ande junto com ela em vez de ficar na leitura
+            // de um assento só.
+            minha.est.vies = (minha.est.vies || 0) + (pGrupo - minha.est.p);
+            minha.est.p = pGrupo;
+            return aiRespostaDaChance(minha.v, prof, minha.est);
         }
 
         // Cada IA anuncia ao time a Classificação da Mão: no começo da rodada e,
@@ -3838,7 +4079,10 @@
                             var allAgree = cats.every(function(c) { return c.cat.key === cats[0].cat.key; });
 
                             if (allAgree) {
-                                indicatorText = "PARCEIROS QUEREM " + cats[0].cat.verb.toUpperCase() + "! (" + cats.map(function(c) { return c.cat.classe.toUpperCase(); }).join(" E ") + ")";
+                                // Sem repetir as classificações aqui ("(RUIM E RUIM)"):
+                                // a frase já diz o que eles querem, e cada parceiro
+                                // conta a mão dele na própria mensagem logo abaixo.
+                                indicatorText = "PARCEIROS QUEREM " + cats[0].cat.verb.toUpperCase() + "!";
                             } else {
                                 indicatorText = cats.map(function(c) {
                                     return partnerLabel(c.pid, c.idx).toUpperCase() + ": " + c.cat.classe.toUpperCase() + ", " + c.cat.label.toUpperCase();
@@ -4659,7 +4903,9 @@
 
 		function aiDecideTruco(pid) {
             var myTeam = getTeam(pid);
-            var escolha = aiDecideResponse(pid);
+            // `pid` é quem FALA; a resposta é do time (aiRespostaDoTime). No 1x1
+            // é a mesma coisa: um assento só.
+            var escolha = aiRespostaDoTime(myTeam, pid);
             var accept = escolha !== 'corre';
 
             if(escolha === 'aumenta') {
