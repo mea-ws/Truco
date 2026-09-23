@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Truco - v0.15.0a</title>
+    <title>Truco - v0.15.1</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♣</text></svg>">
     <style>
         /* THEME VARIABLES */
@@ -67,7 +67,10 @@
             transition: background 0.6s ease, background-color 0.6s ease, border-color 0.6s ease, color 0.6s ease, box-shadow 0.6s ease, transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
         
-        body::before, body::after { content: ''; position: absolute; width: 60vw; height: 60vw; z-index: -1; transition: background 0.8s ease; border-radius: 50%; filter: blur(80px); }
+        /* fixed, e não absolute (v0.15.1): absolute, o brilho passava da tela e
+           deixava a página rolável por programa — o teclado do celular ou o foco
+           do controle rolavam a página, e as janelas ficavam deslocadas pra cima. */
+        body::before, body::after { content: ''; position: fixed; width: 60vw; height: 60vw; z-index: -1; transition: background 0.8s ease; border-radius: 50%; filter: blur(80px); }
         body::before { top: -20%; right: -20%; }
         body::after { bottom: -20%; left: -20%; }
 
@@ -94,11 +97,20 @@
             width: 90%; max-width: 400px; 
             background: var(--glass-bg); 
             backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); 
-            padding: 2rem; border-radius: 20px; 
+            --pad-janela: 2rem; padding: var(--pad-janela); border-radius: 20px; 
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2); 
             text-align: center; border: 1px solid var(--glass-border); 
-            z-index: 50; max-height: 90vh; overflow-y: auto; 
+            z-index: 50; overflow-y: auto;
+            /* Folga até a borda da tela medida pela área VISÍVEL (v0.15.1). Com
+               90vh, no celular a janela passava da área visível (vh conta a barra
+               do navegador como se estivesse escondida) e no computador sobrava só
+               5% de cada lado — e o preenchimento interno ficava FORA do limite,
+               então a janela ainda passava dele: as Estatísticas cheias encostavam
+               na borda (5 a 15 px de folga). A folga cresce com a altura da tela:
+               ~30 px num celular, ~75 px num monitor comum. */
+            max-height: calc(100dvh - 2 * (var(--folga-janela) + var(--pad-janela)) - 2px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
         }
+        :root { --folga-janela: clamp(20px, calc(14dvh - 60px), 110px); --folga-lateral: clamp(14px, 4.5vw, 24px); }
         .panel h1 { font-size: 2.5rem; margin: 0 0 1.5rem; font-weight: 900; letter-spacing: -2px; color: var(--txt); }
         .btn-stack { display: flex; flex-direction: column; gap: 10px; }
         /* Nas telas de Regras, o botão que começa a partida ganha mais ar que os
@@ -186,6 +198,25 @@
             transition: max-height 0.4s cubic-bezier(0.65, 0, 0.35, 1), opacity 0.3s ease, margin-bottom 0.4s;
         }
         #sp-other-modes-wrap.closed { max-height: 0 !important; opacity: 0; margin-bottom: -10px; }
+
+        /* Parceiros Dinâmicos (v0.15.1): só existe em Duplas e Trios, então a
+           seção entra e sai deslizando quando o formato muda — a mesma gaveta do
+           Jogo Rápido. Fechada, os botões ficam fora do alcance do foco (o corte
+           por overflow do ancestral já é considerado em getFocusableList). */
+        #parceiros-gaveta {
+            max-height: 0; overflow: hidden; opacity: 0;
+            transition: max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+        }
+        #parceiros-gaveta.aberta { max-height: 160px; opacity: 1; }
+        .parceiros-dica { font-size: 0.72rem; color: var(--txt-d); margin: -7px 0 15px; line-height: 1.35; }
+        /* Telas baixas (celular): as telas de Regras apertam o espaço entre as
+           seções pro seletor dos Parceiros caber sem rolar, e a explicação do
+           modo só aparece onde cabe (proposta aceita por ele, v0.15.1). */
+        @media (max-height: 760px) {
+            #scr-mode .diff-selector, #scr-local-rules .diff-selector, #scr-online-rules .diff-selector { margin-bottom: 6px; }
+            .btn-stack.rules-actions { margin-top: 14px; }
+            .parceiros-dica { display: none; }
+        }
 
         .game-area { width: 100vw; height: 100dvh; display: flex; flex-direction: column; padding: 10px 10px max(10px, env(safe-area-inset-bottom)); box-sizing: border-box; position: relative; }
         .glass-panel { background: var(--glass-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-radius: 14px; border: 1px solid var(--glass-border); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15); color: var(--txt); }
@@ -437,10 +468,13 @@
         #scr-end.show { opacity: 1; pointer-events: auto; }
         .end-win { background: rgba(16, 185, 129, 0.65); }
         .end-loss { background: rgba(239, 68, 68, 0.65); }
-        .end-content { text-align: center; padding: 40px; background: var(--glass-bg); border-radius: 20px; border: 1px solid var(--glass-border); box-shadow: 0 25px 50px rgba(0,0,0,0.3); transform: translateY(20px); transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .end-content { text-align: center; padding: 40px; background: var(--glass-bg); border-radius: 20px; border: 1px solid var(--glass-border); box-shadow: 0 25px 50px rgba(0,0,0,0.3); transform: translateY(20px); transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            /* Mesmo teto das outras janelas (v0.15.1): num celular deitado a
+               caixa passava da altura da tela. */
+            box-sizing: border-box; overflow-y: auto; max-height: calc(100dvh - 2 * var(--folga-janela) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); }
         #scr-end.show .end-content { transform: translateY(0); }
         .end-content h1 { font-size: 3rem; margin: 0 0 10px; text-shadow: 0 4px 10px rgba(0,0,0,0.3); }
-        .end-content p { font-size: 1.1rem; margin-bottom: 30px; opacity: 0.9; }
+        .end-content p { font-size: 1.1rem; margin-bottom: 30px; opacity: 0.9; text-wrap: balance; }
 
         /* ESCOLHA DE MODO (v0.10.2) */
         .choice-card { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; width: 100%; text-align: left; padding: 14px 16px; border-radius: 12px; background: var(--btn-s-bg); border: 1px solid var(--glass-border); color: var(--txt); cursor: pointer; box-sizing: border-box; }
@@ -484,7 +518,7 @@
         }
         body.reduced-motion .btn-p:hover, body.reduced-motion .btn-s:hover, body.reduced-motion .choice-card:hover, body.reduced-motion .action-btn:hover, body.reduced-motion #btn-hide-card:hover:not(:disabled) { transform: none; }
         body.reduced-motion .legend-group.active, body.reduced-motion .btn-theme-pause.visible { animation: none; }
-        body.reduced-motion .hud-content, body.reduced-motion #quick-game-wrap, body.reduced-motion #sp-other-modes-wrap, body.reduced-motion .hand-top, body.reduced-motion .hand-left2, body.reduced-motion .hand-right2, body.reduced-motion .end-content { transition: none; }
+        body.reduced-motion .hud-content, body.reduced-motion #quick-game-wrap, body.reduced-motion #sp-other-modes-wrap, body.reduced-motion #parceiros-gaveta, body.reduced-motion .hand-top, body.reduced-motion .hand-left2, body.reduced-motion .hand-right2, body.reduced-motion .end-content { transition: none; }
         body.reduced-motion .hud-container.show-msg .hud-content { transform: none; }
         /* A carta vencedora continua destacada, só não cresce nem sobe. */
         body.reduced-motion .card.winner-anim { animation: none !important; border: 3px solid var(--warn); box-shadow: 0 0 20px var(--warn); }
@@ -640,8 +674,18 @@
             .action-btn { padding: 10px 12px; font-size: 0.85rem; border-radius: 10px; }
             .card { width: 55px; height: 85px; } 
             .hand-my { height: 85px; gap: 10px; }
-            .panel { padding: 1.5rem; width: 90%; }
+            /* Folga dos lados (v0.15.1): com 90% de largura o preenchimento
+               ficava por fora e a janela ocupava a tela inteira de lado a lado. */
+            .panel { --pad-janela: 1.25rem; width: calc(100% - 2 * (var(--folga-lateral) + var(--pad-janela)) - 2px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)); }
             .panel h1 { font-size: 2rem; }
+            /* Com a folga dos lados, "JOGO PERSONALIZADO" quebrava em duas linhas
+               nos celulares mais estreitos (e a tela passava a rolar): o título
+               diminui só onde não cabe, até 20 px num celular de 320. */
+            .panel h2 { font-size: clamp(1.25rem, 6.5vw, 1.5rem); }
+            /* Fim de jogo: a caixa crescia até caber "NOVAMENTE" em 3rem e ficava
+               mais larga que a tela (383 px num celular de 360). */
+            .end-content { box-sizing: border-box; padding: clamp(24px, 7.5vw, 40px); max-width: calc(100% - 2 * var(--folga-lateral) - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)); }
+            .end-content h1 { font-size: clamp(1.9rem, 9vw, 2.6rem); }
             .legend-group { gap: 6px; }
             .play-text { display: none; }
             .btn-esc, .btn-theme-pause { padding: 8px 12px; }
@@ -662,6 +706,15 @@
 
             #btn-hide-card { right: 5px; bottom: 5px; padding: 6px 10px; font-size: 0.7rem; }
             #sync-ui { left: 5px; bottom: 5px; padding: 6px 10px; font-size: 0.7rem; }
+        }
+        /* Fim de jogo em tela baixa (celular deitado): título, espaços e botões
+           mais compactos, pra caixa caber com folga em vez de rolar. */
+        @media (max-height: 500px) {
+            .end-content { padding: 20px 32px; }
+            .end-content h1 { font-size: 2rem; margin-bottom: 4px; }
+            .end-content p { margin: 8px 0 16px; }
+            #scr-end .btn-stack { gap: 8px; }
+            #scr-end .btn-stack button { padding: 10px; }
         }
     </style>
 </head>
@@ -726,7 +779,7 @@
         <div class="a11y-option">
             <button class="choice-card" id="btn-confirm-play" onclick="toggleConfirmPlay()">
                 <span class="choice-title" id="btn-confirm-play-title">👆 CONFIRMAR JOGADA: DESATIVADO</span>
-                <span class="choice-desc">No mouse ou no toque, o primeiro toque escolhe a carta e o segundo joga.</span>
+                <span class="choice-desc">Confirme duas vezes uma carta/opção no jogo para validar sua jogada</span>
             </button>
         </div>
         <button class="btn-s danger" data-nav-back style="width: 100%;" onclick="nav('scr-a11y', 'scr-options')">VOLTAR</button>
@@ -801,9 +854,19 @@
 
         <div class="section-label">Formato de Mesa</div>
         <div class="diff-selector">
-            <button class="diff-btn active" id="btn-fmt-1v1-sp" onclick="setPendingFormat('1v1', 'sp')">1 X 1</button>
-            <button class="diff-btn" id="btn-fmt-2v2-sp" onclick="setPendingFormat('2v2', 'sp')">DUPLAS (2 X 2)</button>
-            <button class="diff-btn" id="btn-fmt-3v3-sp" onclick="setPendingFormat('3v3', 'sp')">TRIOS (3 X 3)</button>
+            <button class="diff-btn active" id="btn-fmt-1v1-sp" onclick="setPendingFormat('1v1', 'sp')">1&nbsp;X&nbsp;1</button>
+            <button class="diff-btn" id="btn-fmt-2v2-sp" onclick="setPendingFormat('2v2', 'sp')">DUPLAS (2&nbsp;X&nbsp;2)</button>
+            <button class="diff-btn" id="btn-fmt-3v3-sp" onclick="setPendingFormat('3v3', 'sp')">TRIOS (3&nbsp;X&nbsp;3)</button>
+        </div>
+
+        <div id="parceiros-gaveta">
+            <div class="section-label">Parceiros Dinâmicos</div>
+            <div class="diff-selector">
+                <button class="diff-btn" id="btn-parc-desligado" onclick="setPendingParceiros('desligado')">DESLIGADO</button>
+                <button class="diff-btn active" id="btn-parc-permissivo" onclick="setPendingParceiros('permissivo')">PERMISSIVO</button>
+                <button class="diff-btn" id="btn-parc-ligado" onclick="setPendingParceiros('ligado')">LIGADO</button>
+            </div>
+            <div class="parceiros-dica" id="parceiros-dica">Pedem truco sozinhos; pra blefar ou ir ao baralho, perguntam a você.</div>
         </div>
 
         <div class="section-label">Dificuldade da IA:</div>
@@ -876,9 +939,9 @@
 
         <div class="section-label">Formato de Mesa</div>
         <div class="diff-selector">
-            <button class="diff-btn active" id="btn-fmt-1v1-mp" onclick="setPendingFormat('1v1', 'mp')">1 X 1</button>
-            <button class="diff-btn" id="btn-fmt-2v2-mp" onclick="setPendingFormat('2v2', 'mp')">DUPLAS (2 X 2)</button>
-            <button class="diff-btn" id="btn-fmt-3v3-mp" onclick="setPendingFormat('3v3', 'mp')">TRIOS (3 X 3)</button>
+            <button class="diff-btn active" id="btn-fmt-1v1-mp" onclick="setPendingFormat('1v1', 'mp')">1&nbsp;X&nbsp;1</button>
+            <button class="diff-btn" id="btn-fmt-2v2-mp" onclick="setPendingFormat('2v2', 'mp')">DUPLAS (2&nbsp;X&nbsp;2)</button>
+            <button class="diff-btn" id="btn-fmt-3v3-mp" onclick="setPendingFormat('3v3', 'mp')">TRIOS (3&nbsp;X&nbsp;3)</button>
         </div>
 
         <div class="section-label">Jogadores Humanos (o resto é IA)</div>
@@ -1022,9 +1085,9 @@
 
         <div class="section-label">Formato de Mesa</div>
         <div class="diff-selector">
-            <button class="diff-btn active" id="btn-fmt-1v1-on" onclick="setPendingFormat('1v1', 'on')">1 X 1</button>
-            <button class="diff-btn" id="btn-fmt-2v2-on" onclick="setPendingFormat('2v2', 'on')">DUPLAS (2 X 2)</button>
-            <button class="diff-btn" id="btn-fmt-3v3-on" onclick="setPendingFormat('3v3', 'on')">TRIOS (3 X 3)</button>
+            <button class="diff-btn active" id="btn-fmt-1v1-on" onclick="setPendingFormat('1v1', 'on')">1&nbsp;X&nbsp;1</button>
+            <button class="diff-btn" id="btn-fmt-2v2-on" onclick="setPendingFormat('2v2', 'on')">DUPLAS (2&nbsp;X&nbsp;2)</button>
+            <button class="diff-btn" id="btn-fmt-3v3-on" onclick="setPendingFormat('3v3', 'on')">TRIOS (3&nbsp;X&nbsp;3)</button>
         </div>
 
         <div class="section-label">Jogadores Humanos (o resto é IA)</div>
@@ -1183,6 +1246,12 @@
                 <button class="action-btn primary" data-confirma onclick="respondPartnerFold(false)">JOGAR</button>
             </div>
 
+            <div id="grp-partner-ask" class="legend-group">
+                <span id="txt-partner-ask" class="static-info" style="color: var(--warn); font-weight: bold;">Parceiro quer pedir truco!</span>
+                <button class="action-btn primary" data-confirma onclick="respondPartnerAsk(true)">PODE</button>
+                <button class="action-btn" data-confirma onclick="respondPartnerAsk(false)">NÃO</button>
+            </div>
+
             <div id="grp-mao11" class="legend-group">
                 <span id="txt-mao11-title" class="static-info" style="color: var(--warn); font-weight: bold;">Mão de 11!</span>
                 <button class="action-btn primary" data-confirma onclick="respondMao11(true)">ACEITAR</button>
@@ -1234,7 +1303,7 @@
         var SUITS = ['♦', '♠', '♥', '♣']; 
         var VALS_SUJO = ['4', '5', '6', '7', 'Q', 'J', 'K', 'A', '2', '3'];
         var VALS_LIMPO = ['Q', 'J', 'K', 'A', '2', '3'];
-        var APP_VERSION = '0.15.0a';
+        var APP_VERSION = '0.15.1';
 
         // ═══════════════════════════════════════════════════════════════
         // FORMATO DE `st` (estado sincronizado entre jogadores)
@@ -1297,13 +1366,58 @@
         var pendingFormat = '1v1';
         var pendingRules = 'paulista';
         var pendingHumanCount = 2;
+        // Parceiros Dinâmicos escolhidos no Jogo Personalizado. O Jogo Rápido
+        // sorteia numa variável própria (sorteioParceiros) pra não mexer na
+        // escolha que o jogador deixou marcada na tela de Regras.
+        var pendingParceiros = 'permissivo';
+        var sorteioParceiros = null;
 
-        window.nav = function(f, t) { 
+        window.nav = function(f, t) {
             document.getElementById(f).classList.add('hidden');
             document.getElementById(t).classList.remove('hidden');
+            assumirRegrasDaTela(t);
         };
 
         function getEl(id) { return document.getElementById(id); }
+
+        // Anima a janela entre a altura de antes e a de depois de uma mudança no
+        // conteúdo — o que aparece ou some sem trocar de tela (v0.15.1). Sem isso a
+        // janela pulava de tamanho. O teto de altura da janela continua valendo
+        // (a medida "depois" já vem com ele), e com Movimento Reduzido a mudança
+        // é na hora. No fim o foco é conferido de novo: um botão que apareceu
+        // durante a animação estava cortado e fora do alcance do teclado/controle.
+        function animarJanela(painel, mudar) {
+            if (painel && painel._fimAnimacao) painel._fimAnimacao();
+            if (!painel || prefs.reducedMotion || painel.classList.contains('hidden')) { mudar(); return; }
+            var antes = painel.getBoundingClientRect().height;
+            mudar();
+            var depois = painel.getBoundingClientRect().height;
+            if (Math.abs(depois - antes) < 2) return;
+            // A altura medida inclui preenchimento e borda, e a da janela conta só
+            // o conteúdo: sem descontar, ela saltava ~42 px no começo e no fim.
+            var cs = getComputedStyle(painel);
+            var extra = cs.boxSizing === 'border-box' ? 0 :
+                parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom) + parseFloat(cs.borderTopWidth) + parseFloat(cs.borderBottomWidth);
+            painel.style.transition = 'none';
+            painel.style.height = (antes - extra) + 'px';
+            painel.style.overflow = 'hidden';
+            void painel.offsetHeight;
+            painel.style.transition = 'height 0.35s cubic-bezier(0.16, 1, 0.3, 1)';
+            painel.style.height = (depois - extra) + 'px';
+            var fim = function() {
+                if (painel._fimAnimacao !== fim) return;
+                painel._fimAnimacao = null;
+                painel.style.height = ''; painel.style.overflow = ''; painel.style.transition = '';
+                refreshMenuFocus();
+            };
+            painel._fimAnimacao = fim;
+            painel.addEventListener('transitionend', function ouvir(e) {
+                if (e.target !== painel || e.propertyName !== 'height') return;
+                painel.removeEventListener('transitionend', ouvir);
+                fim();
+            });
+            setTimeout(fim, 500);
+        }
 
         // Aviso de versão diferente entre jogadores em multiplayer (não
         // bloqueia — só o método Online passa por um servidor externo que
@@ -1363,12 +1477,28 @@
             // Mineiro só existe em Baralho Sujo — os outros dois sorteiam entre os dois.
             pendingDeckMode = (pendingQuickRules === 'mineiro') ? 'sujo' : (Math.random() < 0.5 ? 'sujo' : 'limpo');
             aiDifficulty = 1 + Math.floor(Math.random() * 4);
+            sorteioParceiros = PARCEIROS_MODOS[Math.floor(Math.random() * PARCEIROS_MODOS.length)];
             updateBodyDiffClass();
             resetSpChoiceScreen();
             nav('scr-sp-choice', 'scr-game');
             startGame('pc', 1);
             lastStartWasQuick = true; // depois do startGame, que zera a marca
+            avisarSorteio();
         };
+
+        // O que o Jogo Rápido sorteou, na ordem da tela de Regras (o baralho já
+        // aparece no texto verde da mesa). A primeira jogada da IA espera o aviso
+        // acabar: a notificação troca a mensagem atual pela próxima, sem fila, e
+        // um "Seu Parceiro pediu Truco!" logo de cara cortaria o aviso no meio.
+        var avisoAte = 0;
+        function avisarSorteio() {
+            var partes = [{ '1v1': '1 X 1', '2v2': 'DUPLAS', '3v3': 'TRIOS' }[st.gameFormat] || st.gameFormat];
+            if (st.parceiros) partes.push('PARCEIROS: ' + st.parceiros.toUpperCase());
+            partes.push(String(DIFF_LABELS[aiDifficulty] || '').toUpperCase());
+            var dur = 3600;
+            showMsg(partes.join(' | '), 'sys', dur);
+            avisoAte = Date.now() + Math.round(dur * paceScale());
+        }
 
         // "Jogar Novamente" repete as MESMAS regras (playAgain); este sorteia
         // formato, baralho e dificuldade de novo sem passar pelo menu. A região
@@ -1518,7 +1648,44 @@
             getEl('btn-fmt-3v3-' + prefix).classList.remove('active');
             getEl('btn-fmt-' + fmt + '-' + prefix).classList.add('active');
             updateHumanCountAvailability(prefix);
+            // Parceiros Dinâmicos só no Single Player, e só com parceiro na mesa.
+            if (prefix === 'sp') getEl('parceiros-gaveta').classList.toggle('aberta', fmt !== '1v1');
         };
+
+        var PARCEIROS_DICAS = {
+            desligado: 'Perguntam a você antes de pedir truco, blefar ou ir ao baralho.',
+            permissivo: 'Pedem truco sozinhos; pra blefar ou ir ao baralho, perguntam a você.',
+            ligado: 'Pedem e blefam sozinhos; respondem ao truco sozinhos quando confiantes. Na dúvida ou pra ir ao baralho, perguntam a você.'
+        };
+        window.setPendingParceiros = function(modo) {
+            if (!PARCEIROS_DICAS[modo]) return;
+            pendingParceiros = modo;
+            Object.keys(PARCEIROS_DICAS).forEach(function(m) { getEl('btn-parc-' + m).classList.toggle('active', m === modo); });
+            getEl('parceiros-dica').innerText = PARCEIROS_DICAS[modo];
+        };
+
+        // As três telas de Regras (Jogo Personalizado, Local e Online) têm botões
+        // próprios, mas escrevem nas mesmas variáveis: Trios e Difícil marcados no
+        // Jogo Personalizado faziam uma Conexão Direta que mostrava 1 X 1 e Normal
+        // começar em Trios e Difícil. Ao entrar numa delas, vale o que ELA mostra.
+        function assumirRegrasDaTela(tela) {
+            var prefixo = { 'scr-mode': 'sp', 'scr-local-rules': 'mp', 'scr-online-rules': 'on' }[tela];
+            if (!prefixo) return;
+            var marcado = function(grupo, opcoes) {
+                for (var i = 0; i < opcoes.length; i++) {
+                    var b = getEl('btn-' + grupo + '-' + opcoes[i] + '-' + prefixo);
+                    if (b && b.classList.contains('active')) return opcoes[i];
+                }
+                return null;
+            };
+            pendingRules = marcado('rules', ['paulista', 'mineiro', 'goiano']) || pendingRules;
+            pendingDeckMode = marcado('deck', ['sujo', 'limpo']) || pendingDeckMode;
+            pendingFormat = marcado('fmt', ['1v1', '2v2', '3v3']) || pendingFormat;
+            var humanos = marcado('hc', ['2', '3', '4', '5', '6']);
+            if (humanos) pendingHumanCount = Number(humanos);
+            var dificuldade = marcado('diff', ['1', '2', '3', '4']);
+            if (dificuldade) { aiDifficulty = Number(dificuldade); updateBodyDiffClass(); }
+        }
 
         // Seletor de "quantos jogadores humanos" (2 a 6 — já que estando no
         // Multiplayer, sempre tem pelo menos 2). Os botões ficam SEMPRE
@@ -1667,6 +1834,7 @@
             getEl('grp-confirm-exit').classList.remove('active');
             getEl('grp-mao11').classList.remove('active');
             getEl('grp-partner-fold').classList.remove('active');
+            getEl('grp-partner-ask').classList.remove('active');
             getEl('grp-pause-menu').classList.remove('active');
             if (id) getEl(id).classList.add('active');
             // Botão de tema vive FORA do grp-pause-menu (ver comentário no HTML
@@ -1877,6 +2045,7 @@
         var gpLastCardIdx = 0;
 
         function setGpFocus(el) {
+            if (el) desarmarSeOFocoSaiu(el);
             if (gpFocusedEl && gpFocusedEl !== el) {
                 gpFocusedEl.classList.remove('gp-focus');
                 // Segurança extra pro bug do botão de apagar dados: se o foco
@@ -1967,10 +2136,11 @@
             if (getEl('grp-confirm-exit').classList.contains('active')) return [collectVisibleButtons([getEl('grp-confirm-exit')])];
             if (isPaused) return [collectVisibleButtons([getEl('btn-theme-pause'), getEl('grp-pause-menu')])];
             if (getEl('grp-confirm-fold').classList.contains('active')) return [collectVisibleButtons([getEl('grp-confirm-fold')])];
-            if (st.trucoState === 'partner_fold') return [collectVisibleButtons([getEl('grp-partner-fold')])];
+            if (st.trucoState === 'partner_fold') return ehMeuParceiro(st.partnerFoldPid) ? [collectVisibleButtons([getEl('grp-partner-fold')])] : [];
+            if (st.trucoState === 'partner_ask') return st.partnerAsk && ehMeuParceiro(st.partnerAsk.pid) ? [collectVisibleButtons([getEl('grp-partner-ask')])] : [];
             if (st.trucoState === 'mao11' && st.maoDeXTeam === getTeam(myPID) && myPID !== 0) return [collectVisibleButtons([getEl('grp-mao11')])];
             if (st.trucoState === 'pending') {
-                if (getTeam(st.trucoBy) !== getTeam(myPID) && myPID !== 0) return [collectVisibleButtons([getEl('grp-respond')])];
+                if (getTeam(st.trucoBy) !== getTeam(myPID) && myPID !== 0 && !parceirosDecidem(getTeam(myPID))) return [collectVisibleButtons([getEl('grp-respond')])];
                 return [];
             }
             if (st.turn === myPID && st.trucoState === 'none') {
@@ -2325,10 +2495,16 @@
         // começo de cada mão nova (roundId novo), pelo mesmo chokepoint do
         // settleTrucoAsk — cobre os três modos, inclusive o convidado em
         // multiplayer, que nunca executa startRound().
-        var lastCountedRoundId = null;
+        // Guarda TODAS as rodadas já contadas, não só a última (v0.15.1): no
+        // multiplayer, um estado atrasado traz de volta uma rodada anterior
+        // (empate de versão: o estado do anfitrião vale) e a rodada era contada
+        // duas vezes — os dois aparelhos terminavam a partida com contagens
+        // diferentes. O roundId é o relógio de quem começou a rodada, então
+        // nunca se repete entre rodadas.
+        var roundsCounted = {};
         function countHandIfNew() {
-            if (myPID === 0 || matchResultRecorded || !st.roundId || st.roundId === lastCountedRoundId || !isInGameScreen()) return;
-            lastCountedRoundId = st.roundId;
+            if (myPID === 0 || matchResultRecorded || !st.roundId || roundsCounted[st.roundId] || !isInGameScreen()) return;
+            roundsCounted[st.roundId] = true;
             recordTrucoEvent('hands');
         }
 
@@ -2355,7 +2531,9 @@
                 var b = getEl('tab-stats-' + t);
                 if (b) b.classList.toggle('active', t === tab);
             });
-            renderStatsBody();
+            // A janela cresce ou encolhe até o tamanho da aba nova (v0.15.1); o
+            // título, as abas e os botões de baixo ficam parados, só a altura anima.
+            animarJanela(getEl('scr-stats'), renderStatsBody);
             // Trocar de aba volta pro topo: a aba nova pode ser bem mais curta
             // que a anterior, e a rolagem antiga ficava "no vazio".
             var sc = getEl('stats-scroll');
@@ -2591,7 +2769,7 @@
             var humanAsk = info[1].agg.askTotal + info[2].agg.askTotal;
             var reading;
             if (spInfo.matches < 5 || humanMatches < 5) {
-                reading = 'Jogue 5 partidas contra IA e 5 partidas humanos no Multiplayer para mais dados!';
+                reading = 'Jogue 5 partidas nos modos Single Player e 5 partidas contra outros jogadores no Multiplayer para obter mais dados!';
             } else {
                 var spRate = spInfo.agg.askTotal / spInfo.matches;
                 var huRate = humanAsk / humanMatches;
@@ -2771,7 +2949,7 @@
         }
         function onHandCardTap(idx) {
             if (!prefs.confirmPlay || isArmedCard(idx)) { playCard(idx); return; }
-            if (animLock || st.turn !== myPID || (st.trucoState !== 'none' && st.trucoState !== 'pending') || isPaused) return;
+            if (animLock || st.turn !== myPID || st.trucoState !== 'none' || isPaused) return;
             armedCard = { idx: idx, round: st.roundId };
             markArmedCard();
         }
@@ -2797,6 +2975,18 @@
             markArmedBtn();
         }
         function isArmedBtn(el) { return !!armedBtn && armedBtn.el === el && armedBtn.ctx === acaoContexto(); }
+        // Pelo teclado e pelo controle, levar o foco pra outra carta ou outro
+        // botão desfaz a confirmação armada — no toque, tocar fora já fazia isso
+        // (v0.15.1). A carta é comparada pela posição na mão, porque a mesa recria
+        // os elementos a cada redesenho e o foco volta pra mesma carta; o ESCONDER
+        // não conta, igual ao toque.
+        function desarmarSeOFocoSaiu(el) {
+            if (armedCard && el.id !== 'btn-hide-card') {
+                var idx = el.classList && el.classList.contains('card') ? Array.prototype.indexOf.call(getHandCardEls(), el) : -1;
+                if (!isArmedCard(idx)) disarmHandCard();
+            }
+            if (armedBtn && armedBtn.el !== el) disarmActionBtn();
+        }
         // Ouvinte em captura: o primeiro clique arma e não deixa o onclick rodar; o
         // segundo passa direto. Cobre mouse, toque, teclado e controle de uma vez,
         // porque os quatro chegam aqui como clique no botão.
@@ -2840,7 +3030,7 @@
         }
 
         // ====================================================================
-        // IA (v0.15.0a) — nova estrutura
+        // IA (v0.15.1) — nova estrutura
         // ----------------------------------------------------------------------
         // Toda decisão parte de aiView(pid): só o que um jogador naquele lugar
         // veria. As funções do motor nunca olham a mão de outro assento — a
@@ -2896,7 +3086,24 @@
             3: { leitura: 'chance', ruido: 0, pesoPedido: 0.30, placar: true, bonus: { frente: 0.02, atras: 0.015 }, margemAceitar: [0, 0.04], margemAumentar: 0.05, margemPedir: 0, blefe: [0.03, 0.28], reage: 0.4, leitor: 16, segura: [0.05, 0.12], esconde: 0.6, baralho: 0.15, baralhoAte: 0.02, erro: 0, comunica: 'mao' },
             4: { leitura: 'chance', ruido: 0, pesoPedido: 1, placar: true, bonus: { frente: 0.03, atras: 0.02 }, margemAceitar: [0, 0.05], margemAumentar: 0.03, margemPedir: -0.02, blefe: [0.02, 0.50], reage: 0.25, leitor: 6, segura: [0.02, 0.15], esconde: 0.75, baralho: 0.05, baralhoAte: 0.01, erro: 0, comunica: 'mao' }
         };
-        function aiPerfil() { return AI_PERFIS[aiDifficulty] || AI_PERFIS[2]; }
+        // Ajustes que valem só nos times (Duplas e Trios), medidos na v0.15.1 com
+        // o robô Disciplinado nas mesmas sementes (aprovados por ele):
+        // Normal    o blefe dela atrapalhava o próprio time, e o erro de leitura
+        //           pesa mais quando a decisão é de todos: blefe e ruído pela
+        //           metade — robô vence 57,9 → 55,9 (Duplas) e 61,1 → 57,0 (Trios).
+        // Insano    as partidas dos times têm 3 a 5 rodadas, e com leitor 6 ele
+        //           tirava conclusões sobre o jogador com muito pouco pra ver:
+        //           aprende no ritmo da Difícil — 48,3 → 45,0 e 49,1 → 47,3.
+        var AI_AJUSTE_TIMES = {
+            2: { blefe: [0.07, 0.07], ruido: 2 },
+            4: { leitor: 16 }
+        };
+        var AI_PERFIS_TIMES = {};
+        Object.keys(AI_PERFIS).forEach(function(d) { AI_PERFIS_TIMES[d] = Object.assign({}, AI_PERFIS[d], AI_AJUSTE_TIMES[d] || {}); });
+        function aiPerfil() {
+            var tabela = (st.gameFormat === '2v2' || st.gameFormat === '3v3') ? AI_PERFIS_TIMES : AI_PERFIS;
+            return tabela[aiDifficulty] || tabela[2];
+        }
 
         // Sorteio próprio do motor: o teste de honestidade fixa esta função sem
         // mexer no embaralhamento do jogo.
@@ -3685,21 +3892,25 @@
             return aiFaixa(prof.blefe, x) * aiBonusFactor(v, prof) * (AI_TETO_BLEFE[N] || 1);
         }
 
+        // Devolve POR QUE a IA quer pedir — 'valor' (pedido de verdade) ou 'blefe'
+        // (menos de 30% de chance; na Fácil, mão Ruim) — ou false. Os Parceiros
+        // Dinâmicos (v0.15.1) precisam saber qual dos dois pra pedir permissão;
+        // quando e com que sorteios ela pede continua exatamente igual.
         function aiShouldAsk(v, prof, est) {
             var h = v.handVal, N = getNextTrucoVal(h), m = aiPlayerModel(aiMainOpponent(v), prof);
             if (prof.leitura === 'classe') {
-                if (est.classe === 2) return aiRandom() < prof.pedeExcelente;
-                return est.classe === 0 && aiRandom() < aiBluffChance(v, prof, N, m);
+                if (est.classe === 2) return aiRandom() < prof.pedeExcelente ? 'valor' : false;
+                return est.classe === 0 && aiRandom() < aiBluffChance(v, prof, N, m) ? 'blefe' : false;
             }
             // Blefe sem trava: sai só das cartas fracas (menos de 30%), na
             // frequência da dificuldade — nenhuma conta impede o blefe.
-            if (est.p < 0.30) return aiRandom() < aiBluffChance(v, prof, N, m);
+            if (est.p < 0.30) return aiRandom() < aiBluffChance(v, prof, N, m) ? 'blefe' : false;
             // Segurar carta forte só compensa contra quem pede: a faixa sobe com
             // a frequência de pedidos que a IA viu do jogador.
             if (est.p >= 0.85 && aiRandom() < aiFaixa(prof.segura, m.pede / 0.6)) return false;
             var faixa = aiUtility(v, prof, N, 0) - aiUtility(v, prof, 0, N);
             var ganho = (aiEvPedir(v, prof, est, h, N, m) - aiEvJogar(v, prof, est, h)) / (faixa || 1);
-            return ganho > prof.margemPedir - aiPressao(v, prof);
+            return ganho > prof.margemPedir - aiPressao(v, prof) ? 'valor' : false;
         }
 
         // Posição do pedido na escada: 0 truco, 1 seis, 2 nove (dez no Mineiro), 3 doze.
@@ -3740,8 +3951,24 @@
             return escolha;
         }
 
-        function aiDecideResponse(pid) {
-            var v = aiView(pid), prof = aiPerfil(), est = aiEstimate(v, prof, false);
+        // Ligado (v0.15.1, decisão dele): o parceiro responde sozinho só com folga.
+        // Ele não conhece as cartas de quem joga (a pessoa não anuncia
+        // classificação), e aceitando no limite o time perdia de 3 a 11 pontos a
+        // cada 100 partidas; na dúvida, a decisão volta pra pessoa. A folga soma à
+        // de aceitar, em chance de vencer a rodada — e a de aumentar já parte dela.
+        // Medido (0 / 0,05 / 0,10 / 0,20): com 0,10 a Difícil e o Insano ficam no
+        // nível do Permissivo e o parceiro ainda responde sozinho a 35-68% dos
+        // pedidos; 0,20 quase não acrescenta e o deixa bem mais passivo. A Normal
+        // recupera menos: o erro de leitura dela (de propósito) passa por qualquer folga.
+        var AI_FOLGA_LIGADO = 0.10;
+        function aiComFolga(prof, folga) {
+            if (!folga || prof.resposta) return prof; // a Fácil só aceita com mão Excelente
+            var m = prof.margemAceitar || 0;
+            return Object.assign({}, prof, { margemAceitar: Array.isArray(m) ? [m[0] + folga, m[1] + folga] : m + folga });
+        }
+
+        function aiDecideResponse(pid, folga) {
+            var v = aiView(pid), prof = aiComFolga(aiPerfil(), folga), est = aiEstimate(v, prof, false);
             if (prof.resposta) return aiRespostaPorClasse(v, prof, est);
             return aiRespostaDaChance(v, prof, est);
         }
@@ -3843,10 +4070,10 @@
         // Medido: essa leitura do grupo fica em 0,50 quando a rodada de verdade
         // está 0,50 — a melhor mão sozinha enxergava 0,62 e o time pagava pra ver
         // o que não dava.
-        function aiRespostaDoTime(team, fala) {
-            var prof = aiPerfil();
+        function aiRespostaDoTime(team, fala, folga) {
+            var prof = aiComFolga(aiPerfil(), folga);
             var seats = getTeamPIDs(team).filter(function (p) { return !isHumanSeat(p); });
-            if (getNumPlayers() === 2 || seats.length < 2) return aiDecideResponse(fala);
+            if (getNumPlayers() === 2 || seats.length < 2) return aiDecideResponse(fala, folga);
             var minha = null, soma = 0;
             seats.forEach(function (p) {
                 var v = aiView(p), est = aiEstimate(v, prof, false);
@@ -3929,10 +4156,13 @@
                         if(tHand) tHand.querySelectorAll('.card').forEach(c => c.classList.add('active-turn'));
                     }
                 }
-            } else if (st.trucoState === 'partner_fold') {
-                var tHandPartner = getEl('box-' + getUIPos(st.partnerFoldPid || 3));
-                var tHandMe = getEl('box-' + getUIPos(myPID));
+            } else if (st.trucoState === 'partner_fold' || st.trucoState === 'partner_ask') {
+                var quemPede = st.trucoState === 'partner_ask' ? (st.partnerAsk && st.partnerAsk.pid) : st.partnerFoldPid;
+                var tHandPartner = getEl('box-' + getUIPos(quemPede || 3));
                 if(tHandPartner) tHandPartner.querySelectorAll('.card').forEach(c => c.classList.add('active-turn'));
+                // A minha mão só acende se o pedido é pra mim (multiplayer: o rival
+                // vê só a vez do bot).
+                var tHandMe = ehMeuParceiro(quemPede) ? getEl('box-' + getUIPos(myPID)) : null;
                 if(tHandMe) tHandMe.querySelectorAll('.card').forEach(c => c.classList.add('active-turn'));
             } else if (st.trucoState === 'none') {
                 var tHand = getEl('box-' + getUIPos(st.turn));
@@ -3952,7 +4182,8 @@
         function isAwaitingMyAction() {
             if (st.trucoState === 'pending') return getTeam(st.trucoBy) !== getTeam(myPID);
             if (st.trucoState === 'mao11') return st.maoDeXTeam === getTeam(myPID);
-            if (st.trucoState === 'partner_fold') return true;
+            if (st.trucoState === 'partner_fold') return ehMeuParceiro(st.partnerFoldPid);
+            if (st.trucoState === 'partner_ask') return !!st.partnerAsk && ehMeuParceiro(st.partnerAsk.pid);
             return st.turn === myPID;
         }
 
@@ -4047,16 +4278,48 @@
             }
             else if (st.trucoState === 'partner_fold') {
                 btnHide.setAttribute('disabled', 'true'); btnHide.classList.add('disabled');
-                if (!isExiting && !isPaused) { setBottomGroup('grp-partner-fold'); actionBar.classList.add('danger-zone'); }
-                uiTurn.innerText = "DECISÃO DE FUGA!"; uiTurn.style.color = "var(--warn)";
+                if (ehMeuParceiro(st.partnerFoldPid)) {
+                    if (!isExiting && !isPaused) { setBottomGroup('grp-partner-fold'); actionBar.classList.add('danger-zone'); }
+                    uiTurn.innerText = "DECISÃO DE FUGA!"; uiTurn.style.color = "var(--warn)";
+                } else {
+                    // Quem não é do time do bot vê só a mesa esperando (v0.15.1).
+                    if (!isExiting && !isPaused) { setBottomGroup(null); actionBar.classList.remove('danger-zone'); }
+                    uiTurn.innerText = "VEZ " + turnOfLabel(st.turn);
+                    uiTurn.style.color = getTeam(st.turn) === getTeam(refPID) ? "var(--prim)" : "var(--dang)";
+                }
+            }
+            else if (st.trucoState === 'partner_ask') {
+                btnHide.setAttribute('disabled', 'true'); btnHide.classList.add('disabled');
+                var ped = st.partnerAsk;
+                if (ped && ehMeuParceiro(ped.pid)) {
+                    if (!isExiting && !isPaused) { setBottomGroup('grp-partner-ask'); actionBar.classList.add('danger-zone'); }
+                    getEl('txt-partner-ask').innerText = rotuloParceiro(ped.pid) + (ped.tipo === 'blefe' ? ' quer blefar ' : ' quer pedir ') + getTrucoName(ped.valor) + '!';
+                    uiTurn.innerText = "PEDIDO DO PARCEIRO!"; uiTurn.style.color = "var(--warn)";
+                    indicatorText = (rotuloParceiro(ped.pid) + ': mão ' + ped.classe).toUpperCase();
+                } else {
+                    // Quem não é do time (o rival humano no multiplayer, ou quem só
+                    // assiste) vê a mesa esperando, como numa vez normal da IA.
+                    if (!isExiting && !isPaused) { setBottomGroup(null); actionBar.classList.remove('danger-zone'); }
+                    uiTurn.innerText = "VEZ " + turnOfLabel(st.turn);
+                    uiTurn.style.color = getTeam(st.turn) === getTeam(refPID) ? "var(--prim)" : "var(--dang)";
+                }
             }
             else if (st.trucoState === 'pending') {
                 btnHide.setAttribute('disabled', 'true'); btnHide.classList.add('disabled');
-                if (getTeam(st.trucoBy) !== getTeam(myPID) && myPID !== 0) {
+                if (getTeam(st.trucoBy) !== getTeam(myPID) && myPID !== 0 && parceirosDecidem(getTeam(myPID))) {
+                    // Ligado: os parceiros decidem primeiro; os botões só aparecem
+                    // se eles passarem a decisão pra você.
+                    if(!isExiting && !isPaused) { setBottomGroup(null); actionBar.classList.remove('danger-zone'); }
+                    var botsLigado = getPartnerPIDs().filter(function(p) { return !isHumanSeat(p); }).length;
+                    uiTurn.innerText = botsLigado > 1 ? "PARCEIROS DECIDINDO..." : "PARCEIRO DECIDINDO..."; uiTurn.style.color = "var(--warn)";
+                } else if (getTeam(st.trucoBy) !== getTeam(myPID) && myPID !== 0) {
                     if(!isExiting && !isPaused) { setBottomGroup('grp-respond'); actionBar.classList.add('danger-zone'); }
                     uiTurn.innerText = trucoActionText(st.trucoBy, 'pediu', 'pediram', st.proposedVal).toUpperCase(); uiTurn.style.color = "var(--warn)";
-                    
-                    if(st.gameFormat !== '1v1') {
+
+                    if (st.gameFormat !== '1v1' && st.parceiros === 'ligado' && st.parceirosPassaram === chaveDoPedido()) {
+                        // Os parceiros passaram a decisão: a fala deles substitui o conselho.
+                        indicatorText = textoParceirosPassaram(getTeam(myPID)).toUpperCase();
+                    } else if(st.gameFormat !== '1v1') {
                         // Conselho só de parceiro-IA, sempre com a Classificação da
                         // Mão verdadeira dele (o blefe é só pros rivais).
                         var partners = getPartnerPIDs().filter(function(p) { return !isHumanSeat(p); });
@@ -4459,6 +4722,14 @@
             }
             
             if (myPID === 1) { st.deckMode = pendingDeckMode; st.aiDifficulty = aiDifficulty; st.appVersion = APP_VERSION; }
+            // Parceiros Dinâmicos: escolha do Jogo Personalizado ou sorteio do Jogo
+            // Rápido; no 1x1 não há parceiro.
+            // No multiplayer não há seletor: vale o Desligado (decisão dele), e quem
+            // define é o anfitrião — o convidado recebe junto com o resto do estado.
+            if (modeStr === 'pc') st.parceiros = st.gameFormat === '1v1' ? null : (sorteioParceiros || pendingParceiros);
+            else if (myPID === 1) st.parceiros = st.gameFormat === '1v1' ? null : 'desligado';
+            sorteioParceiros = null;
+            avisoAte = 0;
             
             var fromScreen = (modeStr === 'pc') ? 'scr-mode' : (modeStr === 'json' ? (playerID === 1 ? 'scr-local-rules' : 'scr-local-role-choice') : 'scr-webrtc-connect');
             nav(fromScreen, 'scr-game');
@@ -4483,6 +4754,8 @@
             window.lastAdviceLevel = 0; st.humanAccepted = false; resetHideBtn();
             var activeVals = getActiveVals();
             st.partnerForcedPlay = false;
+            // Parceiros Dinâmicos: as respostas dadas valem só pra rodada.
+            st.partnerAsk = null; st.parceirosNegou = {}; st.parceiroSegura = 0; st.parceirosPassaram = '';
             st.lastFoldBy = st.nextRoundFoldBy || 0; st.nextRoundFoldBy = 0;
             aiLearnFromRound();
             st.aiLog = []; st.roundPlays = []; st.aiRuido = {};
@@ -4649,6 +4922,9 @@
 
         window.respondPartnerFold = function(accept) {
             if(animLock || st.trucoState !== 'partner_fold') return;
+            // Só quem é do time do bot responde (no multiplayer o rival também
+            // recebe o estado, mas não o pedido).
+            if (!ehMeuParceiro(st.partnerFoldPid)) return;
             if(accept) {
                 showMsg("Vocês correram!", 'neg');
                 st.trucoState = 'none';
@@ -4670,7 +4946,13 @@
         };
 
 		window.playCard = function(idx) {
-            if(animLock || st.turn !== myPID || (st.trucoState !== 'none' && st.trucoState !== 'pending') || isPaused) return;
+            // Com truco pendente, primeiro se responde, depois se joga (v0.15.1,
+            // decisão dele) — como a IA, o teclado e o controle já faziam. Pelo toque
+            // e pelo mouse a carta passava: quem pediu jogava antes da resposta, e no
+            // multiplayer essa jogada disputava com o aceite do outro aparelho, que
+            // sumia no empate de versão (o pedido reaparecia e a rodada chegava a
+            // voltar).
+            if(animLock || st.turn !== myPID || st.trucoState !== 'none' || isPaused) return;
             
             armedCard = null;
             var isHid = window.isHiding;
@@ -4874,21 +5156,110 @@
                 setTimeout(function() {
                     if (st.roundId !== rodadaAgendada || st.turn !== t || st.trucoState !== 'none') return;
                     aiPlay(t);
-                }, currentPace().ai);
+                }, Math.max(currentPace().ai, avisoAte - Date.now()));
             }
+        }
+
+        // ─── Parceiros Dinâmicos (v0.15.1) ───────────────────────────────
+        // Quanta liberdade o bot tem: 'desligado' pede permissão pra pedir truco,
+        // blefar e ir ao baralho; 'permissivo' pede livre com mão boa e pergunta
+        // pra blefar e ir ao baralho; 'ligado' pede e blefa livre e responde ao
+        // truco do rival aceitando ou aumentando. Vale pro bot de um time que tem
+        // humano — o de um time sem humano é rival de todos e joga como sempre.
+        // null = sem o sistema (1x1).
+        var PARCEIROS_MODOS = ['desligado', 'permissivo', 'ligado'];
+        function modoDoParceiro(pid) {
+            if (!st.parceiros || isHumanSeat(pid)) return null;
+            return getTeamPIDs(getTeam(pid)).some(isHumanSeat) ? st.parceiros : null;
+        }
+        function precisaPermissao(modo, tipo) {
+            if (modo === 'desligado') return true;
+            if (modo === 'permissivo') return tipo === 'blefe';
+            return false;
+        }
+        // A classificação que o parceiro conta ao pedir: a mesma do conselho.
+        function classeDoParceiro(pid) { return AI_CLASSES[aiClassOf(aiOwnScore(aiView(pid)))]; }
+        function ehMeuParceiro(pid) { return myPID !== 0 && pid !== myPID && getTeam(pid) === getTeam(myPID); }
+        function rotuloParceiro(pid) {
+            var bots = getPartnerPIDs().filter(function(p) { return !isHumanSeat(p); });
+            return bots.length > 1 ? partnerLabel(pid, bots.indexOf(pid)) : 'Parceiro';
+        }
+        function textoPedidoParceiro(ped) {
+            var nome = getTrucoName(ped.valor).toLowerCase();
+            return rotuloParceiro(ped.pid) + ' quer ' + (ped.tipo === 'blefe' ? 'blefar o ' + nome : 'pedir ' + nome) + ' — mão ' + ped.classe;
+        }
+
+        // O bot pede truco (ou o próximo valor) na vez dele. O parceiro conta a
+        // classificação da mão junto (plano da v0.15.0) — só pra quem é do time
+        // dele; o rival vê só o pedido, como sempre.
+        function aiPedeTruco(pid) {
+            st.proposedVal = getNextTrucoVal(st.handVal);
+            aiLogAction(pid, 'pede', st.proposedVal);
+            st.trucoBy = pid; st.lastTruco = pid; st.trucoState = 'pending';
+            var msg = trucoActionText(pid, 'pediu', 'pediram', st.proposedVal);
+            if (modoDoParceiro(pid) && ehMeuParceiro(pid)) msg += ' — mão ' + classeDoParceiro(pid);
+            showMsg(msg, 'neu');
+            window.lastAdviceLevel = 0; animLock = false;
+            updateUI(); updateTurnGlow(); autoSave(); checkAiTrucoDecision();
+        }
+
+        // A mesa espera a resposta, do mesmo jeito que no "Parceiro quer correr!".
+        // Nada disso entra no registro que os rivais leem (aiLogAction): se o
+        // truco sair, eles veem o pedido; a permissão é conversa do seu time.
+        function pedirPermissao(pid, tipo, valor) {
+            st.trucoState = 'partner_ask';
+            st.partnerAsk = { pid: pid, tipo: tipo, valor: valor, classe: classeDoParceiro(pid) };
+            if (ehMeuParceiro(pid)) showMsg(textoPedidoParceiro(st.partnerAsk), 'neu', 2600);
+            animLock = false; updateUI(); updateTurnGlow(); autoSave();
+        }
+
+        window.respondPartnerAsk = function(pode) {
+            if (animLock || st.trucoState !== 'partner_ask' || !st.partnerAsk) return;
+            if (!ehMeuParceiro(st.partnerAsk.pid)) return;
+            var ped = st.partnerAsk;
+            st.partnerAsk = null; st.trucoState = 'none';
+            if (pode) { aiPedeTruco(ped.pid); return; }
+            // NÃO vale pro time na rodada inteira, pra esse tipo de pedido e esse
+            // valor; e o parceiro joga a carta sem perguntar outra coisa nesta vez
+            // (a conta dele é por sorteio: perto dos 30%, uma segunda olhada podia
+            // virar "pedido de verdade" e perguntar de novo).
+            if (!st.parceirosNegou) st.parceirosNegou = {};
+            st.parceirosNegou[ped.tipo + ':' + ped.valor] = true;
+            st.parceiroSegura = ped.pid;
+            showMsg("Você mandou não pedir!", 'pos', 1500);
+            updateUI(); autoSave(); checkAiTurn();
+        };
+
+        // Ligado: quando o rival pede, os parceiros decidem primeiro, em grupo.
+        // A chave identifica o pedido que eles passaram pra você, pra não
+        // decidirem de novo sobre ele.
+        function chaveDoPedido() { return [st.roundId, st.trucoBy, st.proposedVal].join('|'); }
+        function parceirosDecidem(team) {
+            if (st.parceiros !== 'ligado' || st.trucoState !== 'pending') return false;
+            var bots = getTeamPIDs(team).filter(function(p) { return !isHumanSeat(p); });
+            return bots.length > 0 && bots.some(function(p) { return modoDoParceiro(p) === 'ligado'; }) && st.parceirosPassaram !== chaveDoPedido();
+        }
+        function textoParceirosPassaram(team) {
+            var bots = getTeamPIDs(team).filter(function(p) { return !isHumanSeat(p); });
+            var classes = bots.map(classeDoParceiro);
+            if (bots.length > 1) return 'Seus Parceiros deixaram com você — mãos ' + classes.join(' e ');
+            return 'Seu Parceiro deixou com você — mão ' + classes[0];
         }
 
         function checkAiTrucoDecision() {
             if(st.trucoState !== 'pending') return;
             var askingTeam = getTeam(st.trucoBy); var answeringTeam = getOppTeam(askingTeam);
             var aiNeedsToAnswer = false; var aiPid = 0;
-            
+
             if (gameMode === 'pc') {
                 if (answeringTeam === 2) {
                     aiNeedsToAnswer = true;
                     aiPid = aiPickResponder(2);
+                } else if (parceirosDecidem(answeringTeam)) {
+                    aiNeedsToAnswer = true;
+                    aiPid = aiPickResponder(answeringTeam);
                 }
-            } else { 
+            } else {
                 // Multiplayer com cobertura humana parcial: se NINGUÉM humano
                 // está no time que precisa responder, quem coordena a IA decide
                 // por eles — senão o pedido de truco ficaria pendente pra sempre.
@@ -4905,15 +5276,30 @@
             var myTeam = getTeam(pid);
             // `pid` é quem FALA; a resposta é do time (aiRespostaDoTime). No 1x1
             // é a mesma coisa: um assento só.
-            var escolha = aiRespostaDoTime(myTeam, pid);
+            var ligado = modoDoParceiro(pid) === 'ligado';
+            var escolha = aiRespostaDoTime(myTeam, pid, ligado ? AI_FOLGA_LIGADO : 0);
             var accept = escolha !== 'corre';
+
+            // Ligado: o parceiro aceita ou aumenta sozinho quando tem folga (acima);
+            // sem folga, ou querendo correr, a decisão é sua. A fala não traz
+            // sugestão: ela sai da classificação, e a decisão do grupo, da conta
+            // inteira — "sugiro aceitar" logo depois de não aceitar seria contradição.
+            if (!accept && ligado) {
+                st.parceirosPassaram = chaveDoPedido();
+                if (ehMeuParceiro(pid)) showMsg(textoParceirosPassaram(myTeam), 'neu', 2600);
+                window.lastAdviceLevel = st.proposedVal; // a fala acima substitui o conselho
+                animLock = false; updateUI(); updateTurnGlow(); autoSave(); return;
+            }
 
             if(escolha === 'aumenta') {
                 st.handVal = st.proposedVal; // aumentar aceita o pedido (ver requestTruco)
                 st.proposedVal = getNextTrucoVal(st.proposedVal);
                 aiLogAction(pid, 'aumenta', st.proposedVal);
                 st.trucoBy = pid; st.lastTruco = pid;
-                showMsg(trucoActionText(pid, 'pediu', 'pediram', st.proposedVal), 'neu');
+                var msgAumento = trucoActionText(pid, 'pediu', 'pediram', st.proposedVal);
+                // Parceiro do Ligado aumentando sozinho: conta a mão, como ao pedir.
+                if (modoDoParceiro(pid) && ehMeuParceiro(pid)) msgAumento += ' — mão ' + classeDoParceiro(pid);
+                showMsg(msgAumento, 'neu');
                 animLock = false; updateUI(); updateTurnGlow(); autoSave(); checkAiTrucoDecision(); return;
             }
             // Cor de aceitar/correr depende de QUEM está respondendo: se for
@@ -4944,8 +5330,8 @@
         function aiPlay(pid) {
             // Fora de hora (temporizador atrasado): não faz nada e NÃO destrava —
             // quem mudou o estado é dono da trava.
-            if(st.turn !== pid || (st.trucoState !== 'none' && st.trucoState !== 'mao11' && st.trucoState !== 'partner_fold')) return;
-            if(st.trucoState === 'mao11' || st.trucoState === 'partner_fold') { animLock = false; return; }
+            if(st.turn !== pid || (st.trucoState !== 'none' && st.trucoState !== 'mao11' && st.trucoState !== 'partner_fold' && st.trucoState !== 'partner_ask')) return;
+            if(st.trucoState === 'mao11' || st.trucoState === 'partner_fold' || st.trucoState === 'partner_ask') { animLock = false; return; }
 
             var myTeam  = getTeam(pid);
             var oppTeam = getOppTeam(myTeam);
@@ -4964,13 +5350,13 @@
             // em qualquer vez dela, inclusive logo de cara.
 			if(!myX && !maoDeFerro && !st.isMaoDeX && st.handVal < 12 && (st.lastTruco === 0 || getTeam(st.lastTruco) !== myTeam)) {
                 var canRaise = isRival ? true : !st.humanAccepted;
-                if(canRaise && !st.aiJustAccepted && aiShouldAsk(view, prof, est)) {
-                    st.proposedVal = getNextTrucoVal(st.handVal);
-                    aiLogAction(pid, 'pede', st.proposedVal);
-                    st.trucoBy = pid; st.lastTruco = pid; st.trucoState = 'pending';
-                    showMsg(trucoActionText(pid, 'pediu', 'pediram', st.proposedVal), 'neu');
-                    window.lastAdviceLevel = 0; animLock = false;
-                    updateUI(); updateTurnGlow(); autoSave(); checkAiTrucoDecision(); return;
+                // Parceiro que ouviu NÃO nesta vez joga a carta sem perguntar de novo.
+                var tipoPedido = (canRaise && !st.aiJustAccepted && st.parceiroSegura !== pid) ? aiShouldAsk(view, prof, est) : false;
+                if (tipoPedido) {
+                    var valorPedido = getNextTrucoVal(st.handVal);
+                    if (!precisaPermissao(modoDoParceiro(pid), tipoPedido)) { aiPedeTruco(pid); return; }
+                    // Um NÃO dado nesta rodada, a este parceiro ou a outro, vale pro time.
+                    if (!(st.parceirosNegou || {})[tipoPedido + ':' + valorPedido]) { pedirPermissao(pid, tipoPedido, valorPedido); return; }
                 }
             }
 
@@ -4984,9 +5370,12 @@
 
             // Ir ao baralho nunca ganha ponto; só acontece sem chance (no Fácil,
             // com cartas Ruins). Nos times, só com o time todo anunciando Ruim.
+            // Quem tem humano no time pergunta a ele antes (v0.15.1: decidido pelo
+            // time do bot — olhando só pro anfitrião, o parceiro-IA do convidado ia
+            // ao baralho sem perguntar).
             if(st.table.length === 0 && !myX && !st.isMaoDeX && !maoDeFerro) {
                 if(aiShouldFold(view, prof, est)) {
-                    if (isRival) {
+                    if (!getTeamPIDs(myTeam).some(isHumanSeat)) {
                         var fMsg = st.gameFormat === '1v1' ? "O Rival foi ao baralho!" : "Os Rivais foram ao baralho!";
                         showMsg(fMsg, 'pos');
                         st.scores[oppTeam] += st.handVal;
@@ -4994,14 +5383,17 @@
                         scheduleNextRoundAfterRun(); return;
                     } else if (!st.partnerForcedPlay) {
                         st.trucoState = 'partner_fold'; st.partnerFoldPid = pid;
-                        showMsg("Parceiro quer ir ao baralho!", 'warn');
-                        animLock = false; updateUI(); return;
+                        if (ehMeuParceiro(pid)) showMsg("Parceiro quer ir ao baralho!", 'warn');
+                        // Sincroniza: no multiplayer o colega de time pode estar em
+                        // outro aparelho (antes o pedido ficava só aqui).
+                        animLock = false; updateUI(); updateTurnGlow(); autoSave(); return;
                     }
                 }
             }
 
 			var c = st.hands[pid].splice(playedIdx, 1)[0];
             st.aiJustAccepted = false; // Limpa a trava pois ela finalmente jogou uma carta
+            if (st.parceiroSegura === pid) st.parceiroSegura = 0;
             st.table.push({c: c, p: pid, hidden: hideThisCard});
             renderMesa(null, pid);
 
@@ -5092,10 +5484,11 @@
                 } else if (data.type === 'log_history') {
                     data.logs.forEach(msg => addLobbyLog(msg));
                 } else if (data.type === 'joined') {
-                    myPID = data.pid; 
+                    myPID = data.pid;
                     st.deckMode = pendingDeckMode;
                     st.gameFormat = pendingFormat;
                     st.rules = pendingRules;
+                    st.parceiros = st.gameFormat === '1v1' ? null : 'desligado';
                 } else if (data.type === 'players_info') {
                     window.wsPlayers = data.players;
                     st.humanSeats = Object.keys(data.players).map(Number);
@@ -5297,9 +5690,10 @@
         window.confirmInviteMoreAnswer = async function() {
             var answerCodeStr = getEl('invite-more-answer-in').value.trim();
             if (!answerCodeStr) { showMsg("Cole a resposta do novo jogador antes de confirmar.", 'sys'); return; }
-            var box = getEl('invite-more-status-box');
-            box.classList.remove('hidden');
-            getEl('invite-more-status-text').innerText = '🔄 Conectando...';
+            animarJanela(getEl('scr-webrtc-invite-more'), function() {
+                getEl('invite-more-status-box').classList.remove('hidden');
+                getEl('invite-more-status-text').innerText = '🔄 Conectando...';
+            });
             await webrtcConfirmExtraGuest(window._inviteMoreTargetPid, answerCodeStr);
             setTimeout(function() {
                 nav('scr-webrtc-invite-more', 'scr-game');
@@ -5463,7 +5857,7 @@
                 var state = pc.iceConnectionState;
                 if (state === 'failed') {
                     if (dc && dc.readyState === 'open') { handleWebrtcDisconnect(); }
-                    else { webrtcSetStatus('❌ Falha na conexão. Toque em Tentar Novamente.', 'error'); getEl('webrtc-btn-retry').classList.remove('hidden'); }
+                    else { webrtcSetStatus('❌ Falha na conexão. Toque em Tentar Novamente.', 'error'); mostrarTentarNovamente(); }
                 } else if (state === 'disconnected') {
                     if (dc && dc.readyState === 'open') { handleWebrtcDisconnect(); }
                 }
@@ -5480,7 +5874,7 @@
                 webrtcSetStatus('✅ Código pronto! Copie e envie pro outro jogador.', 'success');
             } else if (!isHostWebRTC && pc.localDescription.type === 'answer') {
                 getEl('webrtc-data-guest-output').value = codeStr;
-                getEl('webrtc-guest-response-area').classList.remove('hidden');
+                animarJanela(getEl('scr-webrtc-connect'), function() { getEl('webrtc-guest-response-area').classList.remove('hidden'); });
                 webrtcSetStatus('✅ Resposta pronta! Copie e envie de volta pro Host.', 'success');
             }
         }
@@ -5537,8 +5931,8 @@
                 window._webrtcRemoteNick = (parsed.nick || 'Guest').substring(0, 15);
                 if (parsed.appVersion !== APP_VERSION) showVersionMismatchWarning(parsed.appVersion);
                 webrtcSetStatus('🔄 Conectando...', 'connecting');
-                pc.setRemoteDescription(answer).catch(function() { webrtcSetStatus('❌ Código de resposta inválido.', 'error'); getEl('webrtc-btn-retry').classList.remove('hidden'); });
-            } catch(e) { webrtcSetStatus('❌ Código mal formatado. Confira e cole novamente.', 'error'); getEl('webrtc-btn-retry').classList.remove('hidden'); }
+                pc.setRemoteDescription(answer).catch(function() { webrtcSetStatus('❌ Código de resposta inválido.', 'error'); mostrarTentarNovamente(); });
+            } catch(e) { webrtcSetStatus('❌ Código mal formatado. Confira e cole novamente.', 'error'); mostrarTentarNovamente(); }
         };
 
         window.webrtcGuestGenerateAnswer = async function() {
@@ -5553,8 +5947,8 @@
                 webrtcSetStatus('🔄 Gerando resposta...', 'connecting');
                 pc.setRemoteDescription(offer).then(function() {
                     pc.createAnswer().then(function(answer) { pc.setLocalDescription(answer); });
-                }).catch(function() { webrtcSetStatus('❌ Código do Host inválido.', 'error'); getEl('webrtc-btn-retry').classList.remove('hidden'); });
-            } catch(e) { webrtcSetStatus('❌ Código mal formatado. Confira e cole novamente.', 'error'); getEl('webrtc-btn-retry').classList.remove('hidden'); }
+                }).catch(function() { webrtcSetStatus('❌ Código do Host inválido.', 'error'); mostrarTentarNovamente(); });
+            } catch(e) { webrtcSetStatus('❌ Código mal formatado. Confira e cole novamente.', 'error'); mostrarTentarNovamente(); }
         };
 
         window.copyWebrtcCode = function(id, btn) {
@@ -5615,10 +6009,16 @@
         };
 
         function webrtcSetStatus(text, state) {
-            var box = getEl('webrtc-status-box');
-            box.classList.remove('hidden', 'status-connecting', 'status-success', 'status-error', 'status-idle');
-            box.classList.add('status-' + state);
-            getEl('webrtc-status-text').innerText = text;
+            animarJanela(getEl('scr-webrtc-connect'), function() {
+                var box = getEl('webrtc-status-box');
+                box.classList.remove('hidden', 'status-connecting', 'status-success', 'status-error', 'status-idle');
+                box.classList.add('status-' + state);
+                getEl('webrtc-status-text').innerText = text;
+            });
+        }
+        // O botão Tentar Novamente aparece depois de uma falha: a janela cresce junto.
+        function mostrarTentarNovamente() {
+            animarJanela(getEl('scr-webrtc-connect'), function() { getEl('webrtc-btn-retry').classList.remove('hidden'); });
         }
 
         // --- SALVAMENTO LOCAL DE SEGURANÇA (RECUPERAÇÃO DE SESSÃO) ---
@@ -5657,7 +6057,7 @@
             webrtcSetStatus('Gere um novo código para reconectar à partida em andamento.', 'connecting');
         };
         window.dismissResumeBanner = function() {
-            getEl('resume-banner').classList.add('hidden');
+            animarJanela(getEl('scr-start'), function() { getEl('resume-banner').classList.add('hidden'); });
             clearSessionBackup();
         };
 
@@ -5793,7 +6193,19 @@
                 // pegava pedido novo do rival, deixando pedido do parceiro e
                 // qualquer aumento subsequente sem notificação nenhuma.
                 if (st.trucoState === 'pending' && st.trucoBy !== myPID && (oldSt.trucoState !== 'pending' || st.proposedVal !== oldSt.proposedVal)) {
-                    showMsg(trucoActionText(st.trucoBy, 'pediu', 'pediram', st.proposedVal), 'neu');
+                    var pedMsg2 = trucoActionText(st.trucoBy, 'pediu', 'pediram', st.proposedVal);
+                    // O parceiro-IA conta a classificação só pra quem é do time dele.
+                    if (modoDoParceiro(st.trucoBy) && ehMeuParceiro(st.trucoBy)) pedMsg2 += ' — mão ' + classeDoParceiro(st.trucoBy);
+                    showMsg(pedMsg2, 'neu');
+                }
+                // Pedidos do parceiro-IA chegando de outro aparelho (v0.15.1): quem
+                // coordena a IA pode não ser do time dele, então o aviso sai aqui,
+                // e só pra quem é do time.
+                else if (st.trucoState === 'partner_ask' && oldSt.trucoState !== 'partner_ask' && st.partnerAsk && ehMeuParceiro(st.partnerAsk.pid)) {
+                    showMsg(textoPedidoParceiro(st.partnerAsk), 'neu', 2600);
+                }
+                else if (st.trucoState === 'partner_fold' && oldSt.trucoState !== 'partner_fold' && ehMeuParceiro(st.partnerFoldPid)) {
+                    showMsg("Parceiro quer ir ao baralho!", 'warn');
                 }
                 else if (st.trucoState === 'none' && oldSt.trucoState === 'pending') {
                     if (st.scores[1] === oldSt.scores[1] && st.scores[2] === oldSt.scores[2]) {
