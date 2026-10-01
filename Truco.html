@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Truco - v0.15.1</title>
+    <title>Truco - v0.15.2</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♣</text></svg>">
     <style>
         /* THEME VARIABLES */
@@ -28,6 +28,7 @@
             --glow-normal: rgba(16,185,129,0.15);
             --glow-dificil: rgba(234,88,12,0.15);
             --glow-insano: rgba(220,20,60,0.15);
+            --glow-adaptativa: rgba(147,51,234,0.15);
         }
 
         /* LIGHT THEME */
@@ -45,6 +46,7 @@
             --glow-normal: rgba(16,185,129,0.35);
             --glow-dificil: rgba(234,88,12,0.35);
             --glow-insano: rgba(220,20,60,0.35);
+            --glow-adaptativa: rgba(147,51,234,0.35);
         }
         
         body, html { 
@@ -78,6 +80,7 @@
         body.diff-2::before, body.diff-2::after { background: var(--glow-normal); } 
         body.diff-3::before, body.diff-3::after { background: var(--glow-dificil); } 
         body.diff-4::before, body.diff-4::after { background: var(--glow-insano); } 
+        body.diff-5::before, body.diff-5::after { background: var(--glow-adaptativa); }
 
         .hidden { display: none !important; }
 
@@ -139,8 +142,17 @@
         .diff-btn.facil.active { background: rgba(125, 211, 252, 0.25); border-color: rgba(125, 211, 252, 0.8); box-shadow: 0 4px 15px rgba(125, 211, 252, 0.4); }
         .diff-btn.dificil.active { background: rgba(234, 88, 12, 0.25); border-color: rgba(234, 88, 12, 0.8); box-shadow: 0 4px 15px rgba(234, 88, 12, 0.4); }
         .diff-btn.insano.active { background: rgba(220, 20, 60, 0.25); border-color: rgba(220, 20, 60, 0.8); box-shadow: 0 4px 15px rgba(220, 20, 60, 0.4); }
-        .diff-btn.adaptativa.active { background: rgba(147, 51, 234, 0.25); border-color: rgba(147, 51, 234, 0.8); box-shadow: 0 4px 15px rgba(147, 51, 234, 0.4); }
+        .diff-btn .cadeado { line-height: 0; }
+        /* A Adaptativa ocupa a fileira inteira: crescendo 5% da própria largura,
+           como os outros, ela ganhava 14 a 20 px e passava das bordas do botão de
+           jogar (pedido dele). Cresce o mesmo tanto que um botão da fileira de
+           cima — um quarto da largura —, e na altura igual a eles. */
+        .diff-btn.adaptativa.active { background: rgba(147, 51, 234, 0.25); border-color: rgba(147, 51, 234, 0.8); box-shadow: 0 4px 15px rgba(147, 51, 234, 0.4); transform: scale(1.0125, 1.05); }
         .diff-btn:disabled { opacity: 0.3; pointer-events: none; }
+        /* Travada, a Adaptativa diz quantas partidas faltam (v0.15.2): com o
+           apagado de sempre o texto quase não se lia. Continua com cara de botão
+           desligado, só que legível. */
+        .diff-btn.adaptativa:disabled { opacity: 0.6; }
 
         .section-label { color: var(--txt-d); font-size: 0.8rem; margin-bottom: 8px; text-align: left; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
         /* Nas telas de Regra especificamente, o rótulo fica centralizado
@@ -174,16 +186,32 @@
            uma ação sensível (apagar dados), então precisa se destacar como
            "categoria à parte". */
         .options-divider { border-top: 1px solid var(--glass-border); margin-top: 14px; }
+        /* Modo Leve e Tema dividem uma fileira (v0.15.2, pedido dele pra poupar
+           espaço): metade da largura cada, com o mesmo espaço do resto da pilha. */
+        .options-par { display: flex; gap: 10px; }
+        .options-par .btn-s { flex: 1 1 0; min-width: 0; }
+        /* No celular, "🌙 TEMA ESCURO" não cabe em meia largura com a letra de
+           sempre e quebrava em duas linhas: letra um pouco menor e menos folga dos
+           lados, com o mesmo alto dos outros botões (medido: uma linha de 360 px
+           pra cima; só no 320 o tema ainda quebra). */
+        @media (max-width: 480px) {
+            .options-par .btn-s { font-size: 0.8rem; padding: 13.5px 6px; }
+        }
 
         /* Gaveta colapsável (max-height 0->N + overflow:hidden) pro mini-painel
            do Jogo Rápido (Single Player) — mesma técnica que a antiga gaveta
            de Opções usava antes de virar tela própria (v0.13.1). */
         #quick-game-wrap {
-            max-height: 0; overflow: hidden; width: 100%;
+            max-height: 0; overflow: hidden;
+            /* A folga de 6 px de cada lado (v0.12.11) cortava o brilho do seletor
+               marcado e deixava os seletores e o JOGAR AGORA mais estreitos que o
+               cartão e o VOLTAR (pedido dele, v0.15.2). A mesma solução da gaveta
+               dos Parceiros: folga por dentro, margem negativa por fora. */
+            padding: 0 20px 20px; margin: 0 -20px -20px;
             transition: max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
         #quick-game-wrap.open { max-height: 180px; }
-        #quick-game-panel { padding: 18px 6px 0; }
+        #quick-game-panel { padding-top: 18px; }
 
         /* Arcade/Jogo Personalizado colapsam suavemente (em vez de sumir com
            .hidden, que fazia a janela saltar) quando o Jogo Rápido abre.
@@ -205,6 +233,11 @@
            por overflow do ancestral já é considerado em getFocusableList). */
         #parceiros-gaveta {
             max-height: 0; overflow: hidden; opacity: 0;
+            /* O botão marcado cresce 5% e tem sombra, e a gaveta cortava as duas
+               coisas nas pontas (DESLIGADO/LIGADO) e embaixo nas telas baixas. A
+               folga dá espaço a elas, e a margem negativa devolve o espaço, pra os
+               botões continuarem alinhados com os outros seletores (v0.15.2). */
+            padding: 0 20px 20px; margin: 0 -20px -20px;
             transition: max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
         }
         #parceiros-gaveta.aberta { max-height: 160px; opacity: 1; }
@@ -471,7 +504,11 @@
         .end-content { text-align: center; padding: 40px; background: var(--glass-bg); border-radius: 20px; border: 1px solid var(--glass-border); box-shadow: 0 25px 50px rgba(0,0,0,0.3); transform: translateY(20px); transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             /* Mesmo teto das outras janelas (v0.15.1): num celular deitado a
                caixa passava da altura da tela. */
-            box-sizing: border-box; overflow-y: auto; max-height: calc(100dvh - 2 * var(--folga-janela) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); }
+            box-sizing: border-box; overflow-y: auto; max-height: calc(100dvh - 2 * var(--folga-janela) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+            /* A caixa seguia o tamanho do texto: numa vitória ("PARABÉNS!") ficava
+               mais estreita que as outras janelas (pedido dele, v0.15.2). Nunca
+               menos que elas: 400 px mais o preenchimento e a borda de uma janela. */
+            min-width: calc(400px + 4rem + 2px); }
         #scr-end.show .end-content { transform: translateY(0); }
         .end-content h1 { font-size: 3rem; margin: 0 0 10px; text-shadow: 0 4px 10px rgba(0,0,0,0.3); }
         .end-content p { font-size: 1.1rem; margin-bottom: 30px; opacity: 0.9; text-wrap: balance; }
@@ -572,6 +609,7 @@
         body.lite-mode.diff-2::before, body.lite-mode.diff-2::after { background: radial-gradient(closest-side, var(--glow-normal) calc(100% - 280px), transparent calc(100% - 40px)); }
         body.lite-mode.diff-3::before, body.lite-mode.diff-3::after { background: radial-gradient(closest-side, var(--glow-dificil) calc(100% - 280px), transparent calc(100% - 40px)); }
         body.lite-mode.diff-4::before, body.lite-mode.diff-4::after { background: radial-gradient(closest-side, var(--glow-insano) calc(100% - 280px), transparent calc(100% - 40px)); }
+        body.lite-mode.diff-5::before, body.lite-mode.diff-5::after { background: radial-gradient(closest-side, var(--glow-adaptativa) calc(100% - 280px), transparent calc(100% - 40px)); }
         /* Barra inferior: pulso parado, destaque firme — anel interno no
            lugar do brilho externo (que é sombra). */
         body.lite-mode .danger-zone { animation: none; border-color: rgba(234, 179, 8, 1); box-shadow: inset 0 0 0 1px rgba(234, 179, 8, 1); }
@@ -662,12 +700,14 @@
                 --glow-normal: rgba(16,185,129,0.2);
                 --glow-dificil: rgba(234,88,12,0.2);
                 --glow-insano: rgba(220,20,60,0.2);
+                --glow-adaptativa: rgba(147,51,234,0.2);
             }
             body.theme-light {
                 --glow-facil: rgba(125,211,252,0.47);
                 --glow-normal: rgba(16,185,129,0.47);
                 --glow-dificil: rgba(234,88,12,0.47);
                 --glow-insano: rgba(220,20,60,0.47);
+                --glow-adaptativa: rgba(147,51,234,0.47);
             }
 
             .key-box { display: none !important; }
@@ -684,7 +724,9 @@
             .panel h2 { font-size: clamp(1.25rem, 6.5vw, 1.5rem); }
             /* Fim de jogo: a caixa crescia até caber "NOVAMENTE" em 3rem e ficava
                mais larga que a tela (383 px num celular de 360). */
-            .end-content { box-sizing: border-box; padding: clamp(24px, 7.5vw, 40px); max-width: calc(100% - 2 * var(--folga-lateral) - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)); }
+            .end-content { box-sizing: border-box; padding: clamp(24px, 7.5vw, 40px); max-width: calc(100% - 2 * var(--folga-lateral) - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
+                /* No celular, a largura das outras janelas, vença ou perca. */
+                min-width: min(calc(400px + 2.5rem + 2px), calc(100% - 2 * var(--folga-lateral) - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px))); }
             .end-content h1 { font-size: clamp(1.9rem, 9vw, 2.6rem); }
             .legend-group { gap: 6px; }
             .play-text { display: none; }
@@ -749,9 +791,11 @@
     <div id="scr-options" class="panel hidden">
         <h2>OPÇÕES</h2>
         <div class="btn-stack">
-            <button class="btn-s" onclick="nav('scr-options', 'scr-a11y')">♿ ACESSIBILIDADE</button>
-            <button class="btn-s" id="btn-lite-mode" onclick="toggleLiteMode()">🍃 MODO LEVE: DESATIVADO</button>
-            <button class="btn-s" id="btn-theme-toggle" onclick="toggleTheme()">☀️ MODO CLARO</button>
+            <button class="btn-s" onclick="nav('scr-options', 'scr-a11y')">👤 ACESSIBILIDADE</button>
+            <div class="options-par">
+                <button class="btn-s" id="btn-lite-mode" onclick="toggleLiteMode()">🍃 MODO LEVE</button>
+                <button class="btn-s" id="btn-theme-toggle" onclick="toggleTheme()">🌙 TEMA ESCURO</button>
+            </div>
             <button class="btn-s" id="btn-manilha-hint" onclick="toggleManilhaHint()">🃏 COM DICA DE MANILHA</button>
             <button class="btn-s options-divider" onclick="refreshStatsScreen(); nav('scr-options', 'scr-stats')">📊 ESTATÍSTICAS</button>
         </div>
@@ -768,7 +812,7 @@
                 <button class="diff-btn" id="btn-pace-calmo" onclick="setPace('calmo')">MAIS CALMO</button>
                 <button class="diff-btn" id="btn-pace-acelerado" onclick="setPace('acelerado')">ACELERADO</button>
             </div>
-            <div class="a11y-hint">Tempo da IA, da vaza e das notificações. No multiplayer é sempre o Padrão.</div>
+            <div class="a11y-hint">Tempo da IA, das mãos e das notificações. No multiplayer é sempre o Padrão.</div>
         </div>
         <div class="a11y-option">
             <button class="choice-card" id="btn-reduced-motion" onclick="toggleReducedMotion()">
@@ -877,7 +921,7 @@
             <button class="diff-btn insano" id="btn-diff-4-sp" onclick="setDiff(4, 'sp')">INSANO</button>
         </div>
         <div class="diff-selector">
-            <button class="diff-btn adaptativa" id="btn-diff-5-sp" disabled>ADAPTATIVA</button>
+            <button class="diff-btn adaptativa" id="btn-diff-5-sp" onclick="setDiff(5, 'sp')" disabled>ADAPTATIVA</button>
         </div>
         <div class="btn-stack rules-actions">
             <button class="btn-p" onclick="startGame('pc', 1)">JOGAR AGORA</button>
@@ -1278,7 +1322,7 @@
                  isso. Visibilidade controlada por JS via syncThemeBtnVisibility().
                  v0.13.2: entra na navegação por foco do Menu de Pausa (não é
                  mais tecla direta W) — key-box removido. -->
-            <button id="btn-theme-pause" class="action-btn btn-theme-pause" onclick="toggleTheme()"><span id="theme-pause-icon">☀️</span></button>
+            <button id="btn-theme-pause" class="action-btn btn-theme-pause" onclick="toggleTheme()"><span id="theme-pause-icon">🌙</span></button>
 
             <button id="btn-pause-toggle" class="action-btn btn-esc" onclick="togglePauseMenu()"><span class="key-box">ESC</span> ⋮</button>
         </div>
@@ -1303,7 +1347,7 @@
         var SUITS = ['♦', '♠', '♥', '♣']; 
         var VALS_SUJO = ['4', '5', '6', '7', 'Q', 'J', 'K', 'A', '2', '3'];
         var VALS_LIMPO = ['Q', 'J', 'K', 'A', '2', '3'];
-        var APP_VERSION = '0.15.1';
+        var APP_VERSION = '0.15.2';
 
         // ═══════════════════════════════════════════════════════════════
         // FORMATO DE `st` (estado sincronizado entre jogadores)
@@ -1470,13 +1514,20 @@
         // A tela de fim de jogo do Jogo Rápido tem uma opção a mais ("Sortear
         // Novamente"), então precisa saber por onde esta partida começou.
         var lastStartWasQuick = false;
+        // Liberada, a Adaptativa sai em 10% dos sorteios e as outras quatro dividem
+        // o resto por igual (Roadmap v0.15.2); travada, as quatro como sempre.
+        // `u` é um sorteio só (0 a 1) nos dois casos.
+        function dificuldadeDoJogoRapido(u) {
+            if (!adaptativaLiberada()) return 1 + Math.floor(u * 4);
+            return u < 0.10 ? 5 : 1 + Math.floor((u - 0.10) / 0.90 * 4);
+        }
         window.startQuickGame = function() {
             pendingRules = pendingQuickRules;
             var formats = ['1v1', '2v2', '3v3'];
             pendingFormat = formats[Math.floor(Math.random() * formats.length)];
             // Mineiro só existe em Baralho Sujo — os outros dois sorteiam entre os dois.
             pendingDeckMode = (pendingQuickRules === 'mineiro') ? 'sujo' : (Math.random() < 0.5 ? 'sujo' : 'limpo');
-            aiDifficulty = 1 + Math.floor(Math.random() * 4);
+            aiDifficulty = dificuldadeDoJogoRapido(Math.random());
             sorteioParceiros = PARCEIROS_MODOS[Math.floor(Math.random() * PARCEIROS_MODOS.length)];
             updateBodyDiffClass();
             resetSpChoiceScreen();
@@ -1493,7 +1544,7 @@
         var avisoAte = 0;
         function avisarSorteio() {
             var partes = [{ '1v1': '1 X 1', '2v2': 'DUPLAS', '3v3': 'TRIOS' }[st.gameFormat] || st.gameFormat];
-            if (st.parceiros) partes.push('PARCEIROS: ' + st.parceiros.toUpperCase());
+            if (st.parceiros) partes.push('DINÂMICOS: ' + st.parceiros.toUpperCase());
             partes.push(String(DIFF_LABELS[aiDifficulty] || '').toUpperCase());
             var dur = 3600;
             showMsg(partes.join(' | '), 'sys', dur);
@@ -1508,23 +1559,23 @@
             startQuickGame();
         };
 
-        window.toggleTheme = function() {
-            var body = document.body;
+        // O botão diz o tema LIGADO (v0.15.2): ao lado do Modo Leve, que mostra o
+        // estado só pela cor, um rótulo que dizia a ação do clique ("MODO CLARO"
+        // com o jogo escuro) parecia dizer que o claro estava ligado.
+        function mostrarTema() {
+            var escuro = currentTheme === 'dark';
             var btn = getEl('btn-theme-toggle');
             var pauseIcon = getEl('theme-pause-icon');
-            if (currentTheme === 'dark') {
-                currentTheme = 'light';
-                body.classList.remove('theme-dark');
-                body.classList.add('theme-light');
-                if (btn) btn.innerText = "🌙 MODO ESCURO";
-                if (pauseIcon) pauseIcon.innerText = "🌙";
-            } else {
-                currentTheme = 'dark';
-                body.classList.remove('theme-light');
-                body.classList.add('theme-dark');
-                if (btn) btn.innerText = "☀️ MODO CLARO";
-                if (pauseIcon) pauseIcon.innerText = "☀️";
-            }
+            if (btn) btn.innerText = escuro ? "🌙 TEMA ESCURO" : "☀️ TEMA CLARO";
+            if (pauseIcon) pauseIcon.innerText = escuro ? "🌙" : "☀️";
+        }
+
+        window.toggleTheme = function() {
+            var body = document.body;
+            currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            body.classList.toggle('theme-light', currentTheme === 'light');
+            body.classList.toggle('theme-dark', currentTheme === 'dark');
+            mostrarTema();
             try { localStorage.setItem('trucoTheme', currentTheme); } catch(e) {}
         };
 
@@ -1574,11 +1625,12 @@
         function applyPrefs() {
             document.body.classList.toggle('lite-mode', prefs.lite);
             document.body.classList.toggle('reduced-motion', prefs.reducedMotion);
-            // Opção ligada = botão verde nos três (v0.14.2): o rótulo diz o
-            // estado e a cor confirma, sem precisar interpretar se o texto é
-            // o estado atual ou a ação do clique.
+            // Opção ligada = botão verde nos três (v0.14.2), e o rótulo nunca
+            // diz a ação do clique. O Modo Leve, nas Opções, mostra o estado só
+            // pelo verde desde a v0.15.2 (pedido dele: a fileira dividida com o
+            // Tema não tem espaço pro "ATIVADO/DESATIVADO").
             var b = getEl('btn-lite-mode');
-            if (b) { b.innerText = '🍃 MODO LEVE: ' + onOffLabel(prefs.lite); b.classList.toggle('active', prefs.lite); }
+            if (b) b.classList.toggle('active', prefs.lite);
             // Os dois botões da tela de Acessibilidade são .choice-card
             // (título + descrição dentro do botão), então aqui só o <span> do
             // título muda — reescrever o innerText do botão apagaria a
@@ -1596,14 +1648,39 @@
 
         function updateBodyDiffClass() {
             var body = document.body;
-            body.classList.remove('diff-1', 'diff-2', 'diff-3', 'diff-4');
+            body.classList.remove('diff-1', 'diff-2', 'diff-3', 'diff-4', 'diff-5');
             body.classList.add('diff-' + aiDifficulty);
         }
 
+        // Adaptativa (v0.15.2): liberada depois de 10 partidas terminadas — as que
+        // contam nas Estatísticas (vitórias e derrotas, de qualquer modo, inclusive
+        // como convidado; desistência não conta). Até lá o botão diz quantas faltam.
+        var ADAPTATIVA_PARTIDAS = 10;
+        function partidasTerminadas() {
+            var buckets = loadStats().buckets || {}, total = 0;
+            Object.keys(buckets).forEach(function(k) {
+                var byConfig = (buckets[k] && buckets[k].byConfig) || {};
+                Object.keys(byConfig).forEach(function(c) { total += (byConfig[c].w || 0) + (byConfig[c].l || 0); });
+            });
+            return total;
+        }
+        function adaptativaLiberada() { return partidasTerminadas() >= ADAPTATIVA_PARTIDAS; }
+        function atualizarBotaoAdaptativa() {
+            var b = getEl('btn-diff-5-sp');
+            if (!b) return;
+            var faltam = Math.max(0, ADAPTATIVA_PARTIDAS - partidasTerminadas());
+            // O emoji tem letra mais alta que o texto e deixava o botão 2 px maior
+            // que os outros; no span sem altura de linha, ele não conta.
+            b.innerHTML = faltam ? '<span class="cadeado">🔒</span> JOGUE MAIS ' + faltam + (faltam === 1 ? ' PARTIDA' : ' PARTIDAS') : 'ADAPTATIVA';
+            b.disabled = !adaptativaLiberada();
+            if (b.disabled && b.classList.contains('active')) setDiff(2, 'sp');
+        }
+
         window.setDiff = function(level, screen) {
+            if (level === 5 && !adaptativaLiberada()) return;
             aiDifficulty = level;
             var prefix = screen || 'sp';
-            ['1','2','3','4'].forEach(function(n) { var b = getEl('btn-diff-' + n + '-' + prefix); if (b) b.classList.remove('active'); });
+            ['1','2','3','4','5'].forEach(function(n) { var b = getEl('btn-diff-' + n + '-' + prefix); if (b) b.classList.remove('active'); });
             var active = getEl('btn-diff-' + level + '-' + prefix);
             if (active) active.classList.add('active');
             updateBodyDiffClass();
@@ -1671,6 +1748,9 @@
         function assumirRegrasDaTela(tela) {
             var prefixo = { 'scr-mode': 'sp', 'scr-local-rules': 'mp', 'scr-online-rules': 'on' }[tela];
             if (!prefixo) return;
+            // A contagem da Adaptativa muda a cada partida terminada, então o
+            // botão é montado de novo sempre que a tela aparece.
+            if (tela === 'scr-mode') atualizarBotaoAdaptativa();
             var marcado = function(grupo, opcoes) {
                 for (var i = 0; i < opcoes.length; i++) {
                     var b = getEl('btn-' + grupo + '-' + opcoes[i] + '-' + prefixo);
@@ -1683,7 +1763,7 @@
             pendingFormat = marcado('fmt', ['1v1', '2v2', '3v3']) || pendingFormat;
             var humanos = marcado('hc', ['2', '3', '4', '5', '6']);
             if (humanos) pendingHumanCount = Number(humanos);
-            var dificuldade = marcado('diff', ['1', '2', '3', '4']);
+            var dificuldade = marcado('diff', ['1', '2', '3', '4', '5']);
             if (dificuldade) { aiDifficulty = Number(dificuldade); updateBodyDiffClass(); }
         }
 
@@ -1821,6 +1901,8 @@
             if (gameMode === 'pc') return 'DO ' + (getTeam(pid) === getTeam(myPID) ? 'PARCEIRO' : 'RIVAL');
             return 'DE ' + getPlayerName(pid).toUpperCase();
         }
+        // A Adaptativa pensando a mais numa decisão apertada (v0.15.2): "RIVAL PENSANDO...".
+        function textoPensando(pid) { return turnOfLabel(pid).replace(/^D[OAE] /, '') + ' PENSANDO...'; }
 
         function setBottomGroup(id) {
             // Trocou o grupo de botões: o que estava armado não vale mais. Só na
@@ -2809,10 +2891,29 @@
                     + '<div style="font-size:0.66rem; margin-top:4px; opacity:0.8;">Média de: ' + styled.map(function(x) { return x.name; }).join(', ') + '</div>'
                     + '<div style="border-top:1px solid var(--glass-border); margin:9px 0 7px;"></div>';
             }
+            // Como a Adaptativa te vê (v0.15.2): só depois de liberada.
+            var adaptativaHtml = '';
+            if (adaptativaLiberada()) {
+                adaptativaHtml = '<div style="border-top:1px solid var(--glass-border); margin:9px 0 7px;"></div>'
+                    + '<div style="font-size:0.66rem; font-weight:bold; letter-spacing:1px; text-transform:uppercase;">Como a Adaptativa te vê</div>'
+                    + '<div id="perfil-adaptativa" style="margin-top:2px;">' + comoAAdaptativaTeVe() + '</div>';
+            }
             html += '<div style="margin-top:12px; padding:9px 11px; border-radius:10px; background:var(--btn-s-bg); border:1px solid var(--glass-border); font-size:0.73rem; color:var(--txt-d); line-height:1.45;">'
-                + styleHtml + reading + '</div>';
+                + styleHtml + reading + adaptativaHtml + '</div>';
 
             el.innerHTML = html;
+        }
+
+        // Vago de propósito (decisão dele): só o quanto ela já te conhece, pelo
+        // tanto que ela te viu decidir no formato em que mais te viu jogar — nunca
+        // onde ela presta atenção nem o que percebeu. A Ficha em si fica oculta.
+        function comoAAdaptativaTeVe() {
+            var f = carregarFicha(), n = 0;
+            Object.keys(f.formatos).forEach(function(k) { var x = f.formatos[k]; if (x.obs && x.obs.length > n) n = x.obs.length; });
+            if (n < 40) return 'Ela ainda está te estudando.';
+            if (n < 120) return 'Ela já está pegando o seu jeito.';
+            if (n < 250) return 'Ela já conhece bem o seu jogo.';
+            return 'Ela te conhece como a palma da mão.';
         }
 
         window.refreshStatsScreen = function() { setStatsTab(statsTab); };
@@ -2870,7 +2971,7 @@
             // updateUI()/setBottomGroup() depois — sem esta chamada o desfecho
             // do truco que FECHOU o jogo nunca seria contabilizado.
             settleTrucoAsk();
-            if (!matchResultRecorded) { matchResultRecorded = true; recordMatchResult(isWin); }
+            if (!matchResultRecorded) { matchResultRecorded = true; recordMatchResult(isWin); anotarFicha(st.nextRoundFoldBy, true); }
             clearSessionBackup();
             setTimeout(function() {
                 var endScr = getEl('scr-end');
@@ -2919,7 +3020,7 @@
 
             getEl('scr-end').className = '';
             st.scores = { 1: 0, 2: 0 };
-            matchResultRecorded = false; askWatch = null; st.aiRead = {};
+            matchResultRecorded = false; askWatch = null; st.aiRead = {}; st.partidaId = Date.now();
             st.vazas = { 1: 0, 2: 0 };
             st.firstPlayerOfRound = 1;
             
@@ -3042,7 +3143,7 @@
         // personalidade por cima dela — não quem vê mais cartas.
         // ====================================================================
 
-        var DIFF_LABELS = { 1: 'Fácil', 2: 'Normal', 3: 'Difícil', 4: 'Insano' };
+        var DIFF_LABELS = { 1: 'Fácil', 2: 'Normal', 3: 'Difícil', 4: 'Insano', 5: 'Adaptativa' };
 
         // leitura      'classe' (só Ruim/OK/Excelente) ou 'chance' (sorteio).
         // ruido        quanto a chance lida erra pra cima ou pra baixo, medido em
@@ -3072,6 +3173,8 @@
         // baralho      chance de ir ao baralho quando não tem chance...
         // baralhoAte   ...e até que chance isso vale (leitura 'chance').
         // erro         chance de erro bobo: carta errada ou carta esquecida.
+        // regra        chance de jogar a carta pela regra simples (aiCardPolicy) em
+        //              vez da conta de cada carta: 1 = sempre (Normal), 0 = nunca.
         // comunica     quando a IA atualiza a classificação pro time.
         // Só na leitura 'classe', com valores fixos por classificação:
         // pedeExcelente  chance de pedir com cartas Excelentes.
@@ -3082,26 +3185,87 @@
             1: { leitura: 'classe', ruido: 0, placar: false, bonus: null, blefe: [0.01, 0.01], leitor: 0, segura: 0, esconde: 0.15, baralho: 0.9, erro: 0.15, comunica: 'inicio',
                  pedeExcelente: 0.08,
                  resposta: { aceita: [[0, 0, 0, 0], [0, 0, 0, 0], [0.5, 0.3, 0.2, 0.1]], aumenta: [[0, 0, 0, 0], [0, 0, 0, 0], [0.1, 0.05, 0, 0]] } },
-            2: { leitura: 'chance', ruido: 4, pesoPedido: 0, placar: true, bonus: null, margemAceitar: 0, margemAumentar: 0.08, margemPedir: 0, blefe: [0.14, 0.14], leitor: 0, segura: 0, esconde: 0.4, baralho: 0.3, baralhoAte: 0.03, erro: 0, comunica: 'mudanca' },
-            3: { leitura: 'chance', ruido: 0, pesoPedido: 0.30, placar: true, bonus: { frente: 0.02, atras: 0.015 }, margemAceitar: [0, 0.04], margemAumentar: 0.05, margemPedir: 0, blefe: [0.03, 0.28], reage: 0.4, leitor: 16, segura: [0.05, 0.12], esconde: 0.6, baralho: 0.15, baralhoAte: 0.02, erro: 0, comunica: 'mao' },
-            4: { leitura: 'chance', ruido: 0, pesoPedido: 1, placar: true, bonus: { frente: 0.03, atras: 0.02 }, margemAceitar: [0, 0.05], margemAumentar: 0.03, margemPedir: -0.02, blefe: [0.02, 0.50], reage: 0.25, leitor: 6, segura: [0.02, 0.15], esconde: 0.75, baralho: 0.05, baralhoAte: 0.01, erro: 0, comunica: 'mao' }
+            // A Normal continua com o erro de leitura e confiando nas próprias
+            // cartas (v0.15.2, decisão dele): "matematicamente precisa", sem o erro
+            // e lendo o pedido do rival, ela virou a IA mais forte contra o robô
+            // (vencia 67% no 1x1). O que fazia as jogadas absurdas agora é barrado
+            // pelas regras novas: pedido com mão Ruim só como blefe (aiMaoRuim), o
+            // revide na conta de aumentar (aiEvPedir) e a classificação certa em
+            // todo momento da rodada. Com isso ela ainda jogava forte demais pra
+            // Normal (robô vence 51,3 no 1x1, meta 60): o erro de leitura só mexe
+            // no truco, e o que a deixava forte era a conta de cada carta. Jogando
+            // pela regra simples, 61,2 (1.200 partidas, Paulista sujo).
+            2: { leitura: 'chance', ruido: 4, pesoPedido: 0, placar: true, bonus: null, margemAceitar: 0, margemAumentar: 0.08, margemPedir: 0, blefe: [0.14, 0.14], leitor: 0, segura: 0, esconde: 0.4, baralho: 0.3, baralhoAte: 0.03, erro: 0, regra: 1, comunica: 'mudanca' },
+            // A Difícil e o Insano pensam um pouco mais (v0.15.2, plano 2.4, aprovados
+            // por ele pro 1x1 e pros times): durante a espera, até 480 e 720 sorteios no
+            // 1x1 e 240 e 360 nos times (o dobro e o triplo de antes). Mesmas sementes,
+            // contra o Disciplinado, com a leitura de blefe corrigida (aiLearnFromRound):
+            // 1x1 (1.200 partidas) Difícil 40,6 → 41,6 (meta 44), Insano 38,5 → 37,3
+            // (meta 37); times (600, dentro do ruído) Duplas 54,2 → 50,3 e 46,3 → 45,0,
+            // Trios 49,7 → 51,8 e 45,8 → 43,3.
+            // A Difícil lê o pedido e o aumento do rival com peso 0,3: com o revide
+            // na conta de aumentar (aiEvPedir, v0.15.2) ela já sabe recuar, e ler
+            // mais a deixava forte demais (robô vence 37,0 no 1x1 lendo 0,6). Joga
+            // 60% das cartas pela regra simples, como quem nem sempre faz a conta:
+            // 47,3 no 1x1 (1.200 partidas, Paulista sujo, meta 47).
+            3: { leitura: 'chance', ruido: 0, pesoPedido: 0.3, placar: true, bonus: { frente: 0.02, atras: 0.015 }, margemAceitar: [0, 0.04], margemAumentar: 0.05, margemPedir: 0, blefe: [0.03, 0.28], reage: 0.4, leitor: 16, segura: [0.05, 0.12], esconde: 0.6, baralho: 0.15, baralhoAte: 0.02, erro: 0, regra: 0.6, comunica: 'mao',
+                 pensa: true, amostras: 480, amostrasTime: 240 },
+            // O Insano lê o jogador com calma, no ritmo da Difícil (leitor 16, como
+            // ele já fazia nos times): lendo rápido (6) ele tirava conclusões de
+            // pouca coisa. Robô vence 36,8 → 33,4 no 1x1 (1.200, meta ~32); a faixa
+            // de blefe mais larga continua sendo dele, e ele blefa mais que a Difícil.
+            4: { leitura: 'chance', ruido: 0, pesoPedido: 1, placar: true, bonus: { frente: 0.03, atras: 0.02 }, margemAceitar: [0, 0.05], margemAumentar: 0.03, margemPedir: -0.02, blefe: [0.02, 0.50], reage: 0.25, leitor: 16, segura: [0.02, 0.15], esconde: 0.75, baralho: 0.05, baralhoAte: 0.01, erro: 0, comunica: 'mao',
+                 pensa: true, amostras: 720, amostrasTime: 360 },
+            // A Adaptativa (v0.15.2) lê o jogador pela Ficha e pela partida (o jeito
+            // dele, aiJeitoDoJogador) e decide tudo pela conta, sem faixa de blefe
+            // nem folga pra aceitar ou aumentar. Pensa durante a espera, até
+            // `pensaAte` sorteios (medido no navegador: cabem 20 mil na espera do
+            // Ritmo Padrão, até com o processador 4 vezes mais lento); se a espera
+            // não bastar, completa na hora até `amostras`. Nos times, 480: lá a
+            // rodada imaginada é pela regra simples (a conta completa não cabe), e
+            // mais sorteios só deixam a IA mais segura de uma imagem aproximada —
+            // medido na Etapa 4, com 8 mil ela ficava mais fácil que o Insano, e com
+            // 480 e o pedido pela conta empata com ele (18 lotes por formato).
+            5: { leitura: 'chance', ruido: 0, pesoPedido: 1, placar: true, bonus: { frente: 0.03, atras: 0.02 }, margemAceitar: 0, margemAumentar: 0, margemPedir: 0, blefe: [0, 0], leitor: 0, segura: 0, esconde: 0.75, baralho: 0.05, baralhoAte: 0.01, erro: 0, comunica: 'mao',
+                 adaptativa: true, pensa: true, amostras: 960, amostrasTime: 480, pensaAte: 20000, pensaAteTime: 480 }
         };
-        // Ajustes que valem só nos times (Duplas e Trios), medidos na v0.15.1 com
-        // o robô Disciplinado nas mesmas sementes (aprovados por ele):
-        // Normal    o blefe dela atrapalhava o próprio time, e o erro de leitura
-        //           pesa mais quando a decisão é de todos: blefe e ruído pela
-        //           metade — robô vence 57,9 → 55,9 (Duplas) e 61,1 → 57,0 (Trios).
-        // Insano    as partidas dos times têm 3 a 5 rodadas, e com leitor 6 ele
-        //           tirava conclusões sobre o jogador com muito pouco pra ver:
-        //           aprende no ritmo da Difícil — 48,3 → 45,0 e 49,1 → 47,3.
+        // Quanto a Adaptativa sorteia perto do empate da conta de pedir (em fração
+        // do que o pedido vale): com ganho de 1% ela pede 73% das vezes; com 5%, 99%.
+        var AI_ADAPTATIVA_MISTURA = 0.01;
+        // Ajustes que valem só nos times (Duplas e Trios), medidos com o robô
+        // Disciplinado nas mesmas sementes (aprovados por ele). Desde a v0.15.2 a
+        // régua dos times é presa à Adaptativa: o Insano 4 pontos acima dela e a
+        // Difícil 8,5 (1.200 partidas, Paulista sujo; a Adaptativa 40,6 nas
+        // Duplas e 44,6 nos Trios).
+        // Normal    decide pelos pontos da rodada, sem a conta do placar da
+        //           partida; o erro de leitura e o blefe são os do 1x1 (na v0.15.1
+        //           eram pela metade, pra ela chegar aos 55 de então) — robô vence
+        //           61,0 (Duplas) e 60,7 (Trios), meta 60.
+        // Insano    lê o pedido do rival pela metade — 42,8 e 48,6.
         var AI_AJUSTE_TIMES = {
-            2: { blefe: [0.07, 0.07], ruido: 2 },
-            4: { leitor: 16 }
+            2: { placar: false },
+            4: { pesoPedido: 0.5 },
+            // Adaptativa  pede com mão Ruim só como blefe, na faixa da Difícil
+            //             (ver aiShouldAsk; v0.15.2).
+            5: { blefe: [0.03, 0.28], reage: 0.4 }
+        };
+        // Ajustes só dos Trios, por cima dos dos times (v0.15.2, aprovados por ele):
+        // nos Trios a régua fica mais espremida, e a Difícil empatava com o Insano
+        // (robô vence 48,9 × 48,2; pela régua, Adaptativa 46,4 + 8,5 = 54,9).
+        // Difícil   decide pelos pontos da rodada, sem a conta do placar da
+        //           partida, e lê o pedido do rival com peso 0,15 — 55,3 (1.200
+        //           partidas, mesmas sementes). Nas Duplas ela já estava na régua.
+        var AI_AJUSTE_TRIOS = {
+            3: { placar: false, pesoPedido: 0.15 }
         };
         var AI_PERFIS_TIMES = {};
-        Object.keys(AI_PERFIS).forEach(function(d) { AI_PERFIS_TIMES[d] = Object.assign({}, AI_PERFIS[d], AI_AJUSTE_TIMES[d] || {}); });
+        var AI_PERFIS_TRIOS = {};
+        Object.keys(AI_PERFIS).forEach(function(d) {
+            AI_PERFIS_TIMES[d] = Object.assign({}, AI_PERFIS[d], AI_AJUSTE_TIMES[d] || {});
+            AI_PERFIS_TRIOS[d] = Object.assign({}, AI_PERFIS_TIMES[d], AI_AJUSTE_TRIOS[d] || {});
+        });
         function aiPerfil() {
-            var tabela = (st.gameFormat === '2v2' || st.gameFormat === '3v3') ? AI_PERFIS_TIMES : AI_PERFIS;
+            var tabela = st.gameFormat === '3v3' ? AI_PERFIS_TRIOS : (st.gameFormat === '2v2' ? AI_PERFIS_TIMES : AI_PERFIS);
             return tabela[aiDifficulty] || tabela[2];
         }
 
@@ -3281,6 +3445,31 @@
                 'goiano limpo':   [0.092, 0.203, 0.297, 0.436, 0.561, 0.706, 0.801, 0.903, 0.954]
             }
         };
+        // A tabela acima é da mão de 3 cartas. Com 2 ou 1 carta a conta ainda pede
+        // que as cartas façam as mãos sozinhas, e uma carta só quase nunca passava
+        // de Ruim: 88% nas Duplas, um 3 sozinho Ruim em metade das vezes, a manilha
+        // nunca Excelente (retorno dele, v0.15.2). Cada número de cartas tem a sua
+        // tabela, que põe a força na MESMA escala do começo da rodada — a decisão
+        // dele: as mesmas proporções de Ruim/OK/Excelente em qualquer momento, e
+        // "0,62 é quem pede truco" continuando a querer dizer a mesma coisa.
+        // Medida em rodadas jogadas, na vez de cada um (a mão que se tem de verdade).
+        // GERADA por testes/simulador/calibrar_forca_cartas.js; não editar à mão.
+        var AI_FORCA_CARTAS = {
+            '2v2': {
+                'paulista sujo':  { 2: [0.076, 0.180, 0.289, 0.398, 0.513, 0.617, 0.712, 0.802, 0.870], 1: [0.001, 0.012, 0.035, 0.082, 0.143, 0.229, 0.365, 0.501, 0.678] },
+                'paulista limpo': { 2: [0.080, 0.171, 0.308, 0.422, 0.527, 0.639, 0.734, 0.827, 0.883], 1: [0.002, 0.007, 0.044, 0.086, 0.152, 0.249, 0.363, 0.508, 0.702] },
+                'mineiro sujo':   { 2: [0.081, 0.181, 0.282, 0.389, 0.511, 0.628, 0.715, 0.801, 0.870], 1: [0.001, 0.013, 0.039, 0.080, 0.146, 0.243, 0.365, 0.512, 0.683] },
+                'goiano sujo':    { 2: [0.071, 0.172, 0.280, 0.386, 0.504, 0.614, 0.699, 0.796, 0.863], 1: [0.001, 0.012, 0.036, 0.069, 0.134, 0.226, 0.327, 0.489, 0.661] },
+                'goiano limpo':   { 2: [0.083, 0.189, 0.286, 0.387, 0.529, 0.627, 0.710, 0.813, 0.874], 1: [0.003, 0.007, 0.034, 0.074, 0.148, 0.242, 0.356, 0.519, 0.672] }
+            },
+            '3v3': {
+                'paulista sujo':  { 2: [0.020, 0.076, 0.160, 0.260, 0.384, 0.516, 0.641, 0.765, 0.900], 1: [0.000, 0.005, 0.022, 0.058, 0.113, 0.203, 0.328, 0.477, 0.667] },
+                'paulista limpo': { 2: [0.021, 0.067, 0.172, 0.277, 0.406, 0.535, 0.676, 0.814, 0.909], 1: [0.000, 0.003, 0.021, 0.053, 0.113, 0.220, 0.339, 0.521, 0.900] },
+                'mineiro sujo':   { 2: [0.024, 0.082, 0.161, 0.256, 0.388, 0.528, 0.641, 0.758, 0.900], 1: [0.000, 0.006, 0.023, 0.059, 0.126, 0.214, 0.339, 0.487, 0.676] },
+                'goiano sujo':    { 2: [0.019, 0.074, 0.155, 0.253, 0.380, 0.509, 0.621, 0.744, 0.885], 1: [0.000, 0.005, 0.022, 0.056, 0.113, 0.194, 0.303, 0.461, 0.656] },
+                'goiano limpo':   { 2: [0.022, 0.079, 0.154, 0.252, 0.422, 0.537, 0.636, 0.782, 0.903], 1: [0.000, 0.004, 0.018, 0.043, 0.138, 0.232, 0.339, 0.521, 0.693] }
+            }
+        };
         function aiConverteForca(bruta, tabela) {
             if (bruta <= tabela[0]) return (AI_FORCA_NIVEIS[0] * bruta) / (tabela[0] || 1);
             for (var i = 1; i < tabela.length; i++) {
@@ -3296,10 +3485,13 @@
         // corre), e ficam em zero onde o que interessa é só a força das cartas.
         function aiForca(pws, poolPw, rivais, n, ganhas, perdidas) {
             if (n === 2) return aiHandScore(pws, poolPw, rivais, ganhas, perdidas);
-            var porFormato = AI_FORCA_TABELA[st.gameFormat] || AI_FORCA_TABELA['2v2'];
+            if (!pws.length) return 0;
+            var tabelas = pws.length >= 3 ? AI_FORCA_TABELA : AI_FORCA_CARTAS;
+            var porFormato = tabelas[st.gameFormat] || tabelas['2v2'];
             // Mineiro não tem baralho limpo, mas estado vindo da rede pode trazer
             // qualquer combinação: cai no sujo da mesma região em vez de quebrar.
             var tabela = porFormato[st.rules + ' ' + st.deckMode] || porFormato[st.rules + ' sujo'] || porFormato['paulista sujo'];
+            if (pws.length < 3) tabela = tabela[pws.length];
             return aiConverteForca(aiForcaBruta(pws, poolPw, rivais, ganhas, AI_PESO_TIME[st.gameFormat] || 0.85), tabela);
         }
 
@@ -3319,22 +3511,32 @@
         //     (o quantil do 1x1), não uma chance, e quem responde decide pela
         //     chance de vencer a rodada. A reta faz essa passagem; ela é a mesma
         //     em toda região e baralho, porque a régua já é calibrada em cada um.
+        //     Desde a v0.15.2 é uma reta pra cada momento da rodada (3, 2 e 1
+        //     carta na mão no começo da mão), e o placar de mãos da rodada entra à
+        //     parte (quem já fez uma mão vê mais chance com as mesmas cartas):
+        //     a reta de antes era só do começo da rodada, e no meio dela a força
+        //     saía torta (AI_FORCA_CARTAS). Com 1 carta o placar é sempre 1 a 1.
         var AI_GRUPO_MELHOR = 0.25;
-        var AI_CHANCE_GRUPO = { '2v2': [0.111, 0.711], '3v3': [0.248, 0.445] };
+        var AI_CHANCE_GRUPO = {
+            '2v2': { 3: [0.114, 0.708, 0], 2: [0.196, 0.567, 0.226], 1: [0.158, 0.563, 0] },
+            '3v3': { 3: [0.246, 0.449, 0], 2: [0.264, 0.422, 0.248], 1: [0.259, 0.410, 0] }
+        };
         function aiForcaDoGrupo(forcas) {
             var soma = 0, melhor = 0;
             for (var i = 0; i < forcas.length; i++) { soma += forcas[i]; if (forcas[i] > melhor) melhor = forcas[i]; }
             var media = soma / forcas.length;
             return media + AI_GRUPO_MELHOR * (melhor - media);
         }
-        // Chance que um time vê na rodada, estimada pela força das mãos dele.
-        function aiChanceDoGrupo(forcas) {
+        // Chance que um time vê na rodada, estimada pela força das mãos dele, com
+        // `cartas` na mão no começo da mão e `margem` = mãos que fez menos as que perdeu.
+        function aiChanceDoGrupo(forcas, cartas, margem) {
             if (!forcas.length) return 0.5;
-            var reta = AI_CHANCE_GRUPO[st.gameFormat] || AI_CHANCE_GRUPO['2v2'];
-            return aiClamp01(reta[0] + reta[1] * aiForcaDoGrupo(forcas));
+            var porCartas = AI_CHANCE_GRUPO[st.gameFormat] || AI_CHANCE_GRUPO['2v2'];
+            var reta = porCartas[cartas] || porCartas[3];
+            return aiClamp01(reta[0] + reta[1] * aiForcaDoGrupo(forcas) + reta[2] * (margem || 0));
         }
         // Uma mão só, na escala da chance: no 1x1 a força já é a chance da rodada.
-        function aiChanceDaForca(s) { return getNumPlayers() === 2 ? s : aiChanceDoGrupo([s]); }
+        function aiChanceDaForca(s, cartas) { return getNumPlayers() === 2 ? s : aiChanceDoGrupo([s], cartas); }
 
         var AI_CLASSES = ['Ruim', 'OK', 'Excelente'];
         // Limites das classes, na escala única da força. No 1x1 ninguém anuncia
@@ -3448,6 +3650,92 @@
             return aiSolve(resto, opp, null, res > 0 ? 'A' : (res < 0 ? 'B' : lider), tr.concat([res]));
         }
 
+        // A mesma rodada do aiSolve, bem mais rápida (v0.15.2): as mãos viram
+        // máscaras de bits, sem criar listas a cada jogada, e o resultado fica
+        // guardado. A rodada só depende de quem ganha de quem, então a conta é
+        // guardada pela ORDEM das cartas: uma situação com a mesma ordem, em
+        // qualquer rodada ou região, sai pronta. É o que deixa a Adaptativa refazer,
+        // pra cada mão que o jogador podia ter, a conta que ele fazia na hora.
+        var aiRapA = [0, 0, 0], aiRapB = [0, 0, 0], aiRapNA = 0, aiRapNB = 0;
+        function aiRapidoFim(n, w, l, t, f0) {
+            if (n === 2) {
+                if (w === 2) return 1;
+                if (l === 2) return 0;
+                if (t === 1) { if (w === 1) return 1; if (l === 1) return 0; }
+                return -1;
+            }
+            if (n === 3) {
+                if (w > l) return 1;
+                if (l > w) return 0;
+                if (t === 1) return f0 > 0 ? 1 : (f0 < 0 ? 0 : 0.5);
+                return 0.5;
+            }
+            return -1;
+        }
+        // mesa -2 = vazia (-1 é carta escondida); f0 = resultado da primeira mão.
+        function aiRapidoMascara(mA, mB, mesa, liderA, n, w, l, t, f0) {
+            var r = aiRapidoFim(n, w, l, t, f0);
+            if (r >= 0) return r;
+            if (!mA && !mB) return 0.5;
+            var vezA = mesa < -1 ? liderA : !liderA;
+            var mao = vezA ? aiRapA : aiRapB, cont = vezA ? aiRapNA : aiRapNB, mask = vezA ? mA : mB;
+            var melhor = vezA ? -1 : 2, ant = -99;
+            for (var i = 0; i < cont; i++) {
+                if (!(mask & (1 << i)) || mao[i] === ant) continue;
+                var pw = mao[i], resto = mask & ~(1 << i), v;
+                ant = pw;
+                if (mesa < -1) {
+                    v = vezA ? aiRapidoMascara(resto, mB, pw, liderA, n, w, l, t, f0) : aiRapidoMascara(mA, resto, pw, liderA, n, w, l, t, f0);
+                } else {
+                    var pA = liderA ? mesa : pw, pB = liderA ? pw : mesa;
+                    var res = pA > pB ? 1 : (pB > pA ? -1 : 0);
+                    v = aiRapidoMascara(vezA ? resto : mA, vezA ? mB : resto, -2, res > 0 ? true : (res < 0 ? false : liderA),
+                                        n + 1, w + (res > 0 ? 1 : 0), l + (res < 0 ? 1 : 0), t + (res === 0 ? 1 : 0), n === 0 ? res : f0);
+                }
+                if (vezA) { if (v > melhor) melhor = v; if (melhor === 1) break; }
+                else { if (v < melhor) melhor = v; if (melhor === 0) break; }
+            }
+            return melhor;
+        }
+        var aiRodadasGuardadas = new Map(), aiOrdem = [0, 0, 0, 0, 0, 0, 0];
+        function aiOrdemPoe(val, nv) {
+            var j = 0;
+            while (j < nv && aiOrdem[j] < val) j++;
+            if (j < nv && aiOrdem[j] === val) return nv;
+            for (var q = nv; q > j; q--) aiOrdem[q] = aiOrdem[q - 1];
+            aiOrdem[j] = val;
+            return nv + 1;
+        }
+        function aiPosto(val, nv) { for (var j = 0; j < nv; j++) if (aiOrdem[j] === val) return j; return 0; }
+        // Mesmos argumentos e mesmo resultado do aiSolve.
+        function aiRodadaRapida(mA, mB, mesa, lider, tr) {
+            var n = tr.length, w = 0, l = 0, t = 0, i;
+            for (i = 0; i < n; i++) { if (tr[i] > 0) w++; else if (tr[i] < 0) l++; else t++; }
+            var f0 = n ? tr[0] : 0, fim = aiRapidoFim(n, w, l, t, f0);
+            if (fim >= 0) return fim;
+            if (!mA.length && !mB.length) return 0.5;
+            var nv = 0;
+            for (i = 0; i < mA.length; i++) nv = aiOrdemPoe(mA[i], nv);
+            for (i = 0; i < mB.length; i++) nv = aiOrdemPoe(mB[i], nv);
+            if (mesa !== null) nv = aiOrdemPoe(mesa, nv);
+            var cA = 0, cB = 0;
+            for (i = mA.length - 1; i >= 0; i--) cA = cA * 8 + aiPosto(mA[i], nv);
+            for (i = mB.length - 1; i >= 0; i--) cB = cB * 8 + aiPosto(mB[i], nv);
+            var cMesa = mesa === null ? 8 : aiPosto(mesa, nv);
+            var cTr = n + 3 * ((n > 0 ? tr[0] + 1 : 0) + 3 * (n > 1 ? tr[1] + 1 : 0));
+            var chave = ((((cA * 4 + mA.length) * 2048 + (cB * 4 + mB.length)) * 9 + cMesa) * 2 + (lider === 'A' ? 0 : 1)) * 27 + cTr;
+            var v = aiRodadasGuardadas.get(chave);
+            if (v === undefined) {
+                aiRapNA = mA.length; aiRapNB = mB.length;
+                for (i = 0; i < aiRapNA; i++) aiRapA[i] = aiPosto(mA[i], nv);
+                for (i = 0; i < aiRapNB; i++) aiRapB[i] = aiPosto(mB[i], nv);
+                v = aiRapidoMascara((1 << aiRapNA) - 1, (1 << aiRapNB) - 1, cMesa === 8 ? -2 : cMesa, lider === 'A', n, w, l, t, f0);
+                if (aiRodadasGuardadas.size >= 300000) aiRodadasGuardadas.clear();
+                aiRodadasGuardadas.set(chave, v);
+            }
+            return v;
+        }
+
         // ------------------------------------------------- leitura do jogador
         // O que se espera de uma pessoa qualquer, até a IA ter visto o jogador.
         // pede = em quantas rodadas a pessoa começa um pedido de truco.
@@ -3485,13 +3773,14 @@
         // times quem faz a passagem é aiChanceDoGrupo, porque a decisão é do time.
         function aiAcceptPoint(m) { return 0.15 + 0.6 * m.corre; }
         function aiRunChance(p, m, extra) { return 1 - aiSigmoid((p - aiAcceptPoint(m) + (extra || 0)) / 0.08); }
-        // Quanto uma ação do rival combina com cartas de força s.
-        function aiLikelihood(acao, s, m) {
+        // Quanto uma ação do rival combina com cartas de força s (com `cartas` na
+        // mão na hora dela).
+        function aiLikelihood(acao, s, m, cartas) {
             if (acao === 'pede') return m.blefe + (1 - m.blefe) * aiSigmoid((s - 0.62) / 0.07);
             if (acao === 'aumenta') return m.blefe * 0.6 + (1 - m.blefe * 0.6) * aiSigmoid((s - 0.72) / 0.07);
             // Aceitar é decisão do time, tomada pela chance que ele vê: a força de
             // uma mão só entra convertida, senão a leitura mediria outra coisa.
-            if (acao === 'aceita') return aiSigmoid((aiChanceDaForca(s) - aiAcceptPoint(m)) / 0.08);
+            if (acao === 'aceita') return aiSigmoid((aiChanceDaForca(s, cartas) - aiAcceptPoint(m)) / 0.08);
             return 1;
         }
         // O rival que mais importa ler: uma pessoa, se houver no outro time.
@@ -3513,6 +3802,11 @@
         // pessoa respondeu aos pedidos da IA.
         function aiLearnFromRound() {
             var log = st.aiLog || [], plays = st.roundPlays || [];
+            // Desde a v0.15.0 as jogadas guardadas não traziam a posição na rodada
+            // (`seq`), e pedidosVistos/blefes nunca subiam: o blefe só era estimado
+            // pela frequência. A posição vem do índice na rodada, como no aiView
+            // (v0.15.2, medido e aprovado no 1x1 e nos times).
+            plays = plays.concat(st.table || []).map(function(x, i) { return { p: x.p, c: x.c, hidden: x.hidden, seq: i }; });
             if (!log.length && !plays.length) return;
             if (!st.aiRead) st.aiRead = {};
             function leitura(p) {
@@ -3546,8 +3840,12 @@
                     var todas = mostradas.length === e.k && mostradas.every(function(x) { return !x.hidden; });
                     if (!todas) return;
                     r.pedidosVistos++;
+                    // As cartas que já tinham saído à vista antes do pedido também
+                    // ficam fora, como na Classificação da Mão. A escondida não:
+                    // ninguém de fora sabe qual foi.
+                    var antes = plays.filter(function(x) { return x.seq < e.seq && !x.hidden; });
                     var pool = buildDeck(st.rules, st.deckMode).filter(function(c) {
-                        return !sameCard(st.vira, c) && !mostradas.some(function(x) { return sameCard(x.c, c); });
+                        return !sameCard(st.vira, c) && !mostradas.some(function(x) { return sameCard(x.c, c); }) && !antes.some(function(x) { return sameCard(x.c, c); });
                     }).map(getPower);
                     if (aiForca(mostradas.map(function(x) { return getPower(x.c); }), pool, Math.floor(getNumPlayers() / 2), getNumPlayers(), 0, 0) < 0.30) r.blefes++;
                 } else if (e.a === 'aceita' || e.a === 'corre') {
@@ -3560,12 +3858,634 @@
             });
         }
 
+        // ------------------------------------------ Ficha do Jogador (v0.15.2)
+        // A situação que o jogador `jog` via na posição `seq` de uma rodada 1x1
+        // (quantas cartas já tinham sido jogadas): as cartas que ele não via — o
+        // baralho menos a vira e as cartas abertas antes; a que o outro escondeu ele
+        // não sabe qual é —, as mãos decididas, a carta na mesa, quem jogava e
+        // quantas cartas o outro ainda tinha. `ctx` é o que QUEM OBSERVA sabe da
+        // rodada: as jogadas em ordem ({p, c, hidden}, c nulo quando quem observa
+        // não viu a carta), os resultados das mãos, de quem é a vez e quantas cartas
+        // cada um tem agora. A situação de uma posição não muda depois, então fica
+        // guardada em ctx.situacoes.
+        function aiSituacaoDoJogador(ctx, jog, seq) {
+            var chave = jog + ':' + seq;
+            if (ctx.situacoes[chave]) return ctx.situacoes[chave];
+            var fora = st.vira ? [st.vira] : [];
+            ctx.jogadas.forEach(function(x, i) { if (i < seq && x.c && (!x.hidden || x.p === jog)) fora.push(x.c); });
+            var poderes = [], contagem = [];
+            buildDeck(st.rules, st.deckMode).forEach(function(c) {
+                for (var f = 0; f < fora.length; f++) if (sameCard(fora[f], c)) return;
+                var pw = getPower(c), i = poderes.indexOf(pw);
+                if (i < 0) { poderes.push(pw); contagem.push(1); } else contagem[i]++;
+            });
+            var ordem = poderes.map(function(pw, i) { return i; }).sort(function(a, b) { return poderes[a] - poderes[b]; });
+            var tr = [];
+            for (var t = 0; t < Math.floor(seq / 2) && t < ctx.maos.length; t++) tr.push(ctx.maos[t] === 3 ? 0 : (ctx.maos[t] === getTeam(jog) ? 1 : -1));
+            var vez = seq < ctx.jogadas.length ? ctx.jogadas[seq].p : ctx.vez;
+            var mesa = null, lider = vez === jog ? 'A' : 'B';
+            if (seq % 2 === 1) {
+                var ant = ctx.jogadas[seq - 1];
+                lider = ant.p === jog ? 'A' : 'B';
+                mesa = ant.hidden || !ant.c ? -1 : getPower(ant.c);
+            }
+            var outro = 3 - jog, nOutro = ctx.cartas[outro] || 0;
+            for (var q = seq; q < ctx.jogadas.length; q++) if (ctx.jogadas[q].p === outro) nOutro++;
+            return (ctx.situacoes[chave] = {
+                poderes: ordem.map(function(i) { return poderes[i]; }), contagem: ordem.map(function(i) { return contagem[i]; }),
+                tr: tr, mesa: mesa, lider: lider, nOutro: nOutro, chances: {}
+            });
+        }
+        var AI_COMB = [[1], [1, 1], [1, 2, 1], [1, 3, 3, 1], [1, 4, 6, 4, 1], [1, 5, 10, 10, 5, 1], [1, 6, 15, 20, 15, 6, 1]];
+        // A chance que o jogador via na situação `sit` com a mão `mao` (poderes em
+        // ordem crescente): a média da rodada jogada até o fim contra cada mão que o
+        // outro podia ter, pesada pelas combinações de cartas que dão aquela mão.
+        // É a pergunta que o jogador responde de cabeça — "com isto, contra o que ele
+        // pode ter, eu ganho?" — e a que decide o que ele faz. Medido no teto do
+        // método (v0.15.2): lendo o jogador pela força das cartas, sem a mesa, a
+        // mesma leitura quase não rendia nada.
+        function aiChanceDoJogador(sit, mao) {
+            var chave = mao.join(',');
+            var e = sit.chances[chave];
+            if (e !== undefined) return e;
+            var cont = sit.contagem.slice(), poderes = sit.poderes, np = poderes.length;
+            for (var h = 0; h < mao.length; h++) { var i = poderes.indexOf(mao[h]); if (i >= 0 && cont[i] > 0) cont[i]--; }
+            var soma = 0, total = 0, outro = [];
+            (function escolhe(i, faltam, peso) {
+                if (!faltam) { soma += peso * aiRodadaRapida(mao, outro, sit.mesa, sit.lider, sit.tr); total += peso; return; }
+                if (i >= np) return;
+                var max = Math.min(cont[i], faltam);
+                for (var x = 0; x <= max; x++) {
+                    if (x) outro.push(poderes[i]);
+                    escolhe(i + 1, faltam - x, peso * AI_COMB[cont[i]][x]);
+                }
+                for (var y = 0; y < max; y++) outro.pop();
+            })(0, sit.nOutro, 1);
+            return (sit.chances[chave] = total ? soma / total : 0.5);
+        }
+        // A chance que o jogador via jogando a carta c agora (a mesma conta, com a
+        // primeira carta dele fixada).
+        function aiChanceDaCarta(sit, mao, c) {
+            var guardadas = sit.porCarta || (sit.porCarta = {}), chave = mao.join(',') + '>' + c;
+            if (guardadas[chave] !== undefined) return guardadas[chave];
+            var resto = mao.slice(); resto.splice(resto.indexOf(c), 1);
+            var cont = sit.contagem.slice(), poderes = sit.poderes, np = poderes.length;
+            for (var h = 0; h < mao.length; h++) { var i = poderes.indexOf(mao[h]); if (i >= 0 && cont[i] > 0) cont[i]--; }
+            var soma = 0, total = 0, outro = [];
+            (function escolhe(i, faltam, peso) {
+                if (!faltam) { soma += peso * aiValorJogadaRapida(resto, outro, c, sit.mesa, sit.lider, sit.tr); total += peso; return; }
+                if (i >= np) return;
+                var max = Math.min(cont[i], faltam);
+                for (var x = 0; x <= max; x++) {
+                    if (x) outro.push(poderes[i]);
+                    escolhe(i + 1, faltam - x, peso * AI_COMB[cont[i]][x]);
+                }
+                for (var y = 0; y < max; y++) outro.pop();
+            })(0, sit.nOutro, 1);
+            return (guardadas[chave] = total ? soma / total : 0.5);
+        }
+        // A escolha da carta (leitura das cartas, plano 2.3): o jogador escolhe entre
+        // as cartas diferentes que tem pela chance que via com cada uma e pelo
+        // hábito de abrir com a mais forte ou guardar a forte. Cada opção é
+        // [chance, posição na mão de −1 (a menor) a +1 (a maior)], a escolhida
+        // primeiro. `redondo`: chance em centésimos, como nas anotações da Ficha.
+        function aiOpcoesDaCarta(sit, mao, c, redondo) {
+            var dif = [], opcoes = [];
+            for (var i = 0; i < mao.length; i++) if (!i || mao[i] !== mao[i - 1]) dif.push(mao[i]);
+            for (var k = 0; k < dif.length; k++) {
+                var e = aiChanceDaCarta(sit, mao, dif[k]);
+                var x = [redondo ? Math.round(e * 100) / 100 : e, dif.length > 1 ? 2 * k / (dif.length - 1) - 1 : 0];
+                if (dif[k] === c) opcoes.unshift(x); else opcoes.push(x);
+            }
+            return opcoes;
+        }
+        // Chance de ele escolher a primeira opção: beta diz o quanto ele segue a
+        // chance (0 = a escolha não diz nada), gama o hábito (> 0 abre com a forte).
+        function aiProbDaEscolha(j, opcoes) {
+            if (opcoes.length < 2) return 1;
+            var v = [], max = -Infinity, soma = 0, i;
+            for (i = 0; i < opcoes.length; i++) { v.push(j.beta * opcoes[i][0] + j.gama * opcoes[i][1]); if (v[i] > max) max = v[i]; }
+            for (i = 0; i < v.length; i++) soma += Math.exp(v[i] - max);
+            return Math.exp(v[0] - max) / soma;
+        }
+
+        // Os momentos de uma rodada 1x1 em que o jogador `jog` decidiu algo que diz
+        // da mão dele: pediu, podia pedir e jogou a carta, ou respondeu a um pedido.
+        // `seq` é a posição na rodada, N o valor em jogo e h o que ele perdia correndo.
+        function aiMomentosDoJogador(log, jogadas, jog) {
+            var lista = [], aceito = st.rules === 'mineiro' ? 2 : 1, pendente = 0, ultimoTime = 0, ie = 0;
+            var podiaPedir = !st.isMaoDeX && !st.maoDeFerro;
+            for (var q = 0; q <= jogadas.length; q++) {
+                while (ie < log.length && (q === jogadas.length || log[ie].seq <= q)) {
+                    var e = log[ie++];
+                    if (e.p === jog) {
+                        if (e.a === 'pede') lista.push({ pede: true, pediu: true, seq: e.seq, N: e.v, h: aceito });
+                        else if (pendente) lista.push({ pede: false, acao: e.a, seq: e.seq, N: pendente, h: aceito });
+                    }
+                    if (e.a === 'pede') { pendente = e.v; ultimoTime = getTeam(e.p); }
+                    else if (e.a === 'aumenta') { if (pendente) aceito = pendente; pendente = e.v; ultimoTime = getTeam(e.p); }
+                    else if (e.a === 'aceita') { aceito = e.v; pendente = 0; }
+                    else if (e.a === 'corre') pendente = 0;
+                }
+                if (q < jogadas.length && jogadas[q].p === jog && podiaPedir && aceito < 12 && ultimoTime !== getTeam(jog))
+                    lista.push({ pede: true, pediu: false, seq: q, N: getNextTrucoVal(aceito), h: aceito });
+            }
+            return lista;
+        }
+
+        // Sorteio próprio da Ficha: as cartas que nunca apareceram são sorteadas
+        // entre as possíveis sem mexer no sorteio do jogo (no simulador isso mudaria
+        // as cartas das partidas seguintes, de qualquer dificuldade). A semente vem
+        // das cartas da rodada, então a mesma rodada dá sempre as mesmas mãos.
+        function aiSorteioDaRodada(jogadas) {
+            var a = 2166136261, texto = (st.vira ? st.vira.v + st.vira.s : '') + jogadas.map(function(x) { return x.c ? x.c.v + x.c.s : '-'; }).join('');
+            for (var i = 0; i < texto.length; i++) { a ^= texto.charCodeAt(i); a = Math.imul(a, 16777619); }
+            function rnd() {
+                a = (a + 0x6d2b79f5) | 0;
+                var t = Math.imul(a ^ (a >>> 15), 1 | a);
+                t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+                return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+            }
+            return function(lista, k) {
+                var buf = lista.slice(), out = [];
+                for (var i = 0; i < k && i < buf.length; i++) {
+                    var j = i + Math.floor(rnd() * (buf.length - i)), tmp = buf[i];
+                    buf[i] = buf[j]; buf[j] = tmp; out.push(buf[i]);
+                }
+                return out;
+            };
+        }
+
+        // As anotações de uma rodada 1x1 que acabou: pra cada decisão do jogador,
+        // o que ele fez e a chance que ele via naquela hora, com as cartas dele que
+        // apareceram abertas. Carta que nunca apareceu (escondida, ou a rodada
+        // acabou antes) fica em aberto: a anotação guarda a chance de algumas mãos
+        // possíveis com as cartas que quem observa nunca viu, sem adivinhar nada.
+        // Quem observa é o outro assento, e só com o que ele viu.
+        var FICHA_POSSIBILIDADES = 10;
+        // A rodada que acabou, como quem observa (o outro assento) a viu.
+        function aiVistaDaRodada(jog) {
+            var obs = 3 - jog, todas = (st.roundPlays || []).concat(st.table || []);
+            var jogadas = todas.map(function(x) { return { p: x.p, c: x.hidden && x.p !== obs ? null : x.c, hidden: !!x.hidden }; });
+            var cartas = {};
+            cartas[jog] = (st.hands[jog] || []).length; cartas[obs] = (st.hands[obs] || []).length;
+            var ctx = { jogadas: jogadas, maos: (st.trickResults || []).slice(), vez: st.turn, cartas: cartas, situacoes: {} };
+            var vistas = (st.vira ? [st.vira] : []).concat(st.hands[obs] || []);
+            jogadas.forEach(function(x) { if (x.c) vistas.push(x.c); });
+            var emAberto = buildDeck(st.rules, st.deckMode).filter(function(c) {
+                for (var i = 0; i < vistas.length; i++) if (sameCard(vistas[i], c)) return false;
+                return true;
+            }).map(getPower);
+            return { jogadas: jogadas, cartas: cartas, ctx: ctx, emAberto: emAberto, sortear: aiSorteioDaRodada(jogadas) };
+        }
+        function aiAnotacoesDaRodada(jog) {
+            var vista = aiVistaDaRodada(jog), jogadas = vista.jogadas, cartas = vista.cartas, ctx = vista.ctx, emAberto = vista.emAberto, sortear = vista.sortear;
+            return aiMomentosDoJogador(st.aiLog || [], jogadas, jog).map(function(m) {
+                var sit = aiSituacaoDoJogador(ctx, jog, m.seq), abertas = [], naMao = cartas[jog];
+                for (var q = m.seq; q < jogadas.length; q++) {
+                    if (jogadas[q].p !== jog) continue;
+                    naMao++;
+                    if (jogadas[q].c) abertas.push(getPower(jogadas[q].c));
+                }
+                var faltam = naMao - abertas.length, e = [];
+                if (!faltam) e.push(aiChanceDoJogador(sit, abertas.slice().sort(aiNum)));
+                else for (var j = 0; j < FICHA_POSSIBILIDADES; j++) e.push(aiChanceDoJogador(sit, abertas.concat(sortear(emAberto, faltam)).sort(aiNum)));
+                var o = { N: m.N, h: m.h, e: e.map(function(x) { return Math.round(x * 100) / 100; }) };
+                if (m.pede) o.pede = m.pediu ? 1 : 0;
+                else o.resp = m.acao === 'corre' ? 0 : (m.acao === 'aceita' ? 1 : 2);
+                return o;
+            });
+        }
+        // As escolhas de carta de uma rodada 1x1 que acabou: pra cada carta que o
+        // jogador jogou aberta, as opções que ele tinha naquela hora (aiOpcoesDaCarta).
+        // As cartas dele que nunca apareceram entram sorteadas entre as que quem
+        // observa não viu, como nas anotações de truco — e toda jogada entra, não só
+        // as das rodadas que foram até o fim: senão faltariam justamente as escolhas
+        // que encurtam a rodada, e a leitura sairia torta.
+        var FICHA_POSSIBILIDADES_CARTA = 5;
+        function aiEscolhasDaRodada(jog) {
+            var vista = aiVistaDaRodada(jog), jogadas = vista.jogadas, lista = [];
+            jogadas.forEach(function(x, seq) {
+                if (x.p !== jog || !x.c) return;
+                var sit = aiSituacaoDoJogador(vista.ctx, jog, seq), abertas = [], naMao = vista.cartas[jog];
+                for (var q = seq; q < jogadas.length; q++) {
+                    if (jogadas[q].p !== jog) continue;
+                    naMao++;
+                    if (jogadas[q].c) abertas.push(getPower(jogadas[q].c));
+                }
+                var faltam = naMao - abertas.length, c = getPower(x.c), op = [], diz = false;
+                for (var i = 0; i < (faltam ? FICHA_POSSIBILIDADES_CARTA : 1); i++) {
+                    var opcoes = aiOpcoesDaCarta(sit, abertas.concat(faltam ? vista.sortear(vista.emAberto, faltam) : []).sort(aiNum), c, true);
+                    op.push(opcoes);
+                    if (opcoes.length > 1) diz = true;
+                }
+                if (diz) lista.push({ carta: 1, op: op });
+            });
+            return lista;
+        }
+
+        // A Ficha: o que a Adaptativa sabe do jogador entre uma partida e outra.
+        // Só do Single Player (decisão dele) e oculta: nenhuma tela mostra — a aba
+        // Perfil só ganha uma frase vaga. Fica numa chave própria, e não dentro de
+        // trucoStatsV2: uma versão antiga do jogo aberta no mesmo navegador
+        // regrava as Estatísticas inteiras e poderia levar junto o que não conhece.
+        // O "Apagar dados salvos" limpa tudo (localStorage.clear), a Ficha inclusive.
+        // Um bloco por formato de mesa. As anotações antigas perdem peso aos poucos
+        // (as recentes contam mais) e as das partidas contra a própria Adaptativa
+        // contam em dobro: é contra ela que o jogador vai jogar, e muita gente joga
+        // diferente contra a IA mais difícil.
+        var FICHA_CHAVE = 'trucoFichaV2';
+        var FICHA_DECAI = 0.97;           // por partida terminada no formato: meia-vida de ~23 partidas
+        var FICHA_PESO_ADAPTATIVA = 2;
+        var FICHA_ANOTACOES = 600;        // por formato; as mais antigas saem
+        var FICHA_ESCOLHAS = 300;         // escolhas de carta, por formato, à parte
+        function fichaBlocoVazio() { return { partidas: 0, obs: [], escolhas: [], descartes: 0, jogadas: 0, escondidas: 0, semente: null }; }
+        // Quem já tem Estatísticas não começa do zero: na primeira vez, a Ficha de
+        // cada formato ganha uma semente com o que as Estatísticas do Single Player
+        // já contam. Números crus — quanto confiar neles é a Adaptativa que decide.
+        function fichaSemear(f) {
+            var sp = (loadStats().buckets || {}).sp;
+            var configs = (sp && sp.byConfig) || {};
+            Object.keys(configs).forEach(function(chave) {
+                var partes = chave.split('|'), r = configs[chave] || {};
+                var formato = partes.length >= 4 ? partes[1] : partes[0]; // chave anterior à v0.14.2: formato|regiao|dificuldade
+                if (!FORMAT_SEATS[formato]) return;
+                var b = f.formatos[formato] || (f.formatos[formato] = fichaBlocoVazio());
+                var s = b.semente || (b.semente = { partidas: 0, rodadas: 0, pedidos: 0, aceitou: 0, correu: 0, pedidosDecididos: 0, pegoNoBlefe: 0, descartes: 0 });
+                s.partidas += (r.w || 0) + (r.l || 0);
+                s.rodadas += r.hands || 0;
+                s.pedidos += r.askTotal || 0;
+                s.aceitou += r.respAccepted || 0;
+                s.correu += r.respRan || 0;
+                s.pedidosDecididos += (r.askHit || 0) + (r.askRanFromRaise || 0) + (r.askLost || 0);
+                s.pegoNoBlefe += r.askRanFromRaise || 0;
+                s.descartes += r.folds || 0;
+            });
+        }
+        // Ler não grava: a Ficha só passa a existir no aparelho quando a primeira
+        // rodada é anotada (até lá, quem lê recebe a semente calculada na hora).
+        function carregarFicha() {
+            try {
+                var f = JSON.parse(localStorage.getItem(FICHA_CHAVE));
+                if (f && f.v === 2 && f.formatos) return f;
+            } catch(e) {}
+            var nova = { v: 2, formatos: {} };
+            fichaSemear(nova);
+            return nova;
+        }
+        // Arredonda na gravação: com o peso das partidas antigas caindo, os pesos
+        // viram números quebrados, e três casas bastam. A 'trucoFichaV1' só existiu
+        // nas cópias de teste da v0.15.2 (outro formato) e sai na primeira gravação.
+        function salvarFicha(f) {
+            try {
+                localStorage.setItem(FICHA_CHAVE, JSON.stringify(f, function(k, v) { return typeof v === 'number' ? Math.round(v * 1000) / 1000 : v; }));
+                localStorage.removeItem('trucoFichaV1');
+            } catch(e) {}
+        }
+        function fichaDoFormato(formato) {
+            var f = carregarFicha();
+            return f.formatos[formato] || null;
+        }
+
+        // Anota a rodada que acabou. Chamada do startRound (antes de o registro da
+        // rodada ser zerado) e do triggerEndGame (a última rodada da partida não
+        // passa por um startRound). `quemDescartou` é quem foi ao baralho nela.
+        // Cada rodada entra uma vez só: a primeira rodada de uma partida nova
+        // ainda vê o registro da última rodada da partida anterior. As anotações de
+        // decisão são do 1x1; as dos times entram com a Adaptativa nos times.
+        var fichaRodadasAnotadas = {};
+        function anotarFicha(quemDescartou, fimDaPartida) {
+            if (gameMode !== 'pc' || myPID === 0 || !st.roundId || fichaRodadasAnotadas[st.roundId]) return;
+            var todas = (st.roundPlays || []).concat(st.table || []);
+            if (!(st.aiLog || []).length && !todas.length && !quemDescartou) return;
+            fichaRodadasAnotadas[st.roundId] = true;
+            var f = carregarFicha();
+            var b = f.formatos[st.gameFormat] || (f.formatos[st.gameFormat] = fichaBlocoVazio());
+            var peso = aiDifficulty === 5 ? FICHA_PESO_ADAPTATIVA : 1;
+            // A Ficha é memória da IA, não regra do jogo: um defeito nela não pode
+            // parar a partida (isto roda no começo de toda rodada).
+            try {
+                if (getNumPlayers() === 2) aiAnotacoesDaRodada(myPID).forEach(function(o) { o.w = peso; o.p = st.partidaId || 0; b.obs.push(o); });
+                if (getNumPlayers() === 2) aiEscolhasDaRodada(myPID).forEach(function(o) { o.w = peso; o.p = st.partidaId || 0; (b.escolhas || (b.escolhas = [])).push(o); });
+            } catch(e) { if (window.console) console.warn('Ficha: rodada não anotada', e); }
+            if (b.obs.length > FICHA_ANOTACOES) b.obs = b.obs.slice(b.obs.length - FICHA_ANOTACOES);
+            if (b.escolhas && b.escolhas.length > FICHA_ESCOLHAS) b.escolhas = b.escolhas.slice(b.escolhas.length - FICHA_ESCOLHAS);
+            if (quemDescartou === myPID) b.descartes += peso;
+            todas.forEach(function(x) { if (x.p === myPID) { b.jogadas += peso; if (x.hidden) b.escondidas += peso; } });
+            if (fimDaPartida) {
+                b.partidas++;
+                b.obs.concat(b.escolhas || []).forEach(function(o) { o.w *= FICHA_DECAI; });
+                b.descartes *= FICHA_DECAI; b.jogadas *= FICHA_DECAI; b.escondidas *= FICHA_DECAI;
+            }
+            salvarFicha(f);
+        }
+
+        // ------------------------------------------ o jeito do jogador (Adaptativa)
+        // A Adaptativa descreve o jogador por poucos números, todos na escala da
+        // chance que ELE via na hora (e, ver aiChanceDoJogador):
+        //   pedir     b·σ((tB−e)/w) + c·σ((e−tP)/w): pede com e acima de tP (c diz
+        //             com que frequência; 1 = sempre) e blefa b das vezes abaixo de tB;
+        //   responder aceita com e acima de tA = t0 − k·(1/3 − pote), onde o pote
+        //             (N−h)/2N é a chance mínima que compensa pagar pra ver (k = 1:
+        //             ele segue o pote; k = 0: o mesmo ponto em todo degrau); aumenta
+        //             com e acima de tR, e aumenta de blefe r das vezes;
+        //   w         o quanto ele varia em volta desses pontos.
+        // Os números saem das anotações da Ficha e da partida atual, pela conta que
+        // melhor explica o que ele fez (máxima verossimilhança), a partir de um
+        // jogador comum ajustado pelas Estatísticas: com pouca anotação, vale esse começo.
+        var AI_JEITO_GRADES = {
+            w: [0.02, 0.04, 0.07, 0.11],
+            tP: [0.30, 0.35, 0.40, 0.45, 0.50, 0.55, 0.60, 0.625, 0.65, 0.675, 0.70, 0.725, 0.75, 0.80, 0.85, 0.90, 0.95],
+            c: [0.25, 0.4, 0.55, 0.7, 0.85, 1],
+            b: [0, 0.01, 0.03, 0.06, 0.1, 0.15, 0.22, 0.3, 0.4],
+            tB: [0.2, 0.3, 0.4, 0.5, 0.6],
+            t0: [0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.325, 0.35, 0.375, 0.40, 0.425, 0.45, 0.50, 0.55, 0.60, 0.70, 0.80],
+            k: [0, 0.5, 1, 1.5],
+            tR: [0.40, 0.50, 0.60, 0.65, 0.70, 0.725, 0.75, 0.775, 0.80, 0.85, 0.90, 0.95],
+            r: [0, 0.02, 0.05, 0.1, 0.18],
+            beta: [0, 3, 6, 10, 15, 22, 30, 45],
+            gama: [-3, -1.5, -0.5, 0, 0.5, 1.5, 3]
+        };
+        // beta e gama andam juntos (seguir a chance e abrir com a forte explicam as
+        // mesmas escolhas): um de cada vez, a conta empacava longe do melhor ponto
+        // (medido: 6/0,5 com o melhor em 10/1,5), então os dois são procurados juntos.
+        var AI_JEITO_CARTAS = [];
+        AI_JEITO_GRADES.beta.forEach(function(b) { AI_JEITO_GRADES.gama.forEach(function(g) { AI_JEITO_CARTAS.push([b, g]); }); });
+        var AI_JEITO_PISO = 0.002;        // o que o jeito não explica (ninguém é uma regra)
+        var AI_JEITO_COMECO = 12;          // quanto o jogador comum pesa, em anotações
+        function aiProbPede(j, e) { return Math.min(1, j.b * aiSigmoid((j.tB - e) / j.w) + j.c * aiSigmoid((e - j.tP) / j.w)); }
+        function aiPontoDeAceitar(j, N, h) { return j.t0 - j.k * (1 / 3 - (N - h) / (2 * N)); }
+        // { corre, aceita, aumenta } diante de um pedido de N (h = o que ele perde correndo).
+        function aiProbResposta(j, e, N, h) {
+            var pa = N < 12 ? j.r + (1 - j.r) * aiSigmoid((e - j.tR) / j.w) : 0;
+            var pac = (1 - pa) * aiSigmoid((e - aiPontoDeAceitar(j, N, h)) / j.w);
+            return { aumenta: pa, aceita: pac, corre: Math.max(0, 1 - pa - pac) };
+        }
+        // O jogador comum (o mesmo AI_JOGADOR_TIPICO das outras dificuldades), com o
+        // que as Estatísticas do Single Player já dizem dele: quanto pede, quanto
+        // corre e quanto é pego blefando.
+        function aiJeitoComum(semente) {
+            var j = { w: 0.07, tP: 0.625, c: 1, b: 0.1, tB: 0.6, t0: 0.425, k: 0, tR: 0.725, r: 0.05, beta: 10, gama: 0 };
+            if (!semente) return j;
+            var perto = function(grade, x) { return grade.reduce(function(a, g) { return Math.abs(g - x) < Math.abs(a - x) ? g : a; }); };
+            if (semente.rodadas >= 20) j.tP = perto(AI_JEITO_GRADES.tP, Math.max(0.45, Math.min(0.85, 0.92 - semente.pedidos / semente.rodadas)));
+            if (semente.aceitou + semente.correu >= 10) j.t0 = perto(AI_JEITO_GRADES.t0, 0.15 + 0.6 * semente.correu / (semente.aceitou + semente.correu));
+            if (semente.pedidosDecididos >= 10) j.b = perto(AI_JEITO_GRADES.b, Math.max(0.01, Math.min(0.4, semente.pegoNoBlefe / semente.pedidosDecididos)));
+            return j;
+        }
+        // O quanto a Adaptativa confia na Ficha (termômetro): se o jogador anda
+        // vencendo dela, a Ficha não está acertando — ele mudou, ou está jogando
+        // justamente contra o que ela espera. Aí ela confia menos no passado e mais
+        // no que vê na partida. Últimas 10 partidas contra ela, no mesmo formato.
+        function aiTermometro(formato) {
+            var sp = (loadStats().buckets || {}).sp, recentes = (sp && sp.recent) || [];
+            var contra = recentes.filter(function(r) { var p = String(r.k || '').split('|'); return p.length >= 4 && p[1] === formato && p[3] === '5'; }).slice(-10);
+            if (!contra.length) return 1;
+            var venceu = contra.filter(function(r) { return r.w; }).length;
+            var taxa = (venceu + 1) / (contra.length + 3);
+            return Math.max(0.3, Math.min(1, 1 - 2.5 * Math.max(0, taxa - 0.3)));
+        }
+        // As anotações da Ficha separadas em duas: as de outras partidas (que pesam
+        // pelo termômetro) e as da partida atual (que pesam mais conforme a partida
+        // avança).
+        function aiAnotacoesPesadas(formato) {
+            var b = fichaDoFormato(formato), daFicha = [], daPartida = [], obsDaPartida = [], escolhasDaPartida = [];
+            ((b && b.obs) || []).forEach(function(o) { if (o.p && o.p === st.partidaId) obsDaPartida.push(o); else daFicha.push(o); });
+            ((b && b.escolhas) || []).forEach(function(o) { if (o.p && o.p === st.partidaId) escolhasDaPartida.push(o); else daFicha.push(o); });
+            daPartida = obsDaPartida.concat(escolhasDaPartida);
+            return { semente: b && b.semente, confianca: aiTermometro(formato), daFicha: daFicha, daPartida: daPartida,
+                     obsDaPartida: obsDaPartida, escolhasDaPartida: escolhasDaPartida,
+                     pesoPartida: Math.min(6, 2 + 0.1 * daPartida.length) };
+        }
+        // Troca de jeito: a Ficha é de outras partidas, e o jogador pode ter mudado.
+        // A cada rodada, as decisões novas desta partida são PREVISTAS antes de
+        // entrar na conta — pelo jeito que a partida mostrava até a rodada anterior
+        // e pelo da Ficha — e quem previu melhor ganha. Quanto mais a partida
+        // prevê melhor que a Ficha, menos a Ficha pesa. Parte de 10% de chance de
+        // alguém ter mudado. (Comparar com o jeito ajustado nas próprias decisões
+        // exigia descontar a folga que ele ganha à toa, e na partida de verdade só
+        // percebia a troca na 8ª rodada; prevendo, em 12 partidas do Camaleão, 26%
+        // já na 2ª rodada e 50% na 7ª, e 7-10% contra quem não troca.)
+        var AI_TROCA_CHANCE = 0.1;
+        function aiVerossimilhancaTotal(j, lista) {
+            return aiVerossimilhanca(j, lista.filter(function(x) { return x.o.pede !== undefined; }), true) +
+                   aiVerossimilhanca(j, lista.filter(function(x) { return x.o.resp !== undefined; }), false) +
+                   aiVerossimilhancaDasCartas(j, lista.filter(function(x) { return x.o.carta !== undefined; }));
+        }
+        // As escolhas de carta: a média, entre as possibilidades da mão dele, da
+        // chance de a escolha feita sair.
+        function aiVerossimilhancaDasCartas(j, lista) {
+            var soma = 0;
+            for (var i = 0; i < lista.length; i++) {
+                var op = lista[i].o.op, p = 0;
+                for (var q = 0; q < op.length; q++) p += aiProbDaEscolha(j, op[q]);
+                soma += lista[i].w * Math.log(AI_JEITO_PISO + (1 - AI_JEITO_PISO) * p / op.length);
+            }
+            return soma;
+        }
+        // As chances anotadas vão em centésimos (aiAnotacoesDaRodada): com a Ficha
+        // cheia são umas 4 mil entradas, mas no máximo 101 valores por tipo de
+        // decisão, então cada conta guarda o que já calculou por centésimo — o
+        // mesmo número, 3 a 4 vezes mais rápido (medido numa Ficha de 600 anotações).
+        function aiVerossimilhanca(j, lista, pede) {
+            var soma = 0, PISO = AI_JEITO_PISO, guardadas = {};
+            for (var i = 0; i < lista.length; i++) {
+                var o = lista[i].o, p = 0, tabela = guardadas[pede ? 0 : o.N * 16 + o.h] || (guardadas[pede ? 0 : o.N * 16 + o.h] = []);
+                for (var q = 0; q < o.e.length; q++) {
+                    var e = o.e[q], c = Math.round(e * 100), exata = c / 100 === e, x = exata ? tabela[c] : undefined;
+                    if (x === undefined) { x = pede ? aiProbPede(j, e) : aiProbResposta(j, e, o.N, o.h); if (exata) tabela[c] = x; }
+                    if (pede) p += o.pede ? x : 1 - x;
+                    else p += o.resp === 2 ? x.aumenta : (o.resp === 1 ? x.aceita : x.corre);
+                }
+                soma += lista[i].w * Math.log(PISO + (1 - PISO) * p / o.e.length);
+            }
+            return soma;
+        }
+        // O começo (jogador comum) entra como anotações de mentira, com a resposta
+        // que ele daria em fração, espalhadas pela escala da chance.
+        function aiAnotacoesDoComeco(comum) {
+            var lista = [], peso = AI_JEITO_COMECO / 10;
+            for (var i = 0; i < 10; i++) {
+                var e = 0.05 + 0.1 * i, pp = aiProbPede(comum, e), r = aiProbResposta(comum, e, 3, 1);
+                lista.push({ o: { pede: 1, e: [e] }, w: peso * pp }, { o: { pede: 0, e: [e] }, w: peso * (1 - pp) });
+                lista.push({ o: { resp: 2, N: 3, h: 1, e: [e] }, w: peso * r.aumenta }, { o: { resp: 1, N: 3, h: 1, e: [e] }, w: peso * r.aceita },
+                           { o: { resp: 0, N: 3, h: 1, e: [e] }, w: peso * r.corre });
+            }
+            // Escolhas de carta de mentira, em espelho (a mais forte com mais e com
+            // menos chance), pra não puxar o hábito pra nenhum lado.
+            var conjuntos = [[[0.3, -1], [0.5, 0], [0.7, 1]], [[0.7, -1], [0.5, 0], [0.3, 1]], [[0.4, -1], [0.6, 1]], [[0.6, -1], [0.4, 1]]];
+            conjuntos.forEach(function(opcoes) {
+                opcoes.forEach(function(x, i) {
+                    var ordem = [x].concat(opcoes.filter(function(y, k) { return k !== i; }));
+                    lista.push({ o: { carta: 1, op: [ordem] }, w: AI_JEITO_COMECO / conjuntos.length * aiProbDaEscolha(comum, ordem) });
+                });
+            });
+            return lista;
+        }
+        // Anotações iguais (mesma decisão, mesma chance conhecida) viram uma só,
+        // com o peso somado: a conta fica do tamanho do que é diferente.
+        function aiAgruparAnotacoes(lista) {
+            var mapa = {}, out = [];
+            lista.forEach(function(x) {
+                var o = x.o;
+                if (!o.e || o.e.length !== 1) { out.push(x); return; }
+                var k = (o.pede !== undefined ? 'p' + o.pede : 'r' + o.resp + '|' + o.N + '|' + o.h) + '|' + o.e[0];
+                if (mapa[k]) mapa[k].w += x.w; else { mapa[k] = { o: o, w: x.w }; out.push(mapa[k]); }
+            });
+            return out;
+        }
+        // A conta: um número de cada vez, na grade, ficando com o que melhor explica
+        // as anotações, até nada mais melhorar. Os números de pedir só mexem na
+        // parte dos pedidos, os de responder só na das respostas (w, nas duas).
+        // `inicio`: de onde partir (o jeito da rodada anterior chega em uma volta).
+        var AI_JEITO_PARTE = { w: 'ambas', tP: 'pede', c: 'pede', b: 'pede', tB: 'pede', t0: 'resposta', k: 'resposta', tR: 'resposta', r: 'resposta', cartas: 'carta' };
+        // A conta anda em passos (um valor da grade por vez), pra caber nos pedaços
+        // de pensar sem travar a tela; aiAjustarJeito faz tudo de uma vez.
+        function aiAjusteDoJeito(anotacoes, comum, inicio) {
+            var lista = aiAgruparAnotacoes(anotacoes.concat(aiAnotacoesDoComeco(comum)));
+            var pedidos = lista.filter(function(x) { return x.o.pede !== undefined; });
+            var respostas = lista.filter(function(x) { return x.o.resp !== undefined; });
+            var escolhas = lista.filter(function(x) { return x.o.carta !== undefined; });
+            var j = Object.assign({}, comum, inicio || {});
+            var llP = aiVerossimilhanca(j, pedidos, true), llR = aiVerossimilhanca(j, respostas, false), llC = aiVerossimilhancaDasCartas(j, escolhas);
+            var nomes = Object.keys(AI_JEITO_PARTE), iNome = 0, iValor = 0, volta = 0, mudou = false, pronto = false;
+            return {
+                // Testa até `n` valores; devolve true quando a conta acabou.
+                passo: function(n) {
+                    while (n-- > 0 && !pronto) {
+                        var nome = nomes[iNome], cartas = nome === 'cartas', grade = cartas ? AI_JEITO_CARTAS : AI_JEITO_GRADES[nome], valor = grade[iValor], parte = AI_JEITO_PARTE[nome];
+                        if (cartas ? valor[0] !== j.beta || valor[1] !== j.gama : valor !== j[nome]) {
+                            var tenta = Object.assign({}, j);
+                            if (cartas) { tenta.beta = valor[0]; tenta.gama = valor[1]; } else tenta[nome] = valor;
+                            var p = parte === 'pede' || parte === 'ambas' ? aiVerossimilhanca(tenta, pedidos, true) : llP;
+                            var r = parte === 'resposta' || parte === 'ambas' ? aiVerossimilhanca(tenta, respostas, false) : llR;
+                            var cc = parte === 'carta' ? aiVerossimilhancaDasCartas(tenta, escolhas) : llC;
+                            if (p + r + cc > llP + llR + llC + 1e-9) { llP = p; llR = r; llC = cc; j = tenta; mudou = true; }
+                        }
+                        if (++iValor < grade.length) continue;
+                        iValor = 0;
+                        if (++iNome < nomes.length) continue;
+                        iNome = 0;
+                        if (!mudou || ++volta >= 6) pronto = true;
+                        mudou = false;
+                    }
+                    return pronto;
+                },
+                jeito: function() { return j; }
+            };
+        }
+        function aiAjustarJeito(anotacoes, comum, inicio) {
+            var ajuste = aiAjusteDoJeito(anotacoes, comum, inicio);
+            while (!ajuste.passo(1000)) {}
+            return ajuste.jeito();
+        }
+        // O jeito do jogador `jog` nesta rodada (a conta é feita uma vez por rodada).
+        // Em jogo, a conta começa com a rodada (aiAdiantarJeito) e anda nos pedaços
+        // de pensar. São até três contas em fila: o jeito da Ficha (uma vez por
+        // partida; se a rodada acabar antes, a conta continua na seguinte), o jeito
+        // só desta partida e, com a chance de troca que os dois dão, o jeito que vale.
+        var aiJeitoGuardado = null, aiAjusteEmCurso = null;
+        var aiJeitoDaFicha = null;        // { chave, jeito } pronto, ou { chave, ajuste } ainda em conta
+        var aiTrocaDaPartida = null;      // a previsão desta partida (detector de troca de jeito)
+        function aiAjusteDaRodada(jog) {
+            var chave = st.roundId + '|' + jog + '|' + st.gameFormat, mesmoJogador = jog + '|' + st.gameFormat;
+            if (aiJeitoGuardado && aiJeitoGuardado.chave === chave) return null;
+            if (aiAjusteEmCurso && aiAjusteEmCurso.chave === chave) return aiAjusteEmCurso;
+            var a = aiAnotacoesPesadas(st.gameFormat), comum = aiJeitoComum(a.semente);
+            var antes = aiJeitoGuardado && aiJeitoGuardado.jogador === mesmoJogador ? aiJeitoGuardado.jeito : null;
+            var chaveFicha = st.partidaId + '|' + mesmoJogador;
+            var contaDaFicha = aiJeitoDaFicha && aiJeitoDaFicha.chave === chaveFicha ? aiJeitoDaFicha : null;
+            var jFicha = contaDaFicha && contaDaFicha.jeito ? contaDaFicha.jeito : (a.daFicha.length ? null : comum);
+            var jPartida = a.daPartida.length ? null : comum;
+            // O que a partida previa até a rodada anterior (na primeira, o jogador comum).
+            var antesDaPartida = aiTrocaDaPartida && aiTrocaDaPartida.chave === chaveFicha ? aiTrocaDaPartida : { chave: chaveFicha, vistasObs: 0, vistasEscolhas: 0, d: 0, jPartida: comum };
+            var troca = Object.assign({}, antesDaPartida);
+            var pesadas = function(lista, peso) { return lista.map(function(o) { return { o: o, w: o.w * peso }; }); };
+            var atual = null, final = null, pronto = false;
+            var ajuste = { chave: chave, chanceDeTroca: 0 };
+            ajuste.passo = function(n) {
+                while (n > 0 && !pronto) {
+                    if (!atual) {
+                        if (!jFicha) {
+                            if (!contaDaFicha) contaDaFicha = aiJeitoDaFicha = { chave: chaveFicha, ajuste: aiAjusteDoJeito(pesadas(a.daFicha, 1), comum, null) };
+                            atual = contaDaFicha.ajuste;
+                        }
+                        // Só esta partida, cada decisão valendo uma (como na conta da troca).
+                        else if (!jPartida) atual = aiAjusteDoJeito(a.daPartida.map(function(o) { return { o: o, w: 1 }; }), comum, null);
+                        else {
+                            var novas = a.obsDaPartida.slice(troca.vistasObs).concat(a.escolhasDaPartida.slice(troca.vistasEscolhas)).map(function(o) { return { o: o, w: 1 }; });
+                            if (novas.length) troca.d += aiVerossimilhancaTotal(troca.jPartida, novas) - aiVerossimilhancaTotal(jFicha, novas);
+                            troca.vistasObs = a.obsDaPartida.length; troca.vistasEscolhas = a.escolhasDaPartida.length; troca.jPartida = jPartida;
+                            ajuste.chanceDeTroca = a.daPartida.length ? aiSigmoid(troca.d + Math.log(AI_TROCA_CHANCE / (1 - AI_TROCA_CHANCE))) : 0;
+                            atual = final = aiAjusteDoJeito(pesadas(a.daFicha, a.confianca * (1 - ajuste.chanceDeTroca)).concat(pesadas(a.daPartida, a.pesoPartida)), comum, antes);
+                        }
+                    }
+                    var fez = Math.min(n, 3);
+                    n -= fez;
+                    if (!atual.passo(fez)) continue;
+                    if (atual === final) pronto = true;
+                    else if (!jFicha) { jFicha = atual.jeito(); aiJeitoDaFicha = { chave: chaveFicha, jeito: jFicha }; }
+                    else jPartida = atual.jeito();
+                    atual = null;
+                }
+                return pronto;
+            };
+            ajuste.jeito = function() { return final.jeito(); };
+            ajuste.guardar = function() {
+                aiJeitoGuardado = { chave: chave, jogador: mesmoJogador, jeito: final.jeito(), chanceDeTroca: ajuste.chanceDeTroca };
+                aiTrocaDaPartida = troca;
+                if (aiAjusteEmCurso === ajuste) aiAjusteEmCurso = null;
+            };
+            return (aiAjusteEmCurso = ajuste);
+        }
+        // No jogo, a decisão nunca termina a conta na hora: com a Ficha cheia, num
+        // celular, ela passa de um segundo, e a tela travaria. Se a conta da rodada
+        // ainda não acabou, vale o jeito provisório e a conta segue nos pedaços. No
+        // simulador (sem espera de verdade) a conta termina sempre na hora.
+        function aiJeitoDoJogador(jog) {
+            var ajuste = aiAjusteDaRodada(jog);
+            if (ajuste && AI_PENSA_NO_TEMPO) return aiJeitoProvisorio(jog);
+            if (ajuste) { while (!ajuste.passo(1000)) {} ajuste.guardar(); }
+            return aiJeitoGuardado.jeito;
+        }
+        // O jeito de antes: o da rodada anterior, ou o da Ficha, ou o do jogador comum.
+        function aiJeitoProvisorio(jog) {
+            var mesmoJogador = jog + '|' + st.gameFormat;
+            if (aiJeitoGuardado && aiJeitoGuardado.jogador === mesmoJogador) return aiJeitoGuardado.jeito;
+            if (aiJeitoDaFicha && aiJeitoDaFicha.jeito && aiJeitoDaFicha.chave === st.partidaId + '|' + mesmoJogador) return aiJeitoDaFicha.jeito;
+            var b = fichaDoFormato(st.gameFormat);
+            return aiJeitoComum(b && b.semente);
+        }
+
         // ---------------------------------------------------------- chance
+        // A conta anda em passos: `passo(n)` soma n sorteios e `resultado()` lê o
+        // que já foi somado, sem fechar a conta. Quem decide na hora roda tudo de
+        // uma vez (aiSample1v1, aiSampleTeam); quem pensa durante a espera
+        // (v0.15.2) vai somando aos poucos, sem travar a tela.
+        function aiResultadoDoSorteio(a, soma, pesos, somaLivre, lista, cartas) {
+            if (!(pesos > 1e-9)) { // nada combinou com o que o rival fez: vale o sorteio puro
+                return { p: somaLivre / a, lista: lista.map(function(x) { return { w: 1, val: x.val, s: x.s, f: x.f }; }), cartas: null };
+            }
+            return {
+                p: soma / pesos, lista: lista.map(function(x) { return { w: x.w, val: x.val, s: x.s, f: x.f }; }),
+                cartas: cartas ? cartas.map(function(x) { return { aberta: x.aberta / pesos, escondida: x.escondida / pesos }; }) : null
+            };
+        }
+        // Sorteios por decisão, conforme a dificuldade e a mesa. Sem espera de
+        // verdade (o simulador), quem pensa durante a espera do jogo (`pensaAte`)
+        // soma na hora o que somaria nela.
+        function aiAmostras(prof, n) {
+            var naEspera = n === 2 ? prof.pensaAte : prof.pensaAteTime;
+            if (naEspera && !AI_PENSA_NO_TEMPO) return naEspera;
+            return n === 2 ? (prof.amostras || AI_AMOSTRAS) : (prof.amostrasTime || AI_AMOSTRAS_TIME);
+        }
+
         // 1x1: sorteia as cartas que o rival pode ter e joga a rodada até o fim
         // em cada sorteio. Cada sorteio pesa conforme combina com o que o rival
         // fez nesta rodada. Devolve a chance da rodada e, se pedido, a de cada
         // carta que dá pra jogar agora (aberta e escondida).
-        function aiSample1v1(v, prof, querCartas, pool, poolPw) {
+        function aiSorteio1v1(v, prof, querCartas, pool, poolPw) {
+            if (prof.adaptativa) return aiSorteioAdaptativa1v1(v, prof, querCartas, pool);
             var oppPid = 3 - v.pid, k = v.counts[oppPid];
             var mine = v.hand.map(getPower), mineSorted = mine.slice().sort(aiNum);
             var tr = v.tricks.map(function(r) { return r === 3 ? 0 : (r === v.team ? 1 : -1); });
@@ -3580,9 +4500,7 @@
             var rec = aiRecord(v);
             var buf = pool.slice(), lista = [], soma = 0, pesos = 0, somaLivre = 0;
             var cartas = querCartas ? mine.map(function() { return { aberta: 0, escondida: 0 }; }) : null;
-            var inicio = Date.now(), a;
-            for (a = 0; a < AI_AMOSTRAS; a++) {
-                if (a >= 60 && Date.now() - inicio > AI_LIMITE_MS) break;
+            function umSorteio() {
                 var opp = [];
                 for (var i = 0; i < k; i++) {
                     var j = i + Math.floor(aiRandom() * (buf.length - i));
@@ -3607,12 +4525,105 @@
                     }
                 }
             }
-            if (!(pesos > 1e-9)) { // nada combinou com o que o rival fez: vale o sorteio puro
-                lista.forEach(function(x) { x.w = 1; });
-                return { p: somaLivre / a, lista: lista, cartas: null };
+            var s = { a: 0 };
+            s.passo = function(n) { for (var fim = s.a + n; s.a < fim; s.a++) umSorteio(); };
+            s.resultado = function() { return aiResultadoDoSorteio(s.a, soma, pesos, somaLivre, lista, cartas); };
+            return s;
+        }
+        // Decide na hora: soma os sorteios da dificuldade de uma vez, parando no
+        // teto de tempo (aparelho lento).
+        function aiSortearAgora(s, alvo, minimo) {
+            var inicio = Date.now();
+            while (s.a < alvo && !(s.a >= minimo && Date.now() - inicio > AI_LIMITE_MS)) s.passo(1);
+            return s.resultado();
+        }
+        function aiSample1v1(v, prof, querCartas, pool, poolPw) {
+            return aiSortearAgora(aiSorteio1v1(v, prof, querCartas, pool, poolPw), aiAmostras(prof, 2), 60);
+        }
+
+        // A Adaptativa no 1x1 (v0.15.2): o mesmo sorteio, mas cada mão que o
+        // jogador pode ter pesa pelo JEITO DELE (aiJeitoDoJogador), com a chance que
+        // ele via em cada momento da rodada a partir daquela mão — inclusive o que
+        // ele deixou de fazer (podia pedir e jogou a carta). Cada sorteio leva
+        // também a chance que ele vê AGORA (s): é por ela que a Adaptativa prevê a
+        // resposta a um pedido dela. As cartas que ele escondeu entram sorteadas.
+        var aiSituacoesDaRodada = { rodada: null, situacoes: {} };
+        function aiValorJogadaRapida(resto, opp, pw, mesa, lider, tr) {
+            if (mesa === null) return aiRodadaRapida(resto, opp, pw, 'A', tr);
+            var res = pw > mesa ? 1 : (pw < mesa ? -1 : 0);
+            return aiRodadaRapida(resto, opp, null, res > 0 ? 'A' : (res < 0 ? 'B' : lider), tr.concat([res]));
+        }
+        function aiSorteioAdaptativa1v1(v, prof, querCartas, pool) {
+            var jog = 3 - v.pid, k = v.counts[jog], jeito = aiJeitoDoJogador(jog);
+            var mine = v.hand.map(getPower), mineSorted = mine.slice().sort(aiNum);
+            var tr = v.tricks.map(function(r) { return r === 3 ? 0 : (r === v.team ? 1 : -1); });
+            var mesa = null, lider = v.turn === v.pid ? 'A' : 'B';
+            if (v.table.length) { mesa = v.table[0].pw; lider = v.table[0].p === v.pid ? 'A' : 'B'; }
+            if (aiSituacoesDaRodada.rodada !== st.roundId) aiSituacoesDaRodada = { rodada: st.roundId, situacoes: {} };
+            var ctx = { jogadas: v.plays, maos: v.tricks, vez: v.turn, cartas: v.counts, situacoes: aiSituacoesDaRodada.situacoes };
+            var abertasDele = v.plays.filter(function(x) { return x.p === jog && x.c; });
+            var escondidasDele = v.plays.filter(function(x) { return x.p === jog && !x.c; });
+            var momentos = aiMomentosDoJogador(v.log, v.plays, jog).map(function(m) {
+                m.sit = aiSituacaoDoJogador(ctx, jog, m.seq);
+                m.depois = abertasDele.filter(function(x) { return x.seq >= m.seq; }).map(function(x) { return getPower(x.c); });
+                return m;
+            });
+            // As cartas que ele jogou abertas nesta rodada, cada uma com a situação em
+            // que ele a escolheu: a escolha diz das que ficaram (leitura das cartas).
+            var jogadasDele = abertasDele.map(function(x) {
+                return { seq: x.seq, pw: getPower(x.c), sit: aiSituacaoDoJogador(ctx, jog, x.seq), porMao: {},
+                         depois: abertasDele.filter(function(y) { return y.seq >= x.seq; }).map(function(y) { return getPower(y.c); }) };
+            });
+            var agora = aiSituacaoDoJogador(ctx, jog, v.plays.length);
+            var buf = pool.slice(), lista = [], porMao = {}, soma = 0, pesos = 0, somaLivre = 0, tira = k + escondidasDele.length;
+            var cartas = querCartas ? mine.map(function() { return { aberta: 0, escondida: 0 }; }) : null;
+            function umSorteio() {
+                var mao = [], escondidas = [];
+                for (var i = 0; i < tira; i++) {
+                    var j = i + Math.floor(aiRandom() * (buf.length - i));
+                    var tmp = buf[i]; buf[i] = buf[j]; buf[j] = tmp;
+                    (i < k ? mao : escondidas).push(getPower(buf[i]));
+                }
+                mao.sort(aiNum);
+                var peso = 1;
+                for (var q = 0; q < momentos.length; q++) {
+                    var mo = momentos[q], naHora = mao.concat(mo.depois);
+                    for (var z = 0; z < escondidasDele.length; z++) if (escondidasDele[z].seq >= mo.seq) naHora.push(escondidas[z]);
+                    var e = aiChanceDoJogador(mo.sit, naHora.sort(aiNum)), p;
+                    if (mo.pede) { var pp = aiProbPede(jeito, e); p = mo.pediu ? pp : 1 - pp; }
+                    else { var r = aiProbResposta(jeito, e, mo.N, mo.h); p = mo.acao === 'aumenta' ? r.aumenta : (mo.acao === 'aceita' ? r.aceita : r.corre); }
+                    peso *= AI_JEITO_PISO + (1 - AI_JEITO_PISO) * p;
+                }
+                for (var q2 = 0; q2 < jogadasDele.length; q2++) {
+                    var jd = jogadasDele[q2], naHora2 = mao.concat(jd.depois);
+                    for (var z2 = 0; z2 < escondidasDele.length; z2++) if (escondidasDele[z2].seq >= jd.seq) naHora2.push(escondidas[z2]);
+                    // A mesma mão dá a mesma chance: guardada, as mãos repetidas (quase
+                    // todas) não refazem a conta.
+                    var chaveDaMao = naHora2.sort(aiNum).join(','), pc = jd.porMao[chaveDaMao];
+                    if (pc === undefined) pc = jd.porMao[chaveDaMao] = aiProbDaEscolha(jeito, aiOpcoesDaCarta(jd.sit, naHora2, jd.pw, false));
+                    peso *= AI_JEITO_PISO + (1 - AI_JEITO_PISO) * pc;
+                }
+                var val = aiRodadaRapida(mineSorted, mao, mesa, lider, tr);
+                soma += peso * val; pesos += peso; somaLivre += val;
+                // Mãos iguais viram uma entrada só, com o peso somado: o resultado da
+                // rodada e a chance do jogador só dependem da mão, e as contas de
+                // pedir e responder passam a andar em centenas de entradas, não em
+                // dezenas de milhares (a decisão pesava na tela de um celular).
+                var chave = mao.join(','), x = porMao[chave];
+                if (x) x.w += peso;
+                else { porMao[chave] = x = { w: peso, val: val, s: aiChanceDoJogador(agora, mao) }; lista.push(x); }
+                if (cartas) {
+                    for (var c = 0; c < mine.length; c++) {
+                        var resto = mine.slice(0, c).concat(mine.slice(c + 1)).sort(aiNum);
+                        cartas[c].aberta += peso * aiValorJogadaRapida(resto, mao, mine[c], mesa, lider, tr);
+                        cartas[c].escondida += peso * aiValorJogadaRapida(resto, mao, -1, mesa, lider, tr);
+                    }
+                }
             }
-            if (cartas) cartas.forEach(function(x) { x.aberta /= pesos; x.escondida /= pesos; });
-            return { p: soma / pesos, lista: lista, cartas: cartas };
+            var s = { a: 0 };
+            s.passo = function(n) { for (var fim = s.a + n; s.a < fim; s.a++) umSorteio(); };
+            s.resultado = function() { return aiResultadoDoSorteio(s.a, soma, pesos, somaLivre, lista, cartas); };
+            return s;
         }
 
         // Quantos rivais ainda jogam depois de mim nesta mão.
@@ -3713,7 +4724,7 @@
         // Duplas e Trios: sorteia as cartas que faltam entre os assentos, pesa cada
         // sorteio pela Classificação que os parceiros anunciaram e pelo que os rivais
         // fizeram, e joga a rodada até o fim em cada um.
-        function aiSampleTeam(v, prof, querCartas, pool, poolPw) {
+        function aiSorteioTime(v, prof, querCartas, pool, poolPw) {
             var meuTime = v.team, n = v.n, rivais = aiRivals(v), rec = aiRecord(v);
             var pesoPedido = prof.pesoPedido === undefined ? 1 : prof.pesoPedido;
             // Um modelo por assento lido: o de cada rival e o do parceiro humano.
@@ -3744,9 +4755,7 @@
 
             var buf = pool.slice(), soma = 0, pesos = 0, somaLivre = 0, lista = [];
             var cartas = querCartas ? minhas.map(function() { return { aberta: 0, escondida: 0 }; }) : null;
-            var inicio = Date.now(), a;
-            for (a = 0; a < AI_AMOSTRAS_TIME; a++) {
-                if (a >= 30 && Date.now() - inicio > AI_LIMITE_MS) break;
+            function umSorteio() {
                 var maos = { }, k = 0;
                 maos[v.pid] = minhasOrd;
                 for (var c1 in conhecidas) if (conhecidas.hasOwnProperty(c1)) maos[c1] = conhecidas[c1];
@@ -3767,11 +4776,11 @@
                         // A mesma régua de quem anunciou: só a força das cartas.
                         peso *= aiClassLikelihood(v.classes[pid2], aiForca(maos[pid2], poolPw, rivais, n, 0, 0));
                     } else {
-                        // Aqui a situação da rodada entra: é pra prever se eles
-                        // correm de um pedido, e quem já fez uma mão corre menos
-                        // (o que eles ganharam é o que eu perdi, daí rec.l/rec.w).
-                        // Guarda a força de CADA um: a resposta ao truco é do time.
-                        forcasRivais.push(aiForca(maos[pid2], poolPw, rivais, n, rec.l, rec.w));
+                        // Pra prever se eles correm de um pedido. Guarda a força
+                        // de CADA um (a resposta ao truco é do time); a situação
+                        // da rodada — quem já fez uma mão corre menos — entra na
+                        // reta do grupo (aiChanceDoGrupo), com o placar de mãos.
+                        forcasRivais.push(aiForca(maos[pid2], poolPw, rivais, n, 0, 0));
                     }
                 }
                 for (var e2 = 0; e2 < eventos.length; e2++) {
@@ -3780,11 +4789,13 @@
                         var jog = v.plays[x];
                         if (jog.p === ev.p && jog.seq >= ev.seq && jog.c) naMao.push(getPower(jog.c));
                     }
-                    peso *= Math.pow(aiLikelihood(ev.a, aiForca(naMao, poolPw, rivais, n, 0, 0), modeloDe(ev.p)), pesoPedido);
+                    peso *= Math.pow(aiLikelihood(ev.a, aiForca(naMao, poolPw, rivais, n, 0, 0), modeloDe(ev.p), naMao.length), pesoPedido);
                 }
                 var val = aiSolveTeam(aiCopiaMaos(maos), mesa, tr, v.turn, n, meuTime);
                 soma += peso * val; pesos += peso; somaLivre += val;
-                lista.push({ w: peso, val: val, s: aiChanceDoGrupo(forcasRivais) });
+                // `f` é a força do grupo, na escala em que a IA lê um aumento: é
+                // com ela que o revide é previsto (aiEvPedir).
+                lista.push({ w: peso, val: val, s: aiChanceDoGrupo(forcasRivais, 3 - v.tricks.length, rec.l - rec.w), f: forcasRivais.length ? aiForcaDoGrupo(forcasRivais) : undefined });
                 if (cartas) {
                     for (var c2 = 0; c2 < minhas.length; c2++) {
                         var resto = minhas.slice(0, c2).concat(minhas.slice(c2 + 1)).sort(aiNum);
@@ -3793,12 +4804,13 @@
                     }
                 }
             }
-            if (!(pesos > 1e-9)) {
-                for (var z = 0; z < lista.length; z++) lista[z].w = 1;
-                return { p: somaLivre / a, lista: lista, cartas: null };
-            }
-            if (cartas) for (var y = 0; y < cartas.length; y++) { cartas[y].aberta /= pesos; cartas[y].escondida /= pesos; }
-            return { p: soma / pesos, lista: lista, cartas: cartas };
+            var s = { a: 0 };
+            s.passo = function(nPassos) { for (var fim = s.a + nPassos; s.a < fim; s.a++) umSorteio(); };
+            s.resultado = function() { return aiResultadoDoSorteio(s.a, soma, pesos, somaLivre, lista, cartas); };
+            return s;
+        }
+        function aiSampleTeam(v, prof, querCartas, pool, poolPw) {
+            return aiSortearAgora(aiSorteioTime(v, prof, querCartas, pool, poolPw), aiAmostras(prof, v.n), 30);
         }
 
         // Erro de leitura da rodada: sorteado uma vez por assento e mantido até
@@ -3809,7 +4821,9 @@
             return st.aiRuido[pid];
         }
 
-        function aiEstimate(v, prof, querCartas) {
+        // `apertada` (opcional): no simulador, a decisão que ela aponta como
+        // apertada ganha o dobro de sorteios na hora (ver aiPensarMais).
+        function aiEstimate(v, prof, querCartas, apertada) {
             var pool = aiUnseen(v), est;
             // Erro bobo de memória: uma carta que já saiu volta a ser possível.
             if (prof.erro && aiRandom() < prof.erro) {
@@ -3829,10 +4843,12 @@
                 // `pRaw` é a chance antes de virar classe: é ela que se junta com a
                 // dos outros quando o time decide em grupo (aiRespostaDoTime).
                 est = { p: [0.25, 0.5, 0.8][cls], pRaw: sorteio.p, classe: cls, lista: null, cartas: null };
-            } else if (v.n === 2) {
-                est = aiSample1v1(v, prof, querCartas, pool, poolPw);
+            } else if (!apertada || AI_PENSA_NO_TEMPO || !aiPensaMais(v.pid, prof)) {
+                est = v.n === 2 ? aiSample1v1(v, prof, querCartas, pool, poolPw) : aiSampleTeam(v, prof, querCartas, pool, poolPw);
             } else {
-                est = aiSampleTeam(v, prof, querCartas, pool, poolPw);
+                var s = v.n === 2 ? aiSorteio1v1(v, prof, querCartas, pool, poolPw) : aiSorteioTime(v, prof, querCartas, pool, poolPw);
+                est = aiSortearAgora(s, aiAmostras(prof, v.n), v.n === 2 ? 60 : 30);
+                if (apertada(est)) est = aiSortearAgora(s, 2 * aiAmostras(prof, v.n), 0);
             }
             // O erro de leitura vale pra toda conta que usa a chance, inclusive a
             // do pedido (aiEvPedir), senão pedir e jogar seriam comparados com
@@ -3851,27 +4867,223 @@
             return est;
         }
 
+        // ------------------------------------------------------------- pensar
+        // Quem pensa (v0.15.2: a Difícil, o Insano e a Adaptativa) soma os sorteios
+        // da próxima decisão DURANTE a espera que o jogo já tem — o Ritmo da IA, a
+        // pausa antes de responder ao truco, a da Mão de 11 —, em pedaços curtos
+        // pra tela não travar, e decide no mesmo instante de sempre, com a conta
+        // mais completa. A Fácil e a Normal decidem na hora, como antes.
+        // A conta feita na espera só vale se a mesa na hora de decidir for a mesma
+        // (a chave): se alguém correu, a rodada acabou ou a vez mudou, ela é
+        // jogada fora — o mesmo cuidado do temporizador atrasado (checkAiTurn).
+        // No simulador não há espera de verdade: lá quem pensa decide na hora, com
+        // o número de sorteios da dificuldade (AI_PENSA_NO_TEMPO desligado).
+        var AI_PENSA_NO_TEMPO = true;
+        var AI_PEDACO_MS = 8, AI_PEDACO_MAX = 400;
+        var aiPensamento = null;
+        function aiChaveDaMesa() {
+            return [st.roundId, st.turn, st.trucoState, st.handVal, st.proposedVal, st.trucoBy, (st.roundPlays || []).length,
+                    st.table.length, (st.aiLog || []).length, st.scores[1], st.scores[2]].join('|');
+        }
+        // A conta em passos de quem pensa. Só serve pra leitura 'chance' sem erro
+        // de leitura nem erro bobo (é o caso de toda dificuldade que pensa): o erro
+        // da Normal e da Fácil fica em aiEstimate.
+        function aiEstimativa(v, prof, querCartas) {
+            var pool = aiUnseen(v), poolPw = pool.map(getPower);
+            return v.n === 2 ? aiSorteio1v1(v, prof, querCartas, pool, poolPw) : aiSorteioTime(v, prof, querCartas, pool, poolPw);
+        }
+        // Começa a pensar na decisão de `pids`: um assento, ou o time inteiro
+        // quando a resposta ao truco é do grupo.
+        function aiComecarAPensar(pids, querCartas) {
+            var prof = aiPerfil();
+            aiPensamento = null;
+            if (!prof.pensa || !AI_PENSA_NO_TEMPO || prof.ruido || prof.erro || prof.leitura !== 'chance') return;
+            // No jogo, quem tem `pensaAte` pensa até esse teto (ou até a espera acabar).
+            var teto = getNumPlayers() === 2 ? prof.pensaAte : prof.pensaAteTime;
+            var p = aiPensamento = { chave: aiChaveDaMesa(), alvo: teto || aiAmostras(prof, getNumPlayers()), tarefas: [] };
+            // A Adaptativa precisa do jeito do jogador pra começar a sortear: na
+            // primeira decisão da rodada, os primeiros pedaços vão pra essa conta.
+            p.ajuste = prof.adaptativa && getNumPlayers() === 2 ? aiAjusteDaRodada(3 - pids[0]) : null;
+            p.montar = function() {
+                p.tarefas = pids.map(function(pid) { return { pid: pid, querCartas: querCartas, sorteio: aiEstimativa(aiView(pid), prof, querCartas) }; });
+            };
+            if (!p.ajuste) p.montar();
+            aiAgendarPedaco(p);
+        }
+        // A conta do jeito do jogador (Adaptativa, 1x1) começa junto com a rodada,
+        // sem esperar a primeira decisão dela: com a Ficha cheia é a parte mais
+        // cara, e a distribuição das cartas e a vez do jogador dão tempo pra ela
+        // andar. Ela não depende da mesa: só para quando a rodada acaba ou quando a
+        // Adaptativa começa a pensar numa decisão (que continua a mesma conta).
+        function aiAdiantarJeito() {
+            if (!AI_PENSA_NO_TEMPO || gameMode !== 'pc' || myPID === 0 || getNumPlayers() !== 2 || !aiPerfil().adaptativa) return;
+            var ajuste = aiAjusteDaRodada(myPID);
+            if (!ajuste) return;
+            var p = aiPensamento = { rodada: st.roundId, alvo: 0, tarefas: [], ajuste: ajuste, montar: function() {} };
+            aiAgendarPedaco(p);
+        }
+        // O MessageChannel devolve a vez pro navegador sem o atraso mínimo de um
+        // setTimeout encadeado (~4 ms), que comeria metade do tempo de pensar.
+        var aiCanalDePensar = null, aiProximoPedaco = null;
+        function aiAgendarPedaco(p) {
+            var f = function() { aiPedacoDePensamento(p); };
+            if (!aiCanalDePensar && typeof MessageChannel !== 'undefined') {
+                aiCanalDePensar = new MessageChannel();
+                aiCanalDePensar.port1.onmessage = function() { var g = aiProximoPedaco; aiProximoPedaco = null; if (g) g(); };
+            }
+            if (aiCanalDePensar) { aiProximoPedaco = f; aiCanalDePensar.port2.postMessage(0); }
+            else setTimeout(f, 0);
+        }
+        function aiPedacoDePensamento(p) {
+            if (aiPensamento !== p || (p.rodada ? p.rodada !== st.roundId : p.chave !== aiChaveDaMesa())) return;
+            var inicio = Date.now(), faltam = true, feitos = 0;
+            if (p.ajuste) {
+                var pronto = false;
+                while (!pronto && Date.now() - inicio < AI_PEDACO_MS) pronto = p.ajuste.passo(3);
+                if (!pronto) { aiAgendarPedaco(p); return; }
+                p.ajuste.guardar(); p.ajuste = null;
+                p.montar();
+                aiAgendarPedaco(p);
+                return;
+            }
+            // O teto de sorteios por pedaço só pesa quando o relógio não anda (os
+            // testes com relógio parado); no jogo, os 8 ms acabam antes.
+            // Um sorteio pode custar bem mais que a média — os primeiros de cada
+            // decisão fazem as contas das mãos novas (na Adaptativa, uns 7 ms num
+            // computador, contra 0,03 ms na média) —, então o pedaço não começa um
+            // que não caberia no que sobra: pelo maior dos últimos, que vai sendo
+            // esquecido (10% a cada sorteio) pra não frear a conta depois.
+            var relogio = typeof performance !== 'undefined' && performance.now ? function() { return performance.now(); } : Date.now;
+            var t0 = relogio();
+            while (faltam && feitos < AI_PEDACO_MAX && Date.now() - inicio < AI_PEDACO_MS && (!feitos || relogio() - t0 + (p.maiorSorteio || 0) < AI_PEDACO_MS)) {
+                faltam = false;
+                for (var i = 0; i < p.tarefas.length; i++) {
+                    var s = p.tarefas[i].sorteio;
+                    if (s.a < p.alvo) {
+                        var ti = relogio();
+                        s.passo(1);
+                        p.maiorSorteio = Math.max(relogio() - ti, (p.maiorSorteio || 0) * 0.9);
+                        faltam = true; feitos++;
+                    }
+                }
+            }
+            if (faltam) aiAgendarPedaco(p);
+        }
+        // A estimativa da decisão: a pensada na espera, completada na hora até o
+        // número da dificuldade (com o teto de tempo de sempre) se a espera não
+        // bastou — ou, se a mesa mudou ou ninguém pensou, a conta na hora.
+        function aiEstimativaPensada(pid, v, prof, querCartas, apertada) {
+            var t = aiTarefaPensada(pid, querCartas);
+            if (t) {
+                // Se a espera não bastou, completa na hora só até o número de sempre
+                // da dificuldade (o teto de pensar é pra espera, não pra agora).
+                t.usada = true;
+                return aiSortearAgora(t.sorteio, Math.max(t.sorteio.a, aiAmostras(prof, v.n)), v.n === 2 ? 60 : 30);
+            }
+            return aiEstimate(v, prof, querCartas, apertada);
+        }
+        function aiTarefaPensada(pid, querCartas) {
+            var p = aiPensamento;
+            if (!p || p.chave !== aiChaveDaMesa()) return null;
+            for (var i = 0; i < p.tarefas.length; i++) {
+                var t = p.tarefas[i];
+                if (t.pid === pid && t.querCartas === querCartas && !t.usada) return t;
+            }
+            return null;
+        }
+
+        // Quando a decisão está apertada — as opções quase empatadas —, a
+        // Adaptativa pensa mais, como uma pessoa: até AI_PENSA_MAIS_MS a mais no
+        // Ritmo Padrão (acompanha o Ritmo), com a Barra Superior mostrando que ela
+        // está pensando, e somando até o dobro de sorteios; na decisão fácil, nada
+        // a mais. Só como rival: como parceira ela não faz o time esperar (quem
+        // conduz o time é o jogador). No simulador a decisão apertada ganha o dobro
+        // de sorteios na hora (aiEstimate).
+        var AI_PENSA_MAIS_MS = 1500;
+        var AI_APERTADA = 0.02;           // diferença entre as opções, em fração do que está em jogo
+        var aiPensandoMais = 0;           // o assento que está pensando a mais (Barra Superior)
+        function aiPensaMais(pid, prof) { return !!prof.adaptativa && myPID !== 0 && getTeam(pid) !== getTeam(myPID); }
+        // Em jogo: se a decisão pensada está apertada, estende o pensamento e
+        // chama `depois` quando o tempo a mais acaba (quem chama confere de novo se
+        // a mesa ainda é a mesma). Devolve true quando adiou a decisão.
+        function aiPensarMais(pid, querCartas, prof, apertada, depois) {
+            if (!AI_PENSA_NO_TEMPO || !aiPensaMais(pid, prof)) return false;
+            var p = aiPensamento, t = aiTarefaPensada(pid, querCartas);
+            if (!t || p.estendido || !apertada(t.sorteio.resultado())) return false;
+            p.estendido = true;
+            p.alvo *= 2;
+            aiAgendarPedaco(p);
+            aiPensandoMais = pid;
+            updateUI();
+            setTimeout(function() { aiPensandoMais = 0; depois(); }, Math.round(AI_PENSA_MAIS_MS * paceScale()));
+            return true;
+        }
+
         // ----------------------------------------------------------- decisões
-        // Valor esperado de pedir N agora: o rival corre (fica h) ou aceita
-        // (joga valendo N). Com sorteio, cada rival imaginado responde conforme
-        // a força dele; `extra` deixa o rival mais disposto a aceitar (quem
-        // acabou de pedir raramente foge do aumento).
+        // Valor esperado de pedir N agora: o rival corre (fica h), aceita (joga
+        // valendo N) ou revida, aumentando de novo. Com sorteio, cada rival
+        // imaginado responde conforme a força dele; `extra` deixa o rival mais
+        // disposto a aceitar (quem acabou de pedir raramente foge do aumento).
+        // O revide entrou na v0.15.2 (retorno dele: "aumenta sem parar"): a conta
+        // só via "corre ou aceita", e a IA subia de degrau em degrau com mão média.
+        // Quem revida costuma ter mão — a mesma leitura que a IA faz de um aumento
+        // (aiLikelihood) —, e aí ela corre (entrega N) ou paga o valor seguinte,
+        // com a chance que sobra nas mãos que revidariam. É a conta que a
+        // Adaptativa já fazia no 1x1 (aiEvPedirAdaptativa).
         function aiEvPedir(v, prof, est, h, N, m, extra) {
+            if (prof.adaptativa && est.lista && v.n === 2) return aiEvPedirAdaptativa(v, prof, est, h, N);
             var uH = aiUtility(v, prof, h, 0), uW = aiUtility(v, prof, N, 0), uL = aiUtility(v, prof, 0, N);
             if (!est.lista) {
                 var f = aiRunChance(0.5, m, extra);
                 return f * uH + (1 - f) * (est.p * uW + (1 - est.p) * uL);
             }
-            var s = 0, w = 0, vies = est.vies || 0;
-            for (var i = 0; i < est.lista.length; i++) {
-                var x = est.lista[i], fr = aiRunChance(x.s, m, extra), val = x.val + vies;
-                s += x.w * (fr * uH + (1 - fr) * (val * uW + (1 - val) * uL));
+            var vies = est.vies || 0, i, x, fr, fa;
+            function revide(y, corre) { return (1 - corre) * aiLikelihood('aumenta', y.f === undefined ? y.s : y.f, m); }
+            // Revidar só vale até o doze, e não pra quem está na Mão de 11.
+            var revida = N < 12 && v.opp !== v.thres, depois = uL;
+            if (revida) {
+                var N2 = getNextTrucoVal(N), sR = 0, wR = 0;
+                for (i = 0; i < est.lista.length; i++) {
+                    x = est.lista[i]; fa = revide(x, aiRunChance(x.s, m, extra));
+                    sR += x.w * fa * (x.val + vies); wR += x.w * fa;
+                }
+                var pR = wR ? sR / wR : 0;
+                depois = Math.max(uL, pR * aiUtility(v, prof, N2, 0) + (1 - pR) * aiUtility(v, prof, 0, N2));
+            }
+            var s = 0, w = 0;
+            for (i = 0; i < est.lista.length; i++) {
+                x = est.lista[i]; fr = aiRunChance(x.s, m, extra); fa = revida ? revide(x, fr) : 0;
+                var val = x.val + vies;
+                s += x.w * (fr * uH + (1 - fr - fa) * (val * uW + (1 - val) * uL) + fa * depois);
                 w += x.w;
             }
             return w ? s / w : 0;
         }
         function aiEvJogar(v, prof, est, h) {
             return est.p * aiUtility(v, prof, h, 0) + (1 - est.p) * aiUtility(v, prof, 0, h);
+        }
+        // O pedido da Adaptativa: cada mão que o jogador pode ter responde pelo
+        // jeito dele, com a chance que ele vê agora — corre, aceita ou aumenta. Se
+        // ele aumentar, ela decide depois pela chance que vê nas mãos em que ele
+        // aumentaria (paga pra ver ou corre).
+        function aiEvPedirAdaptativa(v, prof, est, h, N) {
+            var jeito = aiJeitoDoJogador(3 - v.pid);
+            var uH = aiUtility(v, prof, h, 0), uW = aiUtility(v, prof, N, 0), uL = aiUtility(v, prof, 0, N);
+            var N2 = N < 12 ? getNextTrucoVal(N) : N, uW2 = aiUtility(v, prof, N2, 0), uL2 = aiUtility(v, prof, 0, N2);
+            var respostas = [], sA = 0, wA = 0;
+            est.lista.forEach(function(x) {
+                var r = aiProbResposta(jeito, x.s, N, h);
+                respostas.push(r); sA += x.w * r.aumenta * x.val; wA += x.w * r.aumenta;
+            });
+            var pAumento = wA ? sA / wA : 0;
+            var depoisDoAumento = Math.max(uL, pAumento * uW2 + (1 - pAumento) * uL2);
+            var s = 0, w = 0;
+            est.lista.forEach(function(x, i) {
+                var r = respostas[i];
+                s += x.w * (r.corre * uH + r.aceita * (x.val * uW + (1 - x.val) * uL) + r.aumenta * depoisDoAumento);
+                w += x.w;
+            });
+            return w ? s / w : 0;
         }
 
         // Teto do blefe por valor em jogo: quanto maior o pedido, menos precisa
@@ -3892,25 +5104,71 @@
             return aiFaixa(prof.blefe, x) * aiBonusFactor(v, prof) * (AI_TETO_BLEFE[N] || 1);
         }
 
+        // Blefe é pedir sem ter jogo: com mão Ruim, sempre — definição dele pra toda
+        // IA (v0.15.2) —, ou com menos de 30% de chance mesmo com cartas boas (a
+        // situação não ajuda). Antes a IA pedia "de verdade" com mão Ruim quando a
+        // situação parecia boa (o time já tinha feito a primeira, ou ela contava
+        // com o rival correndo), e o parceiro dizia "quer trucar — mão Ruim".
+        function aiMaoRuim(v) { return v.hand.length > 0 && aiClassOf(aiOwnScore(v)) === 0; }
+
         // Devolve POR QUE a IA quer pedir — 'valor' (pedido de verdade) ou 'blefe'
-        // (menos de 30% de chance; na Fácil, mão Ruim) — ou false. Os Parceiros
-        // Dinâmicos (v0.15.1) precisam saber qual dos dois pra pedir permissão;
-        // quando e com que sorteios ela pede continua exatamente igual.
+        // (ver aiMaoRuim) — ou false. Os Parceiros Dinâmicos (v0.15.1) precisam
+        // saber qual dos dois pra pedir permissão.
         function aiShouldAsk(v, prof, est) {
             var h = v.handVal, N = getNextTrucoVal(h), m = aiPlayerModel(aiMainOpponent(v), prof);
+            var ruim = aiMaoRuim(v);
             if (prof.leitura === 'classe') {
-                if (est.classe === 2) return aiRandom() < prof.pedeExcelente ? 'valor' : false;
-                return est.classe === 0 && aiRandom() < aiBluffChance(v, prof, N, m) ? 'blefe' : false;
+                if (est.classe === 2 && !ruim) return aiRandom() < prof.pedeExcelente ? 'valor' : false;
+                return (est.classe === 0 || ruim) && aiRandom() < aiBluffChance(v, prof, N, m) ? 'blefe' : false;
             }
-            // Blefe sem trava: sai só das cartas fracas (menos de 30%), na
+            // No 1x1 a Adaptativa pede quando a conta manda, com qualquer mão — é
+            // daqui que o blefe dela sai, sem faixa: contra quem corre muito ele
+            // compensa e ela blefa; contra quem paga pra ver, não. Perto do empate da
+            // conta ela sorteia, pra não virar um padrão fácil de ler. Nos times, onde
+            // a conta não tem o jeito do jogador, ela segue a regra de blefe das
+            // outras, com a faixa dela (AI_AJUSTE_TIMES): pela conta, nos Trios, o
+            // robô vencia 51,3 contra 43,6 (v0.15.2, decisão dele).
+            if (prof.adaptativa && est.lista && v.n === 2) {
+                var faixaA = aiUtility(v, prof, N, 0) - aiUtility(v, prof, 0, N);
+                var ganhoA = (aiEvPedir(v, prof, est, h, N, m) - aiEvJogar(v, prof, est, h)) / (faixaA || 1) + aiPressao(v, prof);
+                if (aiRandom() >= aiSigmoid(ganhoA / AI_ADAPTATIVA_MISTURA)) return false;
+                // Nela a definição muda só o nome (pra quando ela é parceira).
+                return est.p < 0.30 || ruim ? 'blefe' : 'valor';
+            }
+            // Blefe sem trava: sai das cartas fracas e da pouca chance, na
             // frequência da dificuldade — nenhuma conta impede o blefe.
-            if (est.p < 0.30) return aiRandom() < aiBluffChance(v, prof, N, m) ? 'blefe' : false;
+            if (est.p < 0.30 || ruim) return aiRandom() < aiBluffChance(v, prof, N, m) ? 'blefe' : false;
             // Segurar carta forte só compensa contra quem pede: a faixa sobe com
             // a frequência de pedidos que a IA viu do jogador.
             if (est.p >= 0.85 && aiRandom() < aiFaixa(prof.segura, m.pede / 0.6)) return false;
             var faixa = aiUtility(v, prof, N, 0) - aiUtility(v, prof, 0, N);
             var ganho = (aiEvPedir(v, prof, est, h, N, m) - aiEvJogar(v, prof, est, h)) / (faixa || 1);
             return ganho > prof.margemPedir - aiPressao(v, prof) ? 'valor' : false;
+        }
+
+        // Decisões apertadas (a Adaptativa pensa mais nelas, ver aiPensarMais): na
+        // vez de jogar, pedir quase empata com não pedir; na resposta a um pedido,
+        // aceitar quase empata com correr, ou aumentar com a melhor das duas. A
+        // escolha da carta fica de fora: duas cartas quase empatadas quase sempre
+        // quer dizer que tanto faz (as duas perdem, ou as duas ganham) — medido no
+        // navegador, contando as cartas ela parava em 4 de cada 10 jogadas.
+        function aiJogadaApertada(v, prof, est, podePedir) {
+            if (!podePedir || !est.lista) return false;
+            var h = v.handVal, N = getNextTrucoVal(h), faixa = aiUtility(v, prof, N, 0) - aiUtility(v, prof, 0, N);
+            var ganho = (aiEvPedir(v, prof, est, h, N, aiPlayerModel(aiMainOpponent(v), prof)) - aiEvJogar(v, prof, est, h)) / (faixa || 1);
+            return Math.abs(ganho + aiPressao(v, prof)) < AI_APERTADA;
+        }
+        function aiRespostaApertada(v, prof, est) {
+            var N = v.proposedVal, h = v.handVal;
+            var uRun = aiUtility(v, prof, 0, h), uWin = aiUtility(v, prof, N, 0), uLose = aiUtility(v, prof, 0, N), faixa = (uWin - uLose) || 1;
+            var uAcc = est.p * uWin + (1 - est.p) * uLose;
+            if (Math.abs(uAcc - uRun) / faixa < AI_APERTADA) return true;
+            if (N < 12 && v.my !== v.thres) {
+                var N2 = getNextTrucoVal(N), faixa2 = (aiUtility(v, prof, N2, 0) - aiUtility(v, prof, 0, N2)) || 1;
+                var uRaise = aiEvPedir(v, prof, est, N, N2, aiPlayerModel(v.trucoBy, prof), 0.12) + aiPressao(v, prof) * faixa2;
+                if (Math.abs(uRaise - Math.max(uAcc, uRun)) / faixa2 < AI_APERTADA) return true;
+            }
+            return false;
         }
 
         // Posição do pedido na escada: 0 truco, 1 seis, 2 nove (dez no Mineiro), 3 doze.
@@ -3946,7 +5204,10 @@
                 // exigir mais pra aceitar empurrava mão média pro aumento — a IA
                 // mais cautelosa pra pagar virava a mais agressiva pra aumentar.
                 var uRaise = aiEvPedir(v, prof, est, N, N2, m, 0.12) - (margemAceitar + prof.margemAumentar - aiPressao(v, prof)) * faixa2;
-                if (uRaise > melhor) escolha = 'aumenta';
+                // Aumentar com mão Ruim também é blefe (aiMaoRuim): sai na frequência
+                // de blefe da dificuldade, no valor do aumento. Na Adaptativa do 1x1,
+                // que decide tudo pela conta, não muda nada.
+                if (uRaise > melhor && ((prof.adaptativa && v.n === 2) || !aiMaoRuim(v) || aiRandom() < aiBluffChance(v, prof, N2, m))) escolha = 'aumenta';
             }
             return escolha;
         }
@@ -3968,7 +5229,8 @@
         }
 
         function aiDecideResponse(pid, folga) {
-            var v = aiView(pid), prof = aiComFolga(aiPerfil(), folga), est = aiEstimate(v, prof, false);
+            var v = aiView(pid), prof = aiComFolga(aiPerfil(), folga);
+            var est = aiEstimativaPensada(pid, v, prof, false, function(e) { return aiRespostaApertada(v, prof, e); });
             if (prof.resposta) return aiRespostaPorClasse(v, prof, est);
             return aiRespostaDaChance(v, prof, est);
         }
@@ -3977,7 +5239,10 @@
             if (prof.leitura === 'classe') return est.classe === 0 && aiRandom() < prof.baralho;
             if (est.p > prof.baralhoAte) return false;
             if (v.n > 2) {
-                var timeRuim = getTeamPIDs(v.team).every(function(p) { return p === v.pid || v.classes[p] === 0; });
+                // Você não anuncia classificação: exigir a sua fazia o seu parceiro
+                // nunca pedir pra ir ao baralho (desde a v0.15.0a). Quem decide é
+                // você, na permissão que ele pede (v0.15.2).
+                var timeRuim = getTeamPIDs(v.team).every(function(p) { return p === v.pid || isHumanSeat(p) || v.classes[p] === 0; });
                 if (!timeRuim) return false;
             }
             return aiRandom() < prof.baralho;
@@ -4017,6 +5282,9 @@
         }
 
         function aiChooseCard(v, prof, est, podeEsconder) {
+            // Quem joga bem sem fazer a conta de cada carta (v0.15.2): a regra
+            // simples nunca joga uma carta absurda, só deixa de achar a melhor.
+            if (prof.regra && (prof.regra >= 1 || aiRandom() < prof.regra)) return aiCardPolicy(v, prof, podeEsconder);
             if (!est.cartas) return aiCardPolicy(v, prof, podeEsconder);
             var mine = v.hand.map(getPower);
             var ordem = mine.map(function(pw, i) { return { i: i, pw: pw, val: est.cartas[i].aberta, esc: est.cartas[i].escondida }; });
@@ -4038,7 +5306,7 @@
             if (!seats.length) seats = [getTeamPIDs(team)[0]];
             var prof = aiPerfil(), v = aiView(seats[0]), soma = 0;
             seats.forEach(function (p) {
-                var est = aiEstimate(p === seats[0] ? v : aiView(p), prof, false);
+                var est = aiEstimativaPensada(p, p === seats[0] ? v : aiView(p), prof, false);
                 soma += est.pRaw === undefined ? est.p : est.pRaw;
             });
             var p = soma / seats.length;
@@ -4052,9 +5320,11 @@
         // time inteiro — ver aiRespostaDoTime.
         function aiPickResponder(team) {
             var seats = getTeamPIDs(team).filter(function(p) { return !isHumanSeat(p); });
-            var melhor = seats[0], melhorCls = -1;
+            var melhor = seats[0], melhorCls = -2;
             seats.forEach(function(p) {
-                var cls = st.aiClasses && st.aiClasses[p] !== undefined ? st.aiClasses[p] : aiClassOf(aiOwnScore(aiView(p)));
+                // Quem já não tem cartas não tem mão pra contar: fala por último
+                // (v0.15.2 — antes um bot sem cartas podia falar "— mão Ruim").
+                var cls = !(st.hands[p] || []).length ? -1 : (st.aiClasses && st.aiClasses[p] !== undefined ? st.aiClasses[p] : aiClassOf(aiOwnScore(aiView(p))));
                 if (cls > melhorCls) { melhorCls = cls; melhor = p; }
             });
             return melhor;
@@ -4076,12 +5346,12 @@
             if (getNumPlayers() === 2 || seats.length < 2) return aiDecideResponse(fala, folga);
             var minha = null, soma = 0;
             seats.forEach(function (p) {
-                var v = aiView(p), est = aiEstimate(v, prof, false);
+                var v = aiView(p), est = aiEstimativaPensada(p, v, prof, false);
                 soma += est.pRaw === undefined ? est.p : est.pRaw;
                 if (p === fala) minha = { v: v, est: est };
             });
             var pGrupo = soma / seats.length;
-            if (!minha) return aiDecideResponse(fala);
+            if (!minha) return aiDecideResponse(fala, folga);
             if (prof.resposta) {
                 minha.est.classe = aiClasseDaChance(pGrupo);
                 return aiRespostaPorClasse(minha.v, prof, minha.est);
@@ -4109,8 +5379,12 @@
         }
 
         // Conselho do parceiro-IA ao jogador: sempre com a classificação certa.
+        // Sem cartas não há o que classificar (a conta dava Ruim): a decisão é
+        // de quem ainda tem cartas — "é com você" (pedido dele, v0.15.2).
         function aiAdvice(pid) {
-            var cls = aiClassOf(aiOwnScore(aiView(pid))), classe = AI_CLASSES[cls];
+            var v = aiView(pid);
+            if (!v.hand.length) return { key: 'comVoce', label: 'É com você', verb: null, classe: null };
+            var cls = aiClassOf(aiOwnScore(v)), classe = AI_CLASSES[cls];
             if (cls === 0) return { key: 'correr', label: 'Correr', verb: 'correr', classe: classe };
             if (cls === 1) return { key: 'aceitar', label: 'Aceitar', verb: 'aceitar', classe: classe };
             if (st.proposedVal < 12) return { key: 'aumentar', label: 'Aumentar', verb: 'aumentar', classe: classe };
@@ -4139,7 +5413,9 @@
 
         function updateTurnGlow() {
             document.querySelectorAll('.card').forEach(c => c.classList.remove('active-turn'));
-            if (animLock && st.trucoState !== 'mao11') return;
+            // Pensando a mais, a Adaptativa trava a mesa mas continua sendo a vez
+            // dela: o contorno fica (sumia quando a Barra Superior era redesenhada).
+            if (animLock && st.trucoState !== 'mao11' && !aiPensandoMais) return;
 
             if (st.trucoState === 'mao11') {
                 for(var p = 1; p <= getNumPlayers(); p++) {
@@ -4295,7 +5571,7 @@
                     if (!isExiting && !isPaused) { setBottomGroup('grp-partner-ask'); actionBar.classList.add('danger-zone'); }
                     getEl('txt-partner-ask').innerText = rotuloParceiro(ped.pid) + (ped.tipo === 'blefe' ? ' quer blefar ' : ' quer pedir ') + getTrucoName(ped.valor) + '!';
                     uiTurn.innerText = "PEDIDO DO PARCEIRO!"; uiTurn.style.color = "var(--warn)";
-                    indicatorText = (rotuloParceiro(ped.pid) + ': mão ' + ped.classe).toUpperCase();
+                    indicatorText = (rotuloParceiro(ped.pid) + (ped.classe ? ': mão ' + ped.classe : '')).toUpperCase();
                 } else {
                     // Quem não é do time (o rival humano no multiplayer, ou quem só
                     // assiste) vê a mesa esperando, como numa vez normal da IA.
@@ -4325,7 +5601,8 @@
                         var partners = getPartnerPIDs().filter(function(p) { return !isHumanSeat(p); });
                         if (partners.length === 1) {
                             var adviceCat = aiAdvice(partners[0]);
-                            var advice = "Parceiro: mão " + adviceCat.classe + (adviceCat.key === 'bora' ? ". Bora!" : ", sugiro " + adviceCat.verb + (adviceCat.key === 'aumentar' ? "!" : ""));
+                            var advice = adviceCat.key === 'comVoce' ? "Parceiro: é com você!"
+                                : "Parceiro: mão " + adviceCat.classe + (adviceCat.key === 'bora' ? ". Bora!" : ", sugiro " + adviceCat.verb + (adviceCat.key === 'aumentar' ? "!" : ""));
                             indicatorText = advice.toUpperCase();
                             if(window.lastAdviceLevel !== st.proposedVal) {
                                 window.lastAdviceLevel = st.proposedVal;
@@ -4341,24 +5618,30 @@
                             });
                             var allAgree = cats.every(function(c) { return c.cat.key === cats[0].cat.key; });
 
-                            if (allAgree) {
+                            var semCartas = allAgree && cats[0].cat.key === 'comVoce';
+                            if (semCartas) {
+                                indicatorText = "PARCEIROS: É COM VOCÊ!";
+                            } else if (allAgree) {
                                 // Sem repetir as classificações aqui ("(RUIM E RUIM)"):
                                 // a frase já diz o que eles querem, e cada parceiro
                                 // conta a mão dele na própria mensagem logo abaixo.
                                 indicatorText = "PARCEIROS QUEREM " + cats[0].cat.verb.toUpperCase() + "!";
                             } else {
                                 indicatorText = cats.map(function(c) {
-                                    return partnerLabel(c.pid, c.idx).toUpperCase() + ": " + c.cat.classe.toUpperCase() + ", " + c.cat.label.toUpperCase();
+                                    return partnerLabel(c.pid, c.idx).toUpperCase() + ": " + (c.cat.key === 'comVoce' ? "É COM VOCÊ" : c.cat.classe.toUpperCase() + ", " + c.cat.label.toUpperCase());
                                 }).join(" - ");
                             }
 
                             if(window.lastAdviceLevel !== st.proposedVal) {
                                 window.lastAdviceLevel = st.proposedVal;
-                                cats.forEach(function(c) {
-                                    var pMsg = partnerLabel(c.pid, c.idx) + ": mão " + c.cat.classe + ", " + (c.cat.key === 'bora' ? c.cat.label : c.cat.label.toLowerCase());
+                                // Os dois sem cartas falam uma vez só, no plural.
+                                var falas = semCartas ? [{ idx: 0, key: 'comVoce', texto: "Parceiros: é com você!" }] : cats.map(function(c) {
+                                    return { idx: c.idx, key: c.cat.key, texto: partnerLabel(c.pid, c.idx) + (c.cat.key === 'comVoce' ? ": é com você!" : ": mão " + c.cat.classe + ", " + (c.cat.key === 'bora' ? c.cat.label : c.cat.label.toLowerCase())) };
+                                });
+                                falas.forEach(function(f) {
                                     setTimeout(function() {
-                                        if (st.trucoState === 'pending') { showMsg(pMsg, adviceMsgType(c.cat.key), 2000); }
-                                    }, 1500 + c.idx * 2200);
+                                        if (st.trucoState === 'pending') { showMsg(f.texto, adviceMsgType(f.key), 2000); }
+                                    }, 1500 + f.idx * 2200);
                                 });
                             }
                         }
@@ -4371,7 +5654,7 @@
                     } else { btnRaise.classList.add('hidden'); }
                 } else {
                     if(!isExiting && !isPaused) { setBottomGroup(null); actionBar.classList.remove('danger-zone'); }
-                    uiTurn.innerText = st.gameFormat === '1v1' ? "AGUARDANDO RIVAL..." : "AGUARDANDO RIVAIS..."; uiTurn.style.color = "var(--warn)";
+                    uiTurn.innerText = aiPensandoMais ? textoPensando(aiPensandoMais) : (st.gameFormat === '1v1' ? "AGUARDANDO RIVAL..." : "AGUARDANDO RIVAIS..."); uiTurn.style.color = "var(--warn)";
                 }
             } else {
                 if (!grpConfirmFold.classList.contains('active') && !isExiting && !isPaused && myPID !== 0) { setBottomGroup('grp-normal'); actionBar.classList.remove('danger-zone'); }
@@ -4383,6 +5666,7 @@
                 var canPlayNow = isMyTurn && !animLock;
                 if (isMyTurn && animLock) { uiTurn.innerText = "AGUARDE..."; }
                 else if (st.maoDeFerro) { uiTurn.innerText = isMyTurn ? "SUA VEZ (MÃO DE FERRO)" : ("VEZ " + turnOfLabel(st.turn)); }
+                else if (!isMyTurn && aiPensandoMais === st.turn) { uiTurn.innerText = textoPensando(st.turn); }
                 else { uiTurn.innerText = isMyTurn ? "SUA VEZ JOGAR" : ("VEZ " + turnOfLabel(st.turn)); }
                 
                 // Vez de outro assento: a cor diz de relance se é rival ou parceiro.
@@ -4714,7 +5998,7 @@
             gameMode = modeStr; myPID = playerID; 
             st.gameFormat = pendingFormat;
             st.rules = pendingRules;
-            st.scores = {1:0, 2:0}; window.lastAdviceLevel = 0; st.humanAccepted = false; matchResultRecorded = false; askWatch = null; st.aiRead = {};
+            st.scores = {1:0, 2:0}; window.lastAdviceLevel = 0; st.humanAccepted = false; matchResultRecorded = false; askWatch = null; st.aiRead = {}; st.partidaId = Date.now();
             if (modeStr === 'pc') { st.nicks = {1:'',2:'',3:'',4:'',5:'',6:''}; window.wsPlayers = {}; st.humanSeats = [1]; st.expectedHumans = 1; }
             else if (modeStr === 'json' || (modeStr === 'webrtc' && !webrtcResuming)) {
                 if (playerID === 1) { st.humanSeats = [1]; st.expectedHumans = pendingHumanCount; }
@@ -4758,6 +6042,7 @@
             st.partnerAsk = null; st.parceirosNegou = {}; st.parceiroSegura = 0; st.parceirosPassaram = '';
             st.lastFoldBy = st.nextRoundFoldBy || 0; st.nextRoundFoldBy = 0;
             aiLearnFromRound();
+            anotarFicha(st.lastFoldBy, false);
             st.aiLog = []; st.roundPlays = []; st.aiRuido = {};
 
             var deck = buildDeck(st.rules, st.deckMode);
@@ -4811,7 +6096,7 @@
             // A distribuição já é uma pausa (o animDeal trava logo em seguida);
             // travando antes, a barra não oferece jogada enquanto as cartas voam.
             animLock = true;
-            updateUI(); animDeal(); autoSave(); 
+            updateUI(); aiAdiantarJeito(); animDeal(); autoSave(); 
         }
 
         function handleMao11() {
@@ -4840,6 +6125,8 @@
                 updateUI();
             } else if (amICoordinatingTeam(st.maoDeXTeam)) {
                 animLock = true; updateUI();
+                var quemDecide = getTeamPIDs(st.maoDeXTeam).filter(function(p) { return !isHumanSeat(p); });
+                aiComecarAPensar(quemDecide.length ? quemDecide : [getTeamPIDs(st.maoDeXTeam)[0]], false);
                 setTimeout(function(){ aiDecideMao11(st.maoDeXTeam); }, 2500);
             } else {
                 updateUI();
@@ -5153,6 +6440,7 @@
             if(isAi) {
                 animLock = true;
                 var rodadaAgendada = st.roundId;
+                aiComecarAPensar([t], true);
                 setTimeout(function() {
                     if (st.roundId !== rodadaAgendada || st.turn !== t || st.trucoState !== 'none') return;
                     aiPlay(t);
@@ -5177,8 +6465,10 @@
             if (modo === 'permissivo') return tipo === 'blefe';
             return false;
         }
-        // A classificação que o parceiro conta ao pedir: a mesma do conselho.
-        function classeDoParceiro(pid) { return AI_CLASSES[aiClassOf(aiOwnScore(aiView(pid)))]; }
+        // A classificação que o parceiro conta ao pedir: a mesma do conselho. Sem
+        // cartas não há mão pra contar (null) e a fala sai sem ela (v0.15.2).
+        function classeDoParceiro(pid) { var v = aiView(pid); return v.hand.length ? AI_CLASSES[aiClassOf(aiOwnScore(v))] : null; }
+        function falaDaMao(classe) { return classe ? ' — mão ' + classe : ''; }
         function ehMeuParceiro(pid) { return myPID !== 0 && pid !== myPID && getTeam(pid) === getTeam(myPID); }
         function rotuloParceiro(pid) {
             var bots = getPartnerPIDs().filter(function(p) { return !isHumanSeat(p); });
@@ -5186,7 +6476,7 @@
         }
         function textoPedidoParceiro(ped) {
             var nome = getTrucoName(ped.valor).toLowerCase();
-            return rotuloParceiro(ped.pid) + ' quer ' + (ped.tipo === 'blefe' ? 'blefar o ' + nome : 'pedir ' + nome) + ' — mão ' + ped.classe;
+            return rotuloParceiro(ped.pid) + ' quer ' + (ped.tipo === 'blefe' ? 'blefar o ' + nome : 'pedir ' + nome) + falaDaMao(ped.classe);
         }
 
         // O bot pede truco (ou o próximo valor) na vez dele. O parceiro conta a
@@ -5197,7 +6487,7 @@
             aiLogAction(pid, 'pede', st.proposedVal);
             st.trucoBy = pid; st.lastTruco = pid; st.trucoState = 'pending';
             var msg = trucoActionText(pid, 'pediu', 'pediram', st.proposedVal);
-            if (modoDoParceiro(pid) && ehMeuParceiro(pid)) msg += ' — mão ' + classeDoParceiro(pid);
+            if (modoDoParceiro(pid) && ehMeuParceiro(pid)) msg += falaDaMao(classeDoParceiro(pid));
             showMsg(msg, 'neu');
             window.lastAdviceLevel = 0; animLock = false;
             updateUI(); updateTurnGlow(); autoSave(); checkAiTrucoDecision();
@@ -5236,14 +6526,33 @@
         function chaveDoPedido() { return [st.roundId, st.trucoBy, st.proposedVal].join('|'); }
         function parceirosDecidem(team) {
             if (st.parceiros !== 'ligado' || st.trucoState !== 'pending') return false;
-            var bots = getTeamPIDs(team).filter(function(p) { return !isHumanSeat(p); });
+            // Só decide pelo time quem ainda tem cartas (v0.15.2).
+            var bots = getTeamPIDs(team).filter(function(p) { return !isHumanSeat(p) && (st.hands[p] || []).length > 0; });
             return bots.length > 0 && bots.some(function(p) { return modoDoParceiro(p) === 'ligado'; }) && st.parceirosPassaram !== chaveDoPedido();
+        }
+        // Sem cartas, o parceiro do Ligado não decide pelo time: passa pra você na
+        // hora, sem contar mão, que não há (v0.15.2, pedido dele). A fala espera a
+        // do pedido, como o conselho.
+        function ligadoSemCartas(team) {
+            if (st.parceiros !== 'ligado' || st.trucoState !== 'pending' || st.parceirosPassaram === chaveDoPedido()) return false;
+            var bots = getTeamPIDs(team).filter(function(p) { return !isHumanSeat(p) && modoDoParceiro(p) === 'ligado'; });
+            return bots.length > 0 && bots.every(function(p) { return !(st.hands[p] || []).length; });
+        }
+        function passarSemCartas(team) {
+            var chave = st.parceirosPassaram = chaveDoPedido();
+            window.lastAdviceLevel = st.proposedVal;
+            updateUI(); autoSave();
+            setTimeout(function() {
+                if (st.trucoState === 'pending' && st.parceirosPassaram === chave && getTeam(myPID) === team) showMsg(textoParceirosPassaram(team), 'neu', 2600);
+            }, 1500);
         }
         function textoParceirosPassaram(team) {
             var bots = getTeamPIDs(team).filter(function(p) { return !isHumanSeat(p); });
-            var classes = bots.map(classeDoParceiro);
-            if (bots.length > 1) return 'Seus Parceiros deixaram com você — mãos ' + classes.join(' e ');
-            return 'Seu Parceiro deixou com você — mão ' + classes[0];
+            // Só conta a mão quem ainda tem cartas (v0.15.2).
+            var classes = bots.map(classeDoParceiro).filter(function(c) { return c; });
+            var fala = bots.length > 1 ? 'Seus Parceiros deixaram com você' : 'Seu Parceiro deixou com você';
+            if (classes.length > 1) return fala + ' — mãos ' + classes.join(' e ');
+            return fala + falaDaMao(classes[0]);
         }
 
         function checkAiTrucoDecision() {
@@ -5258,6 +6567,8 @@
                 } else if (parceirosDecidem(answeringTeam)) {
                     aiNeedsToAnswer = true;
                     aiPid = aiPickResponder(answeringTeam);
+                } else if (ligadoSemCartas(answeringTeam)) {
+                    passarSemCartas(answeringTeam);
                 }
             } else {
                 // Multiplayer com cobertura humana parcial: se NINGUÉM humano
@@ -5269,11 +6580,25 @@
                 }
             } 
             
-            if (aiNeedsToAnswer) { animLock = true; setTimeout(() => aiDecideTruco(aiPid), 1800); }
+            if (aiNeedsToAnswer) {
+                animLock = true;
+                // Nos times a resposta é do grupo (aiRespostaDoTime): pensam todos os bots do time.
+                var quemPensa = getTeamPIDs(answeringTeam).filter(function(p) { return !isHumanSeat(p); });
+                aiComecarAPensar(getNumPlayers() === 2 || quemPensa.length < 2 ? [aiPid] : quemPensa, false);
+                setTimeout(() => aiDecideTruco(aiPid), 1800);
+            }
         }
 
 		function aiDecideTruco(pid) {
             var myTeam = getTeam(pid);
+            // Resposta apertada: a Adaptativa pensa mais (no 1x1; nos times a
+            // resposta é do grupo e entra com a Adaptativa nos times).
+            if (getNumPlayers() === 2) {
+                var profR = aiPerfil(), vR = aiView(pid), rodada = st.roundId;
+                if (aiPensarMais(pid, false, profR, function(e) { return aiRespostaApertada(vR, profR, e); }, function() {
+                    if (st.roundId === rodada && st.trucoState === 'pending') aiDecideTruco(pid);
+                })) return;
+            }
             // `pid` é quem FALA; a resposta é do time (aiRespostaDoTime). No 1x1
             // é a mesma coisa: um assento só.
             var ligado = modoDoParceiro(pid) === 'ligado';
@@ -5298,7 +6623,7 @@
                 st.trucoBy = pid; st.lastTruco = pid;
                 var msgAumento = trucoActionText(pid, 'pediu', 'pediram', st.proposedVal);
                 // Parceiro do Ligado aumentando sozinho: conta a mão, como ao pedir.
-                if (modoDoParceiro(pid) && ehMeuParceiro(pid)) msgAumento += ' — mão ' + classeDoParceiro(pid);
+                if (modoDoParceiro(pid) && ehMeuParceiro(pid)) msgAumento += falaDaMao(classeDoParceiro(pid));
                 showMsg(msgAumento, 'neu');
                 animLock = false; updateUI(); updateTurnGlow(); autoSave(); checkAiTrucoDecision(); return;
             }
@@ -5343,15 +6668,21 @@
             var prof    = aiPerfil();
             var nTricks = st.trickResults.length;
             var view    = aiView(pid);
-            var est     = aiEstimate(view, prof, true);
-
             // Travas de regra (Mão de 11/ferro, teto 12, último pedido do próprio
             // time) e as duas travas depois de aceitar. Fora isso a IA pode pedir
-            // em qualquer vez dela, inclusive logo de cara.
-			if(!myX && !maoDeFerro && !st.isMaoDeX && st.handVal < 12 && (st.lastTruco === 0 || getTeam(st.lastTruco) !== myTeam)) {
-                var canRaise = isRival ? true : !st.humanAccepted;
-                // Parceiro que ouviu NÃO nesta vez joga a carta sem perguntar de novo.
-                var tipoPedido = (canRaise && !st.aiJustAccepted && st.parceiroSegura !== pid) ? aiShouldAsk(view, prof, est) : false;
+            // em qualquer vez dela, inclusive logo de cara. Parceiro que ouviu NÃO
+            // nesta vez joga a carta sem perguntar de novo.
+            var podePedir = !myX && !maoDeFerro && !st.isMaoDeX && st.handVal < 12 && (st.lastTruco === 0 || getTeam(st.lastTruco) !== myTeam) &&
+                            (isRival || !st.humanAccepted) && !st.aiJustAccepted && st.parceiroSegura !== pid;
+            var apertada = function(e) { return aiJogadaApertada(view, prof, e, podePedir); };
+            var rodada = st.roundId;
+            if (aiPensarMais(pid, true, prof, apertada, function() {
+                if (st.roundId === rodada && st.turn === pid && st.trucoState === 'none') aiPlay(pid);
+            })) return;
+            var est     = aiEstimativaPensada(pid, view, prof, true, apertada);
+
+			if(podePedir) {
+                var tipoPedido = aiShouldAsk(view, prof, est);
                 if (tipoPedido) {
                     var valorPedido = getNextTrucoVal(st.handVal);
                     if (!precisaPermissao(modoDoParceiro(pid), tipoPedido)) { aiPedeTruco(pid); return; }
@@ -5497,7 +6828,7 @@
                         nav('scr-lobby', 'scr-game');
                         gameMode = 'ws';
                         if (myPID === 1) { 
-                            st.scores = {1:0, 2:0}; window.lastAdviceLevel = 0; st.humanAccepted = false; matchResultRecorded = false; askWatch = null; st.aiRead = {};
+                            st.scores = {1:0, 2:0}; window.lastAdviceLevel = 0; st.humanAccepted = false; matchResultRecorded = false; askWatch = null; st.aiRead = {}; st.partidaId = Date.now();
                             st.firstPlayerOfRound = 1;
                             startRound(st.firstPlayerOfRound);
                         } else if (myPID === 0) { 
@@ -5516,7 +6847,7 @@
                     }
                     getEl('scr-end').className = '';
                     if (myPID === 1) {
-                        st.scores = {1:0, 2:0}; window.lastAdviceLevel = 0; st.humanAccepted = false; matchResultRecorded = false; askWatch = null; st.aiRead = {};
+                        st.scores = {1:0, 2:0}; window.lastAdviceLevel = 0; st.humanAccepted = false; matchResultRecorded = false; askWatch = null; st.aiRead = {}; st.partidaId = Date.now();
                         st.firstPlayerOfRound = 1;
                         startRound(st.firstPlayerOfRound);
                     }
@@ -6195,7 +7526,7 @@
                 if (st.trucoState === 'pending' && st.trucoBy !== myPID && (oldSt.trucoState !== 'pending' || st.proposedVal !== oldSt.proposedVal)) {
                     var pedMsg2 = trucoActionText(st.trucoBy, 'pediu', 'pediram', st.proposedVal);
                     // O parceiro-IA conta a classificação só pra quem é do time dele.
-                    if (modoDoParceiro(st.trucoBy) && ehMeuParceiro(st.trucoBy)) pedMsg2 += ' — mão ' + classeDoParceiro(st.trucoBy);
+                    if (modoDoParceiro(st.trucoBy) && ehMeuParceiro(st.trucoBy)) pedMsg2 += falaDaMao(classeDoParceiro(st.trucoBy));
                     showMsg(pedMsg2, 'neu');
                 }
                 // Pedidos do parceiro-IA chegando de outro aparelho (v0.15.1): quem
@@ -6322,10 +7653,7 @@
                 document.body.classList.remove('theme-dark');
                 document.body.classList.add('theme-light');
                 currentTheme = 'light';
-                var themeBtn = getEl('btn-theme-toggle');
-                if (themeBtn) themeBtn.innerText = "🌙 MODO ESCURO";
-                var pauseIconInit = getEl('theme-pause-icon');
-                if (pauseIconInit) pauseIconInit.innerText = "🌙";
+                mostrarTema();
             }
         } catch(e) {}
 
