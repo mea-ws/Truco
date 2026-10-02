@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Truco - v0.15.2</title>
+    <title>Truco - v0.15.2a</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♣</text></svg>">
     <style>
         /* THEME VARIABLES */
@@ -242,13 +242,14 @@
         }
         #parceiros-gaveta.aberta { max-height: 160px; opacity: 1; }
         .parceiros-dica { font-size: 0.72rem; color: var(--txt-d); margin: -7px 0 15px; line-height: 1.35; }
+        /* A explicação do modo só aparece onde cabe (proposta aceita por ele,
+           v0.15.1): quem decide é encaixarDicaParceiros, medindo a janela. */
+        .parceiros-dica.sem-espaco { display: none; }
         /* Telas baixas (celular): as telas de Regras apertam o espaço entre as
-           seções pro seletor dos Parceiros caber sem rolar, e a explicação do
-           modo só aparece onde cabe (proposta aceita por ele, v0.15.1). */
+           seções pro seletor dos Parceiros caber sem rolar. */
         @media (max-height: 760px) {
             #scr-mode .diff-selector, #scr-local-rules .diff-selector, #scr-online-rules .diff-selector { margin-bottom: 6px; }
             .btn-stack.rules-actions { margin-top: 14px; }
-            .parceiros-dica { display: none; }
         }
 
         .game-area { width: 100vw; height: 100dvh; display: flex; flex-direction: column; padding: 10px 10px max(10px, env(safe-area-inset-bottom)); box-sizing: border-box; position: relative; }
@@ -257,7 +258,13 @@
         .hud-container { position: relative; overflow: hidden; margin-bottom: 10px; z-index: 30; flex-shrink: 0; min-height: 66px; display: flex; align-items: center; justify-content: center; box-sizing: border-box; }
         .hud-content { display: flex; justify-content: space-between; align-items: center; padding: 8px 16px; width: 100%; transition: opacity 0.3s ease, transform 0.3s ease; }
         
-        .stadium-display { position: absolute; top: -100%; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 1.1rem; letter-spacing: 1px; text-transform: uppercase; background: var(--notify-bg); backdrop-filter: blur(8px); transition: top 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 21; pointer-events: none; color: var(--txt); }
+        .stadium-display { position: absolute; top: -100%; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 14px; box-sizing: border-box; text-align: center; line-height: 1.15; font-weight: 900; font-size: 1.1rem; letter-spacing: 1px; text-transform: uppercase; background: var(--notify-bg); backdrop-filter: blur(8px); transition: top 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 21; pointer-events: none; color: var(--txt); }
+        /* Notificação em duas linhas (v0.15.2a, ideia dele): quem fala ou o assunto
+           pequeno em cima, o que diz maior embaixo. A linha de baixo não quebra: se
+           não cabe, a letra diminui (caberNaLinha) e só em último caso ela quebra. */
+        .stadium-display .msg-quem { font-size: 0.73rem; font-weight: 800; opacity: 0.8; margin-bottom: 4px; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .stadium-display .msg-texto { max-width: 100%; white-space: nowrap; }
+        .stadium-display .msg-texto.quebra { white-space: normal; }
         
         .hud-container.show-msg .stadium-display { top: 0; }
         .hud-container.show-msg .hud-content { opacity: 0.1; transform: scale(0.98); }
@@ -524,14 +531,45 @@
 
         /* ASSISTENTE DE CONEXÃO (v0.10) */
         .webrtc-code-box { width: 100%; height: 55px; font-size: 0.68rem; background: var(--btn-s-bg); color: var(--prim); border: 1px solid var(--glass-border); border-radius: 8px; padding: 8px; box-sizing: border-box; resize: none; outline: none; }
+        /* Copiado ou compartilhado, o código sai da frente e a janela diminui
+           (v0.15.2a, ideia dele); COPIAR de novo continua funcionando. O texto em
+           cima da caixa sai junto: sozinho, só ocupava espaço (pedido dele). */
+        .webrtc-code-box.copiado, .section-label.copiado { display: none; }
+        /* COPIAR e COMPARTILHAR sempre lado a lado, nas três telas de código. */
+        .botoes-codigo { display: flex; gap: 10px; }
+        .botoes-codigo .action-btn { flex: 1; justify-content: center; white-space: nowrap; }
+        /* Em tela baixa (celular em pé), as três telas de código cabem sem rolar
+           mesmo com as duas caixas à vista e o aviso da conexão aberto (v0.15.2a:
+           eram 703, 641 e 728 px em 579). */
+        @media (max-height: 700px) {
+            #scr-webrtc-connect h2, #scr-webrtc-invite-more h2 { margin: 10px 0 12px; }
+            #scr-webrtc-connect .btn-stack, #scr-webrtc-invite-more .btn-stack { gap: 7px; }
+            #scr-webrtc-connect .webrtc-code-box, #scr-webrtc-invite-more .webrtc-code-box { height: 44px; }
+            #scr-webrtc-connect .wizard-instructions, #scr-webrtc-invite-more .wizard-instructions { padding: 8px 10px; line-height: 1.4; }
+            .status-conexao { margin-bottom: 8px; }
+            .mesa-assentos { margin: -4px 0 8px; }
+        }
         .wizard-instructions { text-align: left; font-size: 0.78rem; color: var(--txt-d); background: var(--btn-s-bg); border: 1px solid var(--glass-border); border-radius: 10px; padding: 10px 12px; line-height: 1.5; }
         .wizard-instructions b { color: var(--txt); }
+        /* O passo a passo das telas de código (v0.15.2a): o passo da vez em
+           destaque, os feitos com ✓ verde e os próximos apagados. */
+        .passo { opacity: 0.55; }
+        .passo.atual { opacity: 1; color: var(--txt); }
+        .passo.feito { opacity: 0.85; color: var(--prim); }
+        .passo.feito b { color: var(--prim); }
 
-        #webrtc-status-box { display: flex; align-items: center; gap: 8px; background: var(--btn-s-bg); border: 1px solid var(--glass-border); border-radius: 8px; padding: 8px 12px; font-size: 0.8rem; font-weight: bold; text-align: left; }
+        /* O estado da conexão, igual nas três telas de código (v0.15.2a; antes só
+           a do Host tinha): amarela piscando é o jogo trabalhando ou esperando o
+           outro, verde é pronto, vermelha é erro e cinza é a sua vez de agir. */
+        .status-conexao { display: flex; align-items: center; gap: 8px; background: var(--btn-s-bg); border: 1px solid var(--glass-border); border-radius: 8px; padding: 8px 12px; font-size: 0.8rem; font-weight: bold; text-align: left; margin-bottom: 12px; }
         .webrtc-status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--txt-d); flex-shrink: 0; }
-        #webrtc-status-box.status-connecting .webrtc-status-dot { background: var(--warn); box-shadow: 0 0 6px var(--warn); animation: blink 1.2s infinite ease-in-out; }
-        #webrtc-status-box.status-success .webrtc-status-dot { background: var(--prim); box-shadow: 0 0 6px var(--prim); }
-        #webrtc-status-box.status-error .webrtc-status-dot { background: var(--dang); box-shadow: 0 0 6px var(--dang); }
+        .status-conexao.status-connecting .webrtc-status-dot { background: var(--warn); box-shadow: 0 0 6px var(--warn); animation: blink 1.2s infinite ease-in-out; }
+        .status-conexao.status-success .webrtc-status-dot { background: var(--prim); box-shadow: 0 0 6px var(--prim); }
+        .status-conexao.status-error .webrtc-status-dot { background: var(--dang); box-shadow: 0 0 6px var(--dang); }
+        /* Convidar Jogadores: os humanos que já estão na mesa e os que faltam. */
+        .mesa-assentos { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.72rem; font-weight: bold; color: var(--txt-d); letter-spacing: 1px; margin: -6px 0 12px; text-transform: uppercase; }
+        .mesa-assentos .assento { width: 10px; height: 10px; border-radius: 50%; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.2); }
+        .mesa-assentos .assento.cheio { background: var(--prim); border-color: var(--prim); box-shadow: 0 0 6px var(--prim); }
 
         #resume-banner { background: var(--btn-s-bg); border: 1px solid var(--prim); border-radius: 12px; padding: 12px; margin-bottom: 15px; font-size: 0.8rem; text-align: left; }
 
@@ -583,7 +621,7 @@
         body.lite-mode .panel, body.lite-mode .glass-panel, body.lite-mode .stadium-display, body.lite-mode #version-warn-banner, body.lite-mode #ghost-m-card, body.lite-mode #btn-hide-card, body.lite-mode #sync-ui, body.lite-mode #scr-end {
             backdrop-filter: none; -webkit-backdrop-filter: none;
         }
-        body.lite-mode .panel, body.lite-mode .glass-panel, body.lite-mode #version-warn-banner, body.lite-mode .card, body.lite-mode .card.active-turn, body.lite-mode #deck-pile, body.lite-mode #ghost-m-card, body.lite-mode .end-content, body.lite-mode .nick-tooltip, body.lite-mode .vaza-pip.win, body.lite-mode .diff-btn.active, body.lite-mode .action-btn:hover, body.lite-mode .hud-container.notify-pos, body.lite-mode .hud-container.notify-neg, body.lite-mode .hud-container.notify-neu, body.lite-mode .hud-container.notify-sys, body.lite-mode.theme-dark #btn-hide-card.escondendo, body.lite-mode.theme-light #btn-hide-card.escondendo, body.lite-mode #webrtc-status-box .webrtc-status-dot {
+        body.lite-mode .panel, body.lite-mode .glass-panel, body.lite-mode #version-warn-banner, body.lite-mode .card, body.lite-mode .card.active-turn, body.lite-mode #deck-pile, body.lite-mode #ghost-m-card, body.lite-mode .end-content, body.lite-mode .nick-tooltip, body.lite-mode .vaza-pip.win, body.lite-mode .diff-btn.active, body.lite-mode .action-btn:hover, body.lite-mode .hud-container.notify-pos, body.lite-mode .hud-container.notify-neg, body.lite-mode .hud-container.notify-neu, body.lite-mode .hud-container.notify-sys, body.lite-mode.theme-dark #btn-hide-card.escondendo, body.lite-mode.theme-light #btn-hide-card.escondendo, body.lite-mode .status-conexao .webrtc-status-dot, body.lite-mode .mesa-assentos .assento.cheio {
             box-shadow: none;
         }
         body.lite-mode .end-content h1 { text-shadow: none; }
@@ -1015,45 +1053,51 @@
     <div id="scr-webrtc-connect" class="panel hidden">
         <h2 id="webrtc-connect-title">CONEXÃO DIRETA</h2>
 
-        <div id="webrtc-status-box" class="hidden" style="margin-bottom: 12px;">
+        <div id="webrtc-status-box" class="status-conexao hidden">
             <div class="webrtc-status-dot"></div>
             <span id="webrtc-status-text">Aguardando...</span>
         </div>
 
         <div id="webrtc-step-host" class="hidden btn-stack">
-            <div class="wizard-instructions">
-                <b>PASSO 1:</b> Aguarde seu código ficar pronto abaixo.<br>
-                <b>PASSO 2:</b> Copie e envie pro outro jogador (WhatsApp, etc).<br>
-                <b>PASSO 3:</b> Cole a resposta dele aqui embaixo e confirme.
+            <div class="wizard-instructions" id="passos-host">
+                <div class="passo"><b>1.</b> Copie o seu código e envie pro outro jogador.</div>
+                <div class="passo"><b>2.</b> Cole a resposta dele aqui embaixo e confirme.</div>
             </div>
-            <div class="section-label" style="text-align:left;">Seu código (envie pro outro jogador):</div>
-            <textarea id="webrtc-data-host" class="webrtc-code-box" readonly onclick="this.select()"></textarea>
-            <div style="display:flex; gap:10px;">
-                <button id="btn-copy-host-code" class="action-btn primary" style="flex:1; justify-content:center;" disabled onclick="copyWebrtcCode('webrtc-data-host', this)">📋 COPIAR CÓDIGO</button>
-                <button id="btn-share-host-code" class="action-btn btn-share-code hidden" style="flex:1; justify-content:center;" disabled onclick="shareWebrtcCode('webrtc-data-host')">📤 COMPARTILHAR</button>
+            <!-- Os dois blocos saem da frente quando a conexão falha: aí só o
+                 TENTAR NOVAMENTE serve (v0.15.2a). -->
+            <div id="webrtc-host-codigo" class="btn-stack">
+                <div class="section-label" style="text-align:left;">Seu código:</div>
+                <textarea id="webrtc-data-host" class="webrtc-code-box" readonly onclick="this.select()"></textarea>
+                <div class="botoes-codigo">
+                    <button id="btn-copy-host-code" class="action-btn primary" disabled onclick="copyWebrtcCode('webrtc-data-host', this)">📋 COPIAR</button>
+                    <button id="btn-share-host-code" class="action-btn btn-share-code hidden" disabled onclick="shareWebrtcCode('webrtc-data-host')">📤 COMPARTILHAR</button>
+                </div>
             </div>
-
-            <div class="section-label" style="text-align:left; margin-top:6px;">Cole aqui a resposta do outro jogador:</div>
-            <textarea id="webrtc-answer-input" class="webrtc-code-box" placeholder="Aguardando você colar a resposta..."></textarea>
-            <button class="btn-p" style="background: rgba(16, 185, 129, 0.8);" onclick="webrtcHostConnect()">✅ CONFIRMAR E CONECTAR</button>
+            <div id="webrtc-host-resposta" class="btn-stack">
+                <div class="section-label" style="text-align:left; margin-top:6px;">Resposta do outro jogador:</div>
+                <textarea id="webrtc-answer-input" class="webrtc-code-box" placeholder="Aguardando você colar a resposta..."></textarea>
+                <button class="btn-p" style="background: rgba(16, 185, 129, 0.8);" onclick="webrtcHostConnect()">✅ CONFIRMAR E CONECTAR</button>
+            </div>
         </div>
 
         <div id="webrtc-step-guest" class="hidden btn-stack">
-            <div class="wizard-instructions">
-                <b>PASSO 1:</b> Peça o código de convite pro Host.<br>
-                <b>PASSO 2:</b> Cole abaixo e toque em Gerar Resposta.<br>
-                <b>PASSO 3:</b> Copie a resposta gerada e envie de volta pro Host.
+            <div class="wizard-instructions" id="passos-guest">
+                <div class="passo"><b>1.</b> Cole o código do Host e toque em Gerar Resposta.</div>
+                <div class="passo"><b>2.</b> Copie a resposta e envie de volta pro Host.</div>
             </div>
-            <div class="section-label" style="text-align:left;">Cole aqui o código do Host:</div>
-            <textarea id="webrtc-data-guest-input" class="webrtc-code-box" placeholder="Cole o código do host aqui..."></textarea>
-            <button class="btn-p" onclick="webrtcGuestGenerateAnswer()">GERAR RESPOSTA</button>
+            <!-- Some depois de gerar a resposta (pedido dele, v0.15.2a). -->
+            <div id="webrtc-guest-colar" class="btn-stack">
+                <div class="section-label" style="text-align:left;">Código do Host:</div>
+                <textarea id="webrtc-data-guest-input" class="webrtc-code-box" placeholder="Cole o código do host aqui..."></textarea>
+                <button class="btn-p" onclick="webrtcGuestGenerateAnswer()">GERAR RESPOSTA</button>
+            </div>
 
             <div id="webrtc-guest-response-area" class="hidden btn-stack">
-                <div class="section-label" style="text-align:left;">Sua resposta (envie pro Host):</div>
+                <div class="section-label" style="text-align:left;">Sua resposta:</div>
                 <textarea id="webrtc-data-guest-output" class="webrtc-code-box" readonly onclick="this.select()"></textarea>
-                <div style="display:flex; gap:10px;">
-                    <button class="action-btn primary" style="flex:1; justify-content:center;" onclick="copyWebrtcCode('webrtc-data-guest-output', this)">📋 COPIAR RESPOSTA</button>
-                    <button class="action-btn btn-share-code hidden" style="flex:1; justify-content:center;" onclick="shareWebrtcCode('webrtc-data-guest-output')">📤 COMPARTILHAR</button>
+                <div class="botoes-codigo">
+                    <button class="action-btn primary" onclick="copyWebrtcCode('webrtc-data-guest-output', this)">📋 COPIAR</button>
+                    <button class="action-btn btn-share-code hidden" onclick="shareWebrtcCode('webrtc-data-guest-output')">📤 COMPARTILHAR</button>
                 </div>
             </div>
         </div>
@@ -1063,27 +1107,35 @@
     </div>
 
     <div id="scr-webrtc-invite-more" class="panel hidden">
-        <h2>CONVIDAR MAIS JOGADORES</h2>
-        <div class="wizard-instructions" style="margin-bottom: 12px;">
-            Faltam <b id="invite-more-count">0</b> jogador(es) humano(s) na mesa. Gere um código, envie pro próximo jogador e cole a resposta dele abaixo — igual ao convite principal.
-        </div>
+        <h2>CONVIDAR JOGADORES</h2>
+        <div id="invite-more-mesa" class="mesa-assentos"></div>
 
-        <div id="invite-more-status-box" class="hidden" style="margin-bottom: 12px;">
+        <div id="invite-more-status-box" class="status-conexao hidden">
             <div class="webrtc-status-dot"></div>
             <span id="invite-more-status-text">Aguardando...</span>
         </div>
 
         <div class="btn-stack">
-            <div class="section-label" style="text-align:left;">Código do convite (envie pro próximo jogador):</div>
-            <textarea id="invite-more-code-out" class="webrtc-code-box" readonly onclick="this.select()" placeholder="Gerando código, aguarde..."></textarea>
-            <button class="action-btn primary" style="width:100%; justify-content:center;" onclick="copyWebrtcCode('invite-more-code-out', this)">📋 COPIAR CÓDIGO</button>
-            <button class="action-btn btn-share-code hidden" style="width:100%; justify-content:center;" onclick="shareWebrtcCode('invite-more-code-out')">📤 COMPARTILHAR</button>
-
-            <div class="section-label" style="text-align:left; margin-top:6px;">Cole aqui a resposta do novo jogador:</div>
-            <textarea id="invite-more-answer-in" class="webrtc-code-box" placeholder="Aguardando você colar a resposta..."></textarea>
-            <button class="btn-p" style="background: rgba(16, 185, 129, 0.8);" onclick="confirmInviteMoreAnswer()">✅ CONFIRMAR E CONECTAR</button>
+            <div class="wizard-instructions" id="passos-convite">
+                <div class="passo"><b>1.</b> Copie o código e envie pro próximo jogador.</div>
+                <div class="passo"><b>2.</b> Cole a resposta dele aqui embaixo e confirme.</div>
+            </div>
+            <div id="invite-more-codigo" class="btn-stack">
+                <div class="section-label" style="text-align:left;">Código do convite:</div>
+                <textarea id="invite-more-code-out" class="webrtc-code-box" readonly onclick="this.select()" placeholder="Gerando código, aguarde..."></textarea>
+                <div class="botoes-codigo">
+                    <button id="btn-copy-invite-code" class="action-btn primary" disabled onclick="copyWebrtcCode('invite-more-code-out', this)">📋 COPIAR</button>
+                    <button id="btn-share-invite-code" class="action-btn btn-share-code hidden" disabled onclick="shareWebrtcCode('invite-more-code-out')">📤 COMPARTILHAR</button>
+                </div>
+            </div>
+            <div id="invite-more-resposta" class="btn-stack">
+                <div class="section-label" style="text-align:left; margin-top:6px;">Resposta do novo jogador:</div>
+                <textarea id="invite-more-answer-in" class="webrtc-code-box" placeholder="Aguardando você colar a resposta..."></textarea>
+                <button class="btn-p" style="background: rgba(16, 185, 129, 0.8);" onclick="confirmInviteMoreAnswer()">✅ CONFIRMAR E CONECTAR</button>
+            </div>
         </div>
 
+        <button id="invite-more-btn-retry" class="btn-s hidden" style="width:100%; margin-top:10px;" onclick="retryInviteMore()">🔄 TENTAR NOVAMENTE</button>
         <button class="btn-s" data-nav-back style="width:100%; margin-top:10px;" onclick="skipInviteMore()">VOLTAR AO JOGO (RESTO EM IA)</button>
     </div>
 
@@ -1220,7 +1272,7 @@
                 <div class="hud-center">
                     <span id="ui-turn">Preparando...</span>
                     <div style="margin-top: 2px;">
-                        <span style="font-size: 0.75rem;">VALE:</span> <b id="ui-val" style="color: var(--txt); font-size: 0.9rem;">1</b>
+                        <span style="font-size: 0.85rem;">VALE</span> <b id="ui-val" style="color: var(--txt); font-size: 0.85rem;">1</b>
                     </div>
                     <div id="ui-deck-indicator" style="font-size: 0.65rem; color: var(--prim); margin-top: 2px; text-transform: uppercase;">BARALHO SUJO</div>
                 </div>
@@ -1347,7 +1399,7 @@
         var SUITS = ['♦', '♠', '♥', '♣']; 
         var VALS_SUJO = ['4', '5', '6', '7', 'Q', 'J', 'K', 'A', '2', '3'];
         var VALS_LIMPO = ['Q', 'J', 'K', 'A', '2', '3'];
-        var APP_VERSION = '0.15.2';
+        var APP_VERSION = '0.15.2a';
 
         // ═══════════════════════════════════════════════════════════════
         // FORMATO DE `st` (estado sincronizado entre jogadores)
@@ -1537,17 +1589,19 @@
             avisarSorteio();
         };
 
-        // O que o Jogo Rápido sorteou, na ordem da tela de Regras (o baralho já
-        // aparece no texto verde da mesa). A primeira jogada da IA espera o aviso
-        // acabar: a notificação troca a mensagem atual pela próxima, sem fila, e
-        // um "Seu Parceiro pediu Truco!" logo de cara cortaria o aviso no meio.
+        // O que o Jogo Rápido sorteou, na ordem da tela de Regras: em cima o formato e
+        // o baralho, embaixo os Dinâmicos e a dificuldade (v0.15.2a, pedido dele; o
+        // jogador já sabe que escolheu o Jogo Rápido). A primeira jogada da IA espera
+        // o aviso acabar: a notificação troca a mensagem atual pela próxima, sem
+        // fila, e um "Pediu truco!" do parceiro logo de cara cortaria o aviso no meio.
         var avisoAte = 0;
         function avisarSorteio() {
-            var partes = [{ '1v1': '1 X 1', '2v2': 'DUPLAS', '3v3': 'TRIOS' }[st.gameFormat] || st.gameFormat];
-            if (st.parceiros) partes.push('DINÂMICOS: ' + st.parceiros.toUpperCase());
-            partes.push(String(DIFF_LABELS[aiDifficulty] || '').toUpperCase());
+            var formato = { '1v1': '1 X 1', '2v2': 'DUPLAS', '3v3': 'TRIOS' }[st.gameFormat] || st.gameFormat;
+            var embaixo = [];
+            if (st.parceiros) embaixo.push('DINÂMICOS: ' + st.parceiros.toUpperCase());
+            embaixo.push(String(DIFF_LABELS[aiDifficulty] || '').toUpperCase());
             var dur = 3600;
-            showMsg(partes.join(' | '), 'sys', dur);
+            showMsg({ quem: formato + ' | BARALHO ' + (st.deckMode === 'limpo' ? 'LIMPO' : 'SUJO'), texto: embaixo.join(' | ') }, 'sys', dur);
             avisoAte = Date.now() + Math.round(dur * paceScale());
         }
 
@@ -1726,8 +1780,24 @@
             getEl('btn-fmt-' + fmt + '-' + prefix).classList.add('active');
             updateHumanCountAvailability(prefix);
             // Parceiros Dinâmicos só no Single Player, e só com parceiro na mesa.
-            if (prefix === 'sp') getEl('parceiros-gaveta').classList.toggle('aberta', fmt !== '1v1');
+            if (prefix === 'sp') { getEl('parceiros-gaveta').classList.toggle('aberta', fmt !== '1v1'); encaixarDicaParceiros(); }
         };
+
+        // A explicação do modo aparece onde cabe sem rolar (proposta aceita por ele,
+        // v0.15.1). A regra era uma altura fixa (760 px): no computador, com a janela
+        // do navegador entre 650 e 730 px, ela nunca aparecia, mesmo com espaço
+        // sobrando (v0.15.2a). Agora mede a janela de verdade, contando a gaveta já
+        // aberta: ela anima ao abrir, e no meio da animação ainda está mais baixa.
+        function encaixarDicaParceiros() {
+            var painel = getEl('scr-mode'), gaveta = getEl('parceiros-gaveta'), dica = getEl('parceiros-dica');
+            dica.classList.remove('sem-espaco');
+            if (painel.classList.contains('hidden') || !gaveta.classList.contains('aberta')) return;
+            var cs = getComputedStyle(painel);
+            var teto = parseFloat(cs.maxHeight) + parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+            var falta = gaveta.scrollHeight - gaveta.clientHeight;
+            if (painel.scrollHeight + falta > teto + 1) dica.classList.add('sem-espaco');
+        }
+        window.addEventListener('resize', encaixarDicaParceiros);
 
         var PARCEIROS_DICAS = {
             desligado: 'Perguntam a você antes de pedir truco, blefar ou ir ao baralho.',
@@ -1739,6 +1809,7 @@
             pendingParceiros = modo;
             Object.keys(PARCEIROS_DICAS).forEach(function(m) { getEl('btn-parc-' + m).classList.toggle('active', m === modo); });
             getEl('parceiros-dica').innerText = PARCEIROS_DICAS[modo];
+            encaixarDicaParceiros(); // o texto do Ligado é maior
         };
 
         // As três telas de Regras (Jogo Personalizado, Local e Online) têm botões
@@ -1765,6 +1836,7 @@
             if (humanos) pendingHumanCount = Number(humanos);
             var dificuldade = marcado('diff', ['1', '2', '3', '4', '5']);
             if (dificuldade) { aiDifficulty = Number(dificuldade); updateBodyDiffClass(); }
+            if (tela === 'scr-mode') encaixarDicaParceiros();
         }
 
         // Seletor de "quantos jogadores humanos" (2 a 6 — já que estando no
@@ -1856,6 +1928,19 @@
             var verb = actor.plural ? verbPlur : verbSing;
             var suffix = (val !== undefined) ? (' ' + getTrucoName(val) + '!') : '!';
             return actor.name + ' ' + verb + suffix;
+        }
+
+        // A mesma ação na notificação de duas linhas (v0.15.2a): quem fez em cima,
+        // o que fez embaixo ("Pediu truco!", "Aceitaram!"). O parceiro-IA aparece com
+        // o nome das falas dele: nos Trios, "Parceiro 2" diz qual dos dois foi.
+        function quemFez(pid) {
+            var actor = trucoActor(pid);
+            if (actor.name === 'Seu Parceiro' && !isHumanSeat(pid)) return { name: rotuloParceiro(pid), plural: false };
+            return actor;
+        }
+        function acaoDe(pid, verbSing, verbPlur, val) {
+            var actor = quemFez(pid), verbo = actor.plural ? verbPlur : verbSing;
+            return { quem: actor.name, texto: verbo.charAt(0).toUpperCase() + verbo.slice(1) + (val !== undefined ? ' ' + getTrucoName(val).toLowerCase() : '') + '!' };
         }
 
         function getTeam(pid) { if(!pid || pid === 0) return 0; return (pid % 2 === 1) ? 1 : 2; }
@@ -2392,20 +2477,35 @@
             handleMenuKey(e);
         });
 
+        // m é o texto, ou { quem, texto } pra notificação de duas linhas (v0.15.2a,
+        // ideia dele): quem fala ou o assunto pequeno em cima, o que diz maior
+        // embaixo. Sem quem, uma linha só.
         function showMsg(m, type, durOverride) {
             var hud = getEl('main-hud'); var display = getEl('stadium-text');
             clearTimeout(msgTimeout);
             hud.classList.remove('show-msg', 'notify-pos', 'notify-neg', 'notify-neu', 'notify-sys');
-            void hud.offsetWidth; 
-            display.innerText = m;
-            if (type === 'pos') { hud.classList.add('notify-pos'); display.style.color = 'var(--prim)'; } 
-            else if (type === 'neg') { hud.classList.add('notify-neg'); display.style.color = 'var(--dang)'; } 
+            void hud.offsetWidth;
+            var aviso = typeof m === 'object' ? m : { texto: m };
+            display.textContent = '';
+            if (aviso.quem) display.appendChild(linhaDoAviso('msg-quem', aviso.quem));
+            var texto = display.appendChild(linhaDoAviso('msg-texto', aviso.texto));
+            if (type === 'pos') { hud.classList.add('notify-pos'); display.style.color = 'var(--prim)'; }
+            else if (type === 'neg') { hud.classList.add('notify-neg'); display.style.color = 'var(--dang)'; }
             else if (type === 'sys') { hud.classList.add('notify-sys'); display.style.color = 'var(--txt)'; }
             else { hud.classList.add('notify-neu'); display.style.color = 'var(--warn)'; }
             hud.classList.add('show-msg');
-            
+            caberNaLinha(texto);
+
             var duration = Math.round((durOverride || 1300) * paceScale());
-            msgTimeout = setTimeout(function() { hud.classList.remove('show-msg', 'notify-pos', 'notify-neg', 'notify-neu', 'notify-sys'); }, duration); 
+            msgTimeout = setTimeout(function() { hud.classList.remove('show-msg', 'notify-pos', 'notify-neg', 'notify-neu', 'notify-sys'); }, duration);
+        }
+        function linhaDoAviso(classe, texto) { var el = document.createElement('div'); el.className = classe; el.textContent = texto; return el; }
+        // A linha de baixo não quebra: se não cabe, a letra diminui até ~0,78rem, e
+        // só em último caso (celular bem estreito) ela quebra em duas.
+        function caberNaLinha(el) {
+            var tam = parseFloat(getComputedStyle(el).fontSize);
+            while (el.scrollWidth > el.clientWidth + 1 && tam > 12.5) { tam -= 0.5; el.style.fontSize = tam + 'px'; }
+            if (el.scrollWidth > el.clientWidth + 1) el.classList.add('quebra');
         }
 
         // Estatísticas (trucoStatsV2): três baldes independentes — sp (Single
@@ -3175,6 +3275,8 @@
         // erro         chance de erro bobo: carta errada ou carta esquecida.
         // regra        chance de jogar a carta pela regra simples (aiCardPolicy) em
         //              vez da conta de cada carta: 1 = sempre (Normal), 0 = nunca.
+        // pedeValor    chance de pedir quando a conta manda pedir de verdade (sem
+        //              o campo, sempre): um jogador comum às vezes nem pensa em pedir.
         // comunica     quando a IA atualiza a classificação pro time.
         // Só na leitura 'classe', com valores fixos por classificação:
         // pedeExcelente  chance de pedir com cartas Excelentes.
@@ -3182,8 +3284,14 @@
         //              (truco, seis, nove/dez, doze): chance de aceitar e,
         //              aceitando, de aumentar.
         var AI_PERFIS = {
-            1: { leitura: 'classe', ruido: 0, placar: false, bonus: null, blefe: [0.01, 0.01], leitor: 0, segura: 0, esconde: 0.15, baralho: 0.9, erro: 0.15, comunica: 'inicio',
-                 pedeExcelente: 0.08,
+            // A Fácil volta ao jeito de antes da v0.15 (v0.15.2a, decisão dele): quando
+            // ela pede truco, é porque tem mão boa — pede com mão Excelente em 20% das
+            // vezes (era 8%: 5 pedidos a cada 100 rodadas no 1x1; agora 12, como os 11
+            // da v0.14.2) e quase nunca blefa. Pedindo mais ela ficava forte demais pra
+            // meta de 85: o erro bobo sobe de 15% pra 35% — robô vence 84,8 / 84,7 /
+            // 79,5 (1x1 / Duplas / Trios, 600 partidas, Paulista sujo).
+            1: { leitura: 'classe', ruido: 0, placar: false, bonus: null, blefe: [0.01, 0.01], leitor: 0, segura: 0, esconde: 0.15, baralho: 0.9, erro: 0.35, comunica: 'inicio',
+                 pedeExcelente: 0.2,
                  resposta: { aceita: [[0, 0, 0, 0], [0, 0, 0, 0], [0.5, 0.3, 0.2, 0.1]], aumenta: [[0, 0, 0, 0], [0, 0, 0, 0], [0.1, 0.05, 0, 0]] } },
             // A Normal continua com o erro de leitura e confiando nas próprias
             // cartas (v0.15.2, decisão dele): "matematicamente precisa", sem o erro
@@ -3195,7 +3303,12 @@
             // Normal (robô vence 51,3 no 1x1, meta 60): o erro de leitura só mexe
             // no truco, e o que a deixava forte era a conta de cada carta. Jogando
             // pela regra simples, 61,2 (1.200 partidas, Paulista sujo).
-            2: { leitura: 'chance', ruido: 4, pesoPedido: 0, placar: true, bonus: null, margemAceitar: 0, margemAumentar: 0.08, margemPedir: 0, blefe: [0.14, 0.14], leitor: 0, segura: 0, esconde: 0.4, baralho: 0.3, baralhoAte: 0.03, erro: 0, regra: 1, comunica: 'mudanca' },
+            // Ainda pedia truco demais, mais que a Difícil (v0.15.2a, retorno dele):
+            // nem sempre pede com mão boa (25% das vezes que a conta manda), como um
+            // jogador comum, e blefa 10% (era 14%). O time rival pedia 52/69/82 vezes
+            // a cada 100 rodadas (1x1/Duplas/Trios), agora 21/37/49 (a Difícil: 51/61/
+            // 75; a Normal da v0.14.2 pedia 22 no 1x1) — robô vence 59,7/58,7/55,7.
+            2: { leitura: 'chance', ruido: 4, pesoPedido: 0, placar: true, bonus: null, margemAceitar: 0, margemAumentar: 0.08, margemPedir: 0, blefe: [0.10, 0.10], leitor: 0, segura: 0, esconde: 0.4, baralho: 0.3, baralhoAte: 0.03, erro: 0, regra: 1, pedeValor: 0.25, comunica: 'mudanca' },
             // A Difícil e o Insano pensam um pouco mais (v0.15.2, plano 2.4, aprovados
             // por ele pro 1x1 e pros times): durante a espera, até 480 e 720 sorteios no
             // 1x1 e 240 e 360 nos times (o dobro e o triplo de antes). Mesmas sementes,
@@ -3255,8 +3368,18 @@
         // Difícil   decide pelos pontos da rodada, sem a conta do placar da
         //           partida, e lê o pedido do rival com peso 0,15 — 55,3 (1.200
         //           partidas, mesmas sementes). Nas Duplas ela já estava na régua.
+        // Na v0.15.2a (Classificação da Rodada, blefe só com mão Ruim, Mão de 11
+        // certa, Normal e Fácil novas) os Trios saíram 79,8 / 56,9 / 56,9 / 48,3 /
+        // 46,9, com a Normal empatada com a Difícil. Ajustes aprovados por ele,
+        // medidos nas mesmas 12 sementes da escada:
+        // Fácil     erro bobo de 45% (no resto, 35%) — 84,0 (meta 85).
+        // Normal    erro bobo de 10%; os pedidos não mudam (48 a cada 100
+        //           rodadas, a Difícil faz 75) — 59,9 (meta 60).
+        // Difícil   lê o pedido do rival com peso 0,3 — 55,5 (Adaptativa + 8,5).
         var AI_AJUSTE_TRIOS = {
-            3: { placar: false, pesoPedido: 0.15 }
+            1: { erro: 0.45 },
+            2: { erro: 0.10 },
+            3: { placar: false, pesoPedido: 0.3 }
         };
         var AI_PERFIS_TIMES = {};
         var AI_PERFIS_TRIOS = {};
@@ -3565,19 +3688,36 @@
         // ------------------------------------------------------------ placar
         // Chance de vencer a partida em cada placar, pra decidir pelo que a
         // rodada vale de verdade: 3 pontos que fecham o jogo valem mais que 3.
+        // Com um time na Mão de 11 (de 10 no Mineiro), toda rodada é Mão de 11:
+        // esse time vê as cartas e escolhe jogar (vale 3; 4 no Mineiro) ou correr
+        // (o outro faz 1; 2 no Mineiro), e os dois na mão de X é meio a meio. Sem
+        // isso a tabela tratava essas rodadas como qualquer outra, e a IA aceitava
+        // a Mão de 11 com 23-37% de chance — o certo fica perto de 46% (v0.15.2a,
+        // retorno do ponto de teste 5). A chance da rodada de quem decide sai
+        // uniforme entre 0 e 1, como nas Mãos de 11 medidas no simulador.
         var aiMatchCache = {};
         function aiMatchTable(rules) {
             if (aiMatchCache[rules]) return aiMatchCache[rules];
-            var passos = rules === 'mineiro'
+            var mineiro = rules === 'mineiro', x = mineiro ? 10 : 11, vale = mineiro ? 4 : 3, corre = mineiro ? 2 : 1;
+            var passos = mineiro
                 ? [[2, 0.52], [4, 0.30], [6, 0.11], [10, 0.04], [12, 0.03]]
                 : [[1, 0.52], [3, 0.30], [6, 0.11], [9, 0.04], [12, 0.03]];
-            var E = [];
+            var E = [], N = 200;
             for (var i = 0; i < 12; i++) E.push([]);
             function val(a, b) { return a >= 12 ? 1 : (b >= 12 ? 0 : E[a][b]); }
             for (var a = 11; a >= 0; a--) {
                 for (var b = 11; b >= 0; b--) {
-                    var s = 0;
-                    for (var k = 0; k < passos.length; k++) s += passos[k][1] * 0.5 * (val(a + passos[k][0], b) + val(a, b + passos[k][0]));
+                    var s = 0, k, p;
+                    if (a === x && b === x) s = 0.5;
+                    else if (a === x) {
+                        for (k = 0; k < N; k++) { p = (k + 0.5) / N; s += Math.max(p + (1 - p) * val(a, b + vale), val(a, b + corre)); }
+                        s /= N;
+                    } else if (b === x) {
+                        for (k = 0; k < N; k++) { p = (k + 0.5) / N; s += Math.min((1 - p) * val(a + vale, b), val(a + corre, b)); }
+                        s /= N;
+                    } else {
+                        for (k = 0; k < passos.length; k++) s += passos[k][1] * 0.5 * (val(a + passos[k][0], b) + val(a, b + passos[k][0]));
+                    }
                     E[a][b] = s;
                 }
             }
@@ -3841,7 +3981,7 @@
                     if (!todas) return;
                     r.pedidosVistos++;
                     // As cartas que já tinham saído à vista antes do pedido também
-                    // ficam fora, como na Classificação da Mão. A escondida não:
+                    // ficam fora, como na Classificação da Rodada. A escondida não:
                     // ninguém de fora sabe qual foi.
                     var antes = plays.filter(function(x) { return x.seq < e.seq && !x.hidden; });
                     var pool = buildDeck(st.rules, st.deckMode).filter(function(c) {
@@ -4745,7 +4885,7 @@
             // O que os rivais fizeram nesta rodada pesa na leitura (quem pede truco
             // tende a ter cartas melhores) — e, desde a v0.15.0a, o que um parceiro
             // HUMANO fez também: é o único jeito de o parceiro-IA te ler, já que você
-            // não anuncia Classificação da Mão. Parceiro bot fica fora: ele anuncia a
+            // não anuncia Classificação da Rodada. Parceiro bot fica fora: ele anuncia a
             // classe, e contar o pedido dele em cima disso seria contar duas vezes.
             var eventos = v.log.filter(function(e) {
                 if (e.a !== 'pede' && e.a !== 'aumenta' && e.a !== 'aceita') return false;
@@ -5104,12 +5244,18 @@
             return aiFaixa(prof.blefe, x) * aiBonusFactor(v, prof) * (AI_TETO_BLEFE[N] || 1);
         }
 
-        // Blefe é pedir sem ter jogo: com mão Ruim, sempre — definição dele pra toda
-        // IA (v0.15.2) —, ou com menos de 30% de chance mesmo com cartas boas (a
-        // situação não ajuda). Antes a IA pedia "de verdade" com mão Ruim quando a
-        // situação parecia boa (o time já tinha feito a primeira, ou ela contava
-        // com o rival correndo), e o parceiro dizia "quer trucar — mão Ruim".
-        function aiMaoRuim(v) { return v.hand.length > 0 && aiClassOf(aiOwnScore(v)) === 0; }
+        // Blefe é pedir sem ter jogo: com mão Ruim, e só com ela — definição dele
+        // pra toda IA (v0.15.2). Antes a IA pedia "de verdade" com mão Ruim quando a
+        // situação parecia boa, e o parceiro dizia "quer trucar — mão Ruim"; e
+        // pedir com menos de 30% de chance também era blefe, mesmo com cartas boas,
+        // e o parceiro dizia "quer blefar — mão OK" (8-30% dos blefes; v0.15.2a).
+        // Com mão OK ou Excelente ela pede só pela conta do pedido de verdade.
+        // Nos times vale a Classificação da Rodada (a que o parceiro conta).
+        function aiMaoRuim(v) {
+            if (!v.hand.length) return false;
+            if (v.n > 2 && st.classeDaRodada && st.classeDaRodada[v.pid] !== undefined) return st.classeDaRodada[v.pid] === 0;
+            return aiClassOf(aiOwnScore(v)) === 0;
+        }
 
         // Devolve POR QUE a IA quer pedir — 'valor' (pedido de verdade) ou 'blefe'
         // (ver aiMaoRuim) — ou false. Os Parceiros Dinâmicos (v0.15.1) precisam
@@ -5119,7 +5265,7 @@
             var ruim = aiMaoRuim(v);
             if (prof.leitura === 'classe') {
                 if (est.classe === 2 && !ruim) return aiRandom() < prof.pedeExcelente ? 'valor' : false;
-                return (est.classe === 0 || ruim) && aiRandom() < aiBluffChance(v, prof, N, m) ? 'blefe' : false;
+                return ruim && aiRandom() < aiBluffChance(v, prof, N, m) ? 'blefe' : false;
             }
             // No 1x1 a Adaptativa pede quando a conta manda, com qualquer mão — é
             // daqui que o blefe dela sai, sem faixa: contra quem corre muito ele
@@ -5133,17 +5279,20 @@
                 var ganhoA = (aiEvPedir(v, prof, est, h, N, m) - aiEvJogar(v, prof, est, h)) / (faixaA || 1) + aiPressao(v, prof);
                 if (aiRandom() >= aiSigmoid(ganhoA / AI_ADAPTATIVA_MISTURA)) return false;
                 // Nela a definição muda só o nome (pra quando ela é parceira).
-                return est.p < 0.30 || ruim ? 'blefe' : 'valor';
+                return ruim ? 'blefe' : 'valor';
             }
-            // Blefe sem trava: sai das cartas fracas e da pouca chance, na
-            // frequência da dificuldade — nenhuma conta impede o blefe.
-            if (est.p < 0.30 || ruim) return aiRandom() < aiBluffChance(v, prof, N, m) ? 'blefe' : false;
+            // Blefe sem trava: sai das cartas fracas, na frequência da
+            // dificuldade — nenhuma conta impede o blefe.
+            if (ruim) return aiRandom() < aiBluffChance(v, prof, N, m) ? 'blefe' : false;
             // Segurar carta forte só compensa contra quem pede: a faixa sobe com
             // a frequência de pedidos que a IA viu do jogador.
             if (est.p >= 0.85 && aiRandom() < aiFaixa(prof.segura, m.pede / 0.6)) return false;
             var faixa = aiUtility(v, prof, N, 0) - aiUtility(v, prof, 0, N);
             var ganho = (aiEvPedir(v, prof, est, h, N, m) - aiEvJogar(v, prof, est, h)) / (faixa || 1);
-            return ganho > prof.margemPedir - aiPressao(v, prof) ? 'valor' : false;
+            if (ganho <= prof.margemPedir - aiPressao(v, prof)) return false;
+            // Nem sempre pede com mão boa, como um jogador comum que às vezes nem
+            // pensa em pedir (v0.15.2a, decisão dele, só a Normal).
+            return prof.pedeValor === undefined || aiRandom() < prof.pedeValor ? 'valor' : false;
         }
 
         // Decisões apertadas (a Adaptativa pensa mais nelas, ver aiPensarMais): na
@@ -5235,7 +5384,17 @@
             return aiRespostaDaChance(v, prof, est);
         }
 
+        // Ir ao baralho é decisão de quem vê as cartas, não de quem já se
+        // comprometeu (v0.15.2a, retorno do ponto de teste 5): na última mão não
+        // adianta (dá o mesmo que perder a mão), e depois que o time pediu,
+        // aumentou ou aceitou truco na rodada, quem se comprometeu joga até o fim.
+        // A Fácil ia ao baralho logo depois do próprio truco aceito: o aceite
+        // derrubava a conta dela pra Ruim.
+        function aiTimeSeComprometeu(v) {
+            return v.log.some(function(e) { return getTeam(e.p) === v.team && (e.a === 'pede' || e.a === 'aumenta' || e.a === 'aceita'); });
+        }
         function aiShouldFold(v, prof, est) {
+            if (v.tricks.length >= 2 || aiTimeSeComprometeu(v)) return false;
             if (prof.leitura === 'classe') return est.classe === 0 && aiRandom() < prof.baralho;
             if (est.p > prof.baralhoAte) return false;
             if (v.n > 2) {
@@ -5365,8 +5524,41 @@
             return aiRespostaDaChance(minha.v, prof, minha.est);
         }
 
-        // Cada IA anuncia ao time a Classificação da Mão: no começo da rodada e,
-        // conforme a dificuldade, quando ela muda.
+        // Classificação da Rodada (v0.15.2a, decisão dele): a classe que cada IA
+        // conta ao time em que joga gente. Começa com a das 3 cartas e só muda
+        // quando ELA joga: soltar a carta mais fraca não muda nada; gastar uma mais
+        // forte pode baixar (fica a menor entre a de antes e a do que sobrou); na
+        // última carta vale a conta da carta (um 3 ou uma manilha sozinhos são
+        // Excelente — o "disse Ruim e ganhou com um 3" da v0.15.2). Antes a conta
+        // era refeita a cada fala, na régua de cada número de cartas: soltando a
+        // carta fraca, o resto "subia" (OK → Excelente sem nada ter melhorado), e
+        // a jogada dos outros mexia na classe de quem nem tinha jogado. Entre as
+        // IAs a conversa continua pela classe de cada mão (aiAnnounceClasses).
+        function aiClasseDaRodadaInicio() {
+            st.classeDaRodada = {};
+            if (getNumPlayers() === 2) return;
+            for (var p = 1; p <= getNumPlayers(); p++) {
+                if (!isHumanSeat(p) && (st.hands[p] || []).length) st.classeDaRodada[p] = aiClassOf(aiOwnScore(aiView(p)));
+            }
+        }
+        function aiClasseDepoisDaJogada(pid, jogada) {
+            if (!st.classeDaRodada || st.classeDaRodada[pid] === undefined) return;
+            var resto = st.hands[pid] || [];
+            if (!resto.length) { delete st.classeDaRodada[pid]; return; }
+            var agora = aiClassOf(aiOwnScore(aiView(pid)));
+            if (resto.length === 1) { st.classeDaRodada[pid] = agora; return; }
+            var soltouAMaisFraca = resto.every(function(c) { return getPower(c) >= getPower(jogada); });
+            if (!soltouAMaisFraca) st.classeDaRodada[pid] = Math.min(st.classeDaRodada[pid], agora);
+        }
+        // A classe que o parceiro conta: a da rodada, ou (fora dela) a conta da hora.
+        function aiClasseContada(pid) {
+            if (!(st.hands[pid] || []).length) return null;
+            if (st.classeDaRodada && st.classeDaRodada[pid] !== undefined) return st.classeDaRodada[pid];
+            return aiClassOf(aiOwnScore(aiView(pid)));
+        }
+
+        // Cada IA anuncia ao time a classificação de cada mão: no começo da rodada
+        // e, conforme a dificuldade, quando ela muda. É a conversa entre as IAs.
         function aiAnnounceClasses(momento) {
             if (getNumPlayers() === 2) return;
             if (!st.aiClasses || momento === 'inicio') st.aiClasses = {};
@@ -5382,9 +5574,9 @@
         // Sem cartas não há o que classificar (a conta dava Ruim): a decisão é
         // de quem ainda tem cartas — "é com você" (pedido dele, v0.15.2).
         function aiAdvice(pid) {
-            var v = aiView(pid);
-            if (!v.hand.length) return { key: 'comVoce', label: 'É com você', verb: null, classe: null };
-            var cls = aiClassOf(aiOwnScore(v)), classe = AI_CLASSES[cls];
+            var cls = aiClasseContada(pid);
+            if (cls === null) return { key: 'comVoce', label: 'É com você', verb: null, classe: null };
+            var classe = AI_CLASSES[cls];
             if (cls === 0) return { key: 'correr', label: 'Correr', verb: 'correr', classe: classe };
             if (cls === 1) return { key: 'aceitar', label: 'Aceitar', verb: 'aceitar', classe: classe };
             if (st.proposedVal < 12) return { key: 'aumentar', label: 'Aumentar', verb: 'aumentar', classe: classe };
@@ -5606,8 +5798,9 @@
                             indicatorText = advice.toUpperCase();
                             if(window.lastAdviceLevel !== st.proposedVal) {
                                 window.lastAdviceLevel = st.proposedVal;
+                                var falaDele = { quem: rotuloParceiro(partners[0]), texto: falaDoConselho(adviceCat) };
                                 setTimeout(function() {
-                                    if (st.trucoState === 'pending') { showMsg(advice, adviceMsgType(adviceCat.key), 2300); }
+                                    if (st.trucoState === 'pending') { showMsg(falaDele, adviceMsgType(adviceCat.key), 2300); }
                                 }, 1500);
                             }
                         } else if (partners.length > 1) {
@@ -5635,12 +5828,12 @@
                             if(window.lastAdviceLevel !== st.proposedVal) {
                                 window.lastAdviceLevel = st.proposedVal;
                                 // Os dois sem cartas falam uma vez só, no plural.
-                                var falas = semCartas ? [{ idx: 0, key: 'comVoce', texto: "Parceiros: é com você!" }] : cats.map(function(c) {
-                                    return { idx: c.idx, key: c.cat.key, texto: partnerLabel(c.pid, c.idx) + (c.cat.key === 'comVoce' ? ": é com você!" : ": mão " + c.cat.classe + ", " + (c.cat.key === 'bora' ? c.cat.label : c.cat.label.toLowerCase())) };
+                                var falas = semCartas ? [{ idx: 0, key: 'comVoce', aviso: { quem: 'Parceiros', texto: 'É com você!' } }] : cats.map(function(c) {
+                                    return { idx: c.idx, key: c.cat.key, aviso: { quem: partnerLabel(c.pid, c.idx), texto: falaDoConselho(c.cat) } };
                                 });
                                 falas.forEach(function(f) {
                                     setTimeout(function() {
-                                        if (st.trucoState === 'pending') { showMsg(f.texto, adviceMsgType(f.key), 2000); }
+                                        if (st.trucoState === 'pending') { showMsg(f.aviso, adviceMsgType(f.key), 2000); }
                                     }, 1500 + f.idx * 2200);
                                 });
                             }
@@ -5985,7 +6178,8 @@
                     if (st.trucoState === 'mao11') {
                         handleMao11();
                     } else {
-                        if (st.maoDeFerro) { showMsg("⚡ MÃO DE FERRO! NINGUÉM FOGE! ⚡", 'warn', 3000); }
+                        // A Mão de Ferro começa sem notificação (pedido dele, v0.15.2a):
+                        // a linha do meio da barra e a vez já dizem que é Mão de Ferro.
                         checkAiTurn(); 
                     }
                 }, 550); 
@@ -6091,6 +6285,7 @@
                 st.isMaoDeX = true; st.maoDeXTeam = 2; st.trucoState = 'mao11';
             }
             aiAnnounceClasses('inicio');
+            aiClasseDaRodadaInicio();
 
             getEl('box-table').innerHTML = '';
             // A distribuição já é uma pausa (o animDeal trava logo em seguida);
@@ -6116,11 +6311,9 @@
                         else advice = advPrefix + "Bora!";
                     }
                     if (advice) getEl('ui-deck-indicator').innerText = advice.toUpperCase();
-                    var m = st.rules === 'mineiro' ? "Mão de 10! Analise as cartas." : "Mão de 11! Analise as cartas.";
-                    showMsg(m, 'warn', 3000);
+                    showMsg({ quem: 'Mão de ' + (st.rules === 'mineiro' ? '10' : '11'), texto: 'Analise as cartas' }, 'warn', 3000);
                 } else {
-                    var m = st.rules === 'mineiro' ? "Sua Mão de 10! Deseja jogar?" : "Sua Mão de 11! Deseja jogar?";
-                    showMsg(m, 'warn', 3000);
+                    showMsg({ quem: 'Sua Mão de ' + (st.rules === 'mineiro' ? '10' : '11'), texto: 'Deseja jogar?' }, 'warn', 3000);
                 }
                 updateUI();
             } else if (amICoordinatingTeam(st.maoDeXTeam)) {
@@ -6168,18 +6361,15 @@
             // por mim em Multiplayer/Trios), não só o rival — texto e cor
             // precisam se ajustar aos dois casos, mesmo padrão de aiDecideTruco.
             var repPid11 = seats[0];
-            var actor11 = trucoActor(repPid11);
             var isMyTeamMao11 = (myPID !== 0 && decidingTeam === getTeam(myPID));
 
             if (accept) {
                 st.handVal = st.rules === 'mineiro' ? 4 : 3;
-                var msg = actor11.name + ' ' + (actor11.plural ? 'aceitaram' : 'aceitou') + ' a Mão de ' + txt + '!';
-                showMsg(msg, isMyTeamMao11 ? 'pos' : 'neg');
+                showMsg(acaoDe(repPid11, 'aceitou a Mão de ' + txt, 'aceitaram a Mão de ' + txt), isMyTeamMao11 ? 'pos' : 'neg');
                 st.trucoState = 'none';
                 animLock = false; updateUI(); autoSave(); checkAiTurn();
             } else {
-                var msg = actor11.name + ' ' + (actor11.plural ? 'correram' : 'correu') + ' da Mão de ' + txt + '!';
-                showMsg(msg, isMyTeamMao11 ? 'neg' : 'pos');
+                showMsg(acaoDe(repPid11, 'correu da Mão de ' + txt, 'correram da Mão de ' + txt), isMyTeamMao11 ? 'neg' : 'pos');
                 st.scores[getOppTeam(decidingTeam)] += st.rules === 'mineiro' ? 2 : 1;
                 autoSave();
                 if(st.scores[getOppTeam(decidingTeam)] >= 12) { triggerEndGame(getTeam(myPID) === getOppTeam(decidingTeam)); return; }
@@ -6465,30 +6655,45 @@
             if (modo === 'permissivo') return tipo === 'blefe';
             return false;
         }
-        // A classificação que o parceiro conta ao pedir: a mesma do conselho. Sem
-        // cartas não há mão pra contar (null) e a fala sai sem ela (v0.15.2).
-        function classeDoParceiro(pid) { var v = aiView(pid); return v.hand.length ? AI_CLASSES[aiClassOf(aiOwnScore(v))] : null; }
+        // A classificação que o parceiro conta ao pedir: a mesma do conselho, a
+        // Classificação da Rodada (v0.15.2a). Sem cartas não há mão pra contar
+        // (null) e a fala sai sem ela (v0.15.2).
+        function classeDoParceiro(pid) { var cls = aiClasseContada(pid); return cls === null ? null : AI_CLASSES[cls]; }
         function falaDaMao(classe) { return classe ? ' — mão ' + classe : ''; }
         function ehMeuParceiro(pid) { return myPID !== 0 && pid !== myPID && getTeam(pid) === getTeam(myPID); }
         function rotuloParceiro(pid) {
             var bots = getPartnerPIDs().filter(function(p) { return !isHumanSeat(p); });
             return bots.length > 1 ? partnerLabel(pid, bots.indexOf(pid)) : 'Parceiro';
         }
-        function textoPedidoParceiro(ped) {
+        // O que o parceiro-IA diz pra você vira fala em primeira pessoa, com o nome
+        // dele em cima e a mão entre parênteses (v0.15.2a, ideia dele).
+        function maoEntreParenteses(classe) { return classe ? ' (mão ' + classe + ')' : ''; }
+        function falaPedidoParceiro(ped) {
             var nome = getTrucoName(ped.valor).toLowerCase();
-            return rotuloParceiro(ped.pid) + ' quer ' + (ped.tipo === 'blefe' ? 'blefar o ' + nome : 'pedir ' + nome) + falaDaMao(ped.classe);
+            var fala = ped.tipo !== 'blefe' ? 'Posso pedir ' + nome + '?' : (nome === 'truco' ? 'Posso blefar?' : 'Posso blefar o ' + nome + '?');
+            return { quem: rotuloParceiro(ped.pid), texto: fala + maoEntreParenteses(ped.classe) };
+        }
+        function falaDoConselho(cat) {
+            if (cat.key === 'comVoce') return 'É com você!';
+            if (cat.key === 'bora') return 'Bora!' + maoEntreParenteses(cat.classe);
+            return 'Sugiro ' + cat.verb + (cat.key === 'aumentar' ? '!' : '') + maoEntreParenteses(cat.classe);
+        }
+        // O pedido de truco de alguém na notificação; o parceiro-IA conta a mão só
+        // pra quem é do time dele.
+        function avisoDoPedido(pid) {
+            var aviso = acaoDe(pid, 'pediu', 'pediram', st.proposedVal);
+            if (modoDoParceiro(pid) && ehMeuParceiro(pid)) aviso.texto += maoEntreParenteses(classeDoParceiro(pid));
+            return aviso;
         }
 
         // O bot pede truco (ou o próximo valor) na vez dele. O parceiro conta a
-        // classificação da mão junto (plano da v0.15.0) — só pra quem é do time
+        // Classificação da Rodada junto (plano da v0.15.0) — só pra quem é do time
         // dele; o rival vê só o pedido, como sempre.
         function aiPedeTruco(pid) {
             st.proposedVal = getNextTrucoVal(st.handVal);
             aiLogAction(pid, 'pede', st.proposedVal);
             st.trucoBy = pid; st.lastTruco = pid; st.trucoState = 'pending';
-            var msg = trucoActionText(pid, 'pediu', 'pediram', st.proposedVal);
-            if (modoDoParceiro(pid) && ehMeuParceiro(pid)) msg += falaDaMao(classeDoParceiro(pid));
-            showMsg(msg, 'neu');
+            showMsg(avisoDoPedido(pid), 'neu');
             window.lastAdviceLevel = 0; animLock = false;
             updateUI(); updateTurnGlow(); autoSave(); checkAiTrucoDecision();
         }
@@ -6499,7 +6704,7 @@
         function pedirPermissao(pid, tipo, valor) {
             st.trucoState = 'partner_ask';
             st.partnerAsk = { pid: pid, tipo: tipo, valor: valor, classe: classeDoParceiro(pid) };
-            if (ehMeuParceiro(pid)) showMsg(textoPedidoParceiro(st.partnerAsk), 'neu', 2600);
+            if (ehMeuParceiro(pid)) showMsg(falaPedidoParceiro(st.partnerAsk), 'neu', 2600);
             animLock = false; updateUI(); updateTurnGlow(); autoSave();
         }
 
@@ -6543,9 +6748,10 @@
             window.lastAdviceLevel = st.proposedVal;
             updateUI(); autoSave();
             setTimeout(function() {
-                if (st.trucoState === 'pending' && st.parceirosPassaram === chave && getTeam(myPID) === team) showMsg(textoParceirosPassaram(team), 'neu', 2600);
+                if (st.trucoState === 'pending' && st.parceirosPassaram === chave && getTeam(myPID) === team) showMsg(falaParceirosPassaram(team), 'neu', 2600);
             }, 1500);
         }
+        // A linha do meio da barra, embaixo do VALE.
         function textoParceirosPassaram(team) {
             var bots = getTeamPIDs(team).filter(function(p) { return !isHumanSeat(p); });
             // Só conta a mão quem ainda tem cartas (v0.15.2).
@@ -6553,6 +6759,13 @@
             var fala = bots.length > 1 ? 'Seus Parceiros deixaram com você' : 'Seu Parceiro deixou com você';
             if (classes.length > 1) return fala + ' — mãos ' + classes.join(' e ');
             return fala + falaDaMao(classes[0]);
+        }
+        // A notificação: a mesma coisa dita por eles (v0.15.2a).
+        function falaParceirosPassaram(team) {
+            var bots = getTeamPIDs(team).filter(function(p) { return !isHumanSeat(p); });
+            var classes = bots.map(classeDoParceiro).filter(function(c) { return c; });
+            var maos = classes.length > 1 ? ' (mãos ' + classes.join(' e ') + ')' : maoEntreParenteses(classes[0]);
+            return bots.length > 1 ? { quem: 'Parceiros', texto: 'Deixamos com você' + maos } : { quem: rotuloParceiro(bots[0]), texto: 'Deixo com você' + maos };
         }
 
         function checkAiTrucoDecision() {
@@ -6611,7 +6824,7 @@
             // inteira — "sugiro aceitar" logo depois de não aceitar seria contradição.
             if (!accept && ligado) {
                 st.parceirosPassaram = chaveDoPedido();
-                if (ehMeuParceiro(pid)) showMsg(textoParceirosPassaram(myTeam), 'neu', 2600);
+                if (ehMeuParceiro(pid)) showMsg(falaParceirosPassaram(myTeam), 'neu', 2600);
                 window.lastAdviceLevel = st.proposedVal; // a fala acima substitui o conselho
                 animLock = false; updateUI(); updateTurnGlow(); autoSave(); return;
             }
@@ -6621,10 +6834,8 @@
                 st.proposedVal = getNextTrucoVal(st.proposedVal);
                 aiLogAction(pid, 'aumenta', st.proposedVal);
                 st.trucoBy = pid; st.lastTruco = pid;
-                var msgAumento = trucoActionText(pid, 'pediu', 'pediram', st.proposedVal);
                 // Parceiro do Ligado aumentando sozinho: conta a mão, como ao pedir.
-                if (modoDoParceiro(pid) && ehMeuParceiro(pid)) msgAumento += falaDaMao(classeDoParceiro(pid));
-                showMsg(msgAumento, 'neu');
+                showMsg(avisoDoPedido(pid), 'neu');
                 animLock = false; updateUI(); updateTurnGlow(); autoSave(); checkAiTrucoDecision(); return;
             }
             // Cor de aceitar/correr depende de QUEM está respondendo: se for
@@ -6638,11 +6849,11 @@
                 aiLogAction(pid, 'aceita', st.proposedVal);
                 st.handVal = st.proposedVal; st.proposedVal = 0;
                 st.aiJustAccepted = true;
-                showMsg(trucoActionText(pid, 'ACEITOU', 'ACEITARAM'), isMyTeamResponding ? 'pos' : 'neg');
+                showMsg(acaoDe(pid, 'aceitou', 'aceitaram'), isMyTeamResponding ? 'pos' : 'neg');
                 st.trucoState = 'none'; animLock = false; updateUI(); autoSave(); checkAiTurn();
             } else {
                 aiLogAction(pid, 'corre', st.proposedVal);
-                showMsg(trucoActionText(pid, 'CORREU', 'CORRERAM'), isMyTeamResponding ? 'neg' : 'pos');
+                showMsg(acaoDe(pid, 'correu', 'correram'), isMyTeamResponding ? 'neg' : 'pos');
                 st.trucoState = 'none';
                 var pts = st.handVal;
                 st.scores[getOppTeam(myTeam)] += pts;
@@ -6707,14 +6918,13 @@
             if(st.table.length === 0 && !myX && !st.isMaoDeX && !maoDeFerro) {
                 if(aiShouldFold(view, prof, est)) {
                     if (!getTeamPIDs(myTeam).some(isHumanSeat)) {
-                        var fMsg = st.gameFormat === '1v1' ? "O Rival foi ao baralho!" : "Os Rivais foram ao baralho!";
-                        showMsg(fMsg, 'pos');
+                        showMsg(acaoDe(pid, 'foi ao baralho', 'foram ao baralho'), 'pos');
                         st.scores[oppTeam] += st.handVal;
                         if(st.scores[oppTeam] >= 12) { animLock = false; triggerEndGame(getTeam(myPID) === oppTeam); return; }
                         scheduleNextRoundAfterRun(); return;
                     } else if (!st.partnerForcedPlay) {
                         st.trucoState = 'partner_fold'; st.partnerFoldPid = pid;
-                        if (ehMeuParceiro(pid)) showMsg("Parceiro quer ir ao baralho!", 'warn');
+                        if (ehMeuParceiro(pid)) showMsg({ quem: rotuloParceiro(pid), texto: 'Vamos correr?' }, 'warn');
                         // Sincroniza: no multiplayer o colega de time pode estar em
                         // outro aparelho (antes o pedido ficava só aqui).
                         animLock = false; updateUI(); updateTurnGlow(); autoSave(); return;
@@ -6726,6 +6936,7 @@
             st.aiJustAccepted = false; // Limpa a trava pois ela finalmente jogou uma carta
             if (st.parceiroSegura === pid) st.parceiroSegura = 0;
             st.table.push({c: c, p: pid, hidden: hideThisCard});
+            aiClasseDepoisDaJogada(pid, c);
             renderMesa(null, pid);
 
             if(st.table.length === getNumPlayers()) {
@@ -6877,7 +7088,7 @@
             { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' }
         ];
         var webrtcResuming = false;
-        var webrtcGatherTimer = null;
+        var codigoDaConexao = null; // ver prepararCodigo
 
         // ═══════════════════════════════════════════════════════════════
         // SUPORTE A MAIS DE 2 HUMANOS (WebRTC) — topologia estrela
@@ -6886,15 +7097,13 @@
         // ALÉM do primeiro; convidados nunca falam entre si, só com o Host,
         // que retransmite. O guest #1 (o fluxo de hoje) continua usando as
         // variáveis clássicas `pc`/`dc` sem nenhuma mudança de comportamento
-        // — isso é 100% aditivo: com `hostPeers` vazio (situação de hoje,
-        // já que só 1v1/2v2 são selecionáveis), autoSave() e o resto do
-        // fluxo funcionam exatamente como antes.
+        // — isso é 100% aditivo: com `hostPeers` vazio (partida com 2
+        // humanos), autoSave() e o resto do fluxo funcionam como antes.
         //
-        // A tela de "convidar mais um jogador" ainda não existe (fica pra
-        // quando os Trios forem ligados na UI) mas o motor abaixo já
-        // funciona e pode ser chamado assim que essa tela existir.
+        // Os outros entram pela tela Convidar Jogadores (CONVIDAR, no Menu
+        // de Pausa), um convite por vez: ver conviteAberto.
         // ═══════════════════════════════════════════════════════════════
-        var hostPeers = {}; // { pid: { pc, dc, gatheringDone } }
+        var hostPeers = {}; // { pid: { pc, dc, aberto, cancelarCodigo } }
 
         function webrtcBroadcastToExtras(payload, exceptPid) {
             Object.keys(hostPeers).forEach(function(pidKey) {
@@ -6915,9 +7124,6 @@
             return 0;
         }
 
-        // Chamado pelo Host pra convidar mais um jogador além do guest
-        // principal. Gera um código de convite igual ao clássico, só que
-        // já embutindo qual pid o novo jogador vai ocupar.
         // Comprime o payload (gzip nativo do navegador) antes de codificar em
         // Base64 — reduz bastante o tamanho do código de convite, já que o SDP
         // tem muita repetição de texto. Cai pra Base64 puro se o navegador não
@@ -6960,81 +7166,216 @@
             return JSON.parse(atob(codeStr));
         }
 
+        // O código sai quando a coleta de rede termina ou 4 s depois de ela
+        // começar, o que vier primeiro. Em quase toda rede um dos testes de rede
+        // só desiste depois de ~40 s (medido em 2026-10-02), e o que chega no
+        // primeiro segundo já basta pra conectar. Antes só a tela do Host tinha
+        // esse limite: o código do convite levava os 40 s (v0.15.2a).
+        var LIMITE_DO_CODIGO_MS = 4000;
+        function prepararCodigo(conexao, pronto) {
+            var feito = false, limite = null;
+            function liberar() { if (feito || !conexao.localDescription) return; feito = true; clearTimeout(limite); pronto(); }
+            conexao.onicecandidate = function(event) { if (!event.candidate) liberar(); };
+            return {
+                // Depois do setLocalDescription: é quando a coleta começa.
+                comecou: function() { clearTimeout(limite); limite = setTimeout(liberar, LIMITE_DO_CODIGO_MS); },
+                cancelar: function() { feito = true; clearTimeout(limite); }
+            };
+        }
+
+        // Lê um código colado e confere o tipo: 'offer' é o código de quem convida
+        // (Host ou convite), 'answer' é a resposta. Código trocado ganha aviso
+        // próprio (v0.15.2a): colar o próprio código no lugar da resposta é um
+        // engano fácil, e o aviso de "mal formatado" não dizia o que fazer.
+        async function lerCodigo(texto, tipoEsperado) {
+            if (!texto) return { erro: 'vazio' };
+            var dados;
+            try { dados = await unpackCode(texto); } catch(e) { return { erro: 'formato' }; }
+            var desc = dados && typeof dados.sdp === 'object' ? dados.sdp : dados;
+            if (!desc || typeof desc.sdp !== 'string' || !desc.type) return { erro: 'formato' };
+            if (desc.type !== tipoEsperado) return { erro: 'trocado' };
+            return { dados: dados, desc: desc };
+        }
+
+        // O estado da conexão, igual nas três telas de código (v0.15.2a).
+        function estadoDaConexao(caixaId, texto, estado) {
+            var caixa = getEl(caixaId);
+            caixa.classList.remove('hidden', 'status-connecting', 'status-success', 'status-error', 'status-idle');
+            caixa.classList.add('status-' + estado);
+            caixa.querySelector('span').innerText = texto;
+        }
+        // O passo a passo da tela: os feitos ganham ✓, o da vez fica em destaque.
+        function marcarPasso(caixaId, atual) {
+            getEl(caixaId).querySelectorAll('.passo').forEach(function(passo, i) {
+                passo.classList.toggle('feito', i < atual);
+                passo.classList.toggle('atual', i === atual);
+                passo.querySelector('b').textContent = i < atual ? '✓' : (i + 1) + '.';
+            });
+        }
+
+        // Uma conexão nova pro convite de um assento: o código já leva o assento
+        // que o novo jogador vai ocupar.
         function setupExtraGuestPeer(targetPid, onReady) {
-            var peer = { pc: null, dc: null, gatheringDone: false };
-            peer.pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+            var peer = { pc: new RTCPeerConnection({ iceServers: ICE_SERVERS }), dc: null, aberto: false };
             peer.dc = peer.pc.createDataChannel('truco');
             setupExtraPeerDataChannel(targetPid, peer);
-            peer.pc.createOffer().then(function(offer) { peer.pc.setLocalDescription(offer); });
-
-            peer.pc.onicecandidate = function(event) {
-                if (!event.candidate && !peer.gatheringDone) {
-                    peer.gatheringDone = true;
-                    var payload = { sdp: peer.pc.localDescription, nick: myLocalNick, assignedPid: targetPid, appVersion: APP_VERSION };
-                    window._extraInviteCodes = window._extraInviteCodes || {};
-                    packCode(payload).then(function(codeStr) {
-                        window._extraInviteCodes[targetPid] = codeStr;
-                        if (onReady) onReady(codeStr);
-                    });
-                }
+            var codigo = prepararCodigo(peer.pc, function() {
+                var payload = { sdp: peer.pc.localDescription, nick: myLocalNick, assignedPid: targetPid, appVersion: APP_VERSION };
+                packCode(payload).then(function(codeStr) { if (onReady) onReady(codeStr); });
+            });
+            peer.cancelarCodigo = codigo.cancelar;
+            peer.pc.createOffer().then(function(offer) { return peer.pc.setLocalDescription(offer); }).then(codigo.comecou);
+            // Sem isso, uma conexão que não fechava deixava a tela esperando pra sempre.
+            // Depois de aberta, a queda é a saída do jogador: quem fecha o jogo ou perde
+            // a rede quase nunca fecha o canal, e o assento ficava humano pra sempre — a
+            // mesa parava na vez dele (verificação final da v0.15.2a). Navegador que não
+            // dá a conexão por perdida: 15 s sem ela voltar bastam.
+            var verConexao = function() {
+                var ice = peer.pc.iceConnectionState, conexao = peer.pc.connectionState;
+                if (!peer.aberto) { if (ice === 'failed') conviteFalhou(peer, 'conexao'); return; }
+                clearTimeout(peer.queda);
+                if (ice === 'failed' || ice === 'closed' || conexao === 'failed') convidadoSaiu(targetPid, peer);
+                else if (ice === 'disconnected') peer.queda = setTimeout(function() {
+                    if (peer.pc.iceConnectionState !== 'connected' && peer.pc.iceConnectionState !== 'completed') convidadoSaiu(targetPid, peer);
+                }, 15000);
             };
-
+            peer.pc.oniceconnectionstatechange = verConexao;
+            peer.pc.onconnectionstatechange = verConexao;
             hostPeers[targetPid] = peer;
             return peer;
         }
 
-        // Confirma a resposta (SDP answer) de um convidado extra específico.
-        async function webrtcConfirmExtraGuest(targetPid, answerCodeStr) {
-            var peer = hostPeers[targetPid];
-            if (!peer) return;
-            try {
-                var parsed = await unpackCode(answerCodeStr);
-                var answer = parsed.sdp || parsed;
-                if (parsed.nick) { st.nicks = st.nicks || {}; st.nicks[targetPid] = parsed.nick.substring(0, 15); }
-                peer.pc.setRemoteDescription(answer);
-            } catch(e) { showMsg("Código de resposta inválido.", 'sys'); }
+        // ─── Convidar Jogadores (v0.15.2a) ───────────────────────────────
+        // O convite em aberto fica guardado: sair da tela e voltar mostra o MESMO
+        // código, e a resposta que o amigo já gerou continua valendo. Antes cada
+        // CONVIDAR fazia um código novo, e a resposta do anterior não servia mais.
+        // momento: 'gerando' → 'pronto' → 'conectando' → 'entrou' (ou 'falhou');
+        // copiado: a caixa do código saiu da frente; erro: aviso de código mal colado.
+        var conviteAberto = null;
+
+        // quemEntrou: o nome de quem acabou de entrar, que fica no estado até o
+        // código do próximo sair (no mínimo 1,8 s, pra dar tempo de ler).
+        function novoConvite(pid, quemEntrou) {
+            descartarConvite();
+            var convite = conviteAberto = { pid: pid, momento: 'gerando', copiado: false, erro: null, codigo: '', quemEntrou: quemEntrou || null, desde: Date.now() };
+            getEl('invite-more-answer-in').value = '';
+            convite.peer = setupExtraGuestPeer(pid, function(codeStr) {
+                setTimeout(function() {
+                    if (conviteAberto !== convite || convite.momento !== 'gerando') return;
+                    convite.codigo = codeStr; convite.momento = 'pronto';
+                    desenharConvite();
+                }, convite.quemEntrou ? Math.max(0, 1800 - (Date.now() - convite.desde)) : 0);
+            });
+            desenharConvite();
+        }
+        function descartarConvite() {
+            var c = conviteAberto; conviteAberto = null;
+            if (!c || c.entrou || !c.peer) return;
+            c.peer.cancelarCodigo();
+            if (hostPeers[c.pid] === c.peer) delete hostPeers[c.pid];
+            try { c.peer.pc.close(); } catch(e) {}
         }
 
-        // Abre a tela de "convidar mais um" — reaproveita o backend de
-        // hostPeers/setupExtraGuestPeer, só que numa tela dedicada e simples,
-        // acessível tanto logo após conectar com o guest principal quanto
-        // depois, a qualquer momento, pelo menu de pausa.
+        var ERROS_DA_RESPOSTA_DO_CONVITE = {
+            vazio: 'Cole a resposta do novo jogador antes de confirmar.',
+            formato: '❌ Código mal formatado. Confira e cole novamente.',
+            trocado: '❌ Esse é o código do convite. Cole a resposta dele.'
+        };
+        // A tela inteira sai do estado do convite, de uma vez (a janela anima uma vez só).
+        function desenharConvite() {
+            var c = conviteAberto || { momento: 'gerando', copiado: false, erro: null, codigo: '' };
+            animarJanela(getEl('scr-webrtc-invite-more'), function() {
+                desenharAssentos();
+                if (getEl('invite-more-code-out').value !== c.codigo) codigoNaCaixa('invite-more-code-out', c.codigo);
+                mostrarCaixa('invite-more-code-out', !c.copiado);
+                getEl('btn-copy-invite-code').disabled = getEl('btn-share-invite-code').disabled = !c.codigo;
+                // Na falha só o TENTAR NOVAMENTE serve: o código e a resposta de antes saem da frente.
+                var falhou = c.momento === 'falhou';
+                getEl('invite-more-btn-retry').classList.toggle('hidden', !falhou);
+                getEl('invite-more-codigo').classList.toggle('hidden', falhou);
+                getEl('invite-more-resposta').classList.toggle('hidden', falhou);
+                marcarPasso('passos-convite', c.momento === 'entrou' ? 2 : (falhou || !c.codigo || (c.momento === 'pronto' && !c.copiado) ? 0 : 1));
+                var estado = c.erro ? [c.erro, 'error'] : {
+                    gerando: c.quemEntrou ? ['🟢 ' + c.quemEntrou + ' entrou na mesa!', 'success'] : ['🔄 Gerando o código do convite...', 'connecting'],
+                    pronto: c.copiado ? ['📋 Copiado! Agora cole a resposta dele.', 'idle'] : ['✅ Envie pro próximo jogador.', 'success'],
+                    conectando: ['🔄 Conectando...', 'connecting'],
+                    entrou: ['🟢 ' + c.nome + ' entrou na mesa!', 'success'],
+                    falhou: [c.motivo === 'resposta' ? '❌ Código de resposta inválido.' : '❌ Falha na conexão. Toque em Tentar Novamente.', 'error']
+                }[c.momento];
+                estadoDaConexao('invite-more-status-box', estado[0], estado[1]);
+            });
+        }
+        // Os humanos que já estão na mesa e os que faltam, no lugar do "Faltam N".
+        function desenharAssentos() {
+            var esperados = st.expectedHumans || 2, cheios = Math.min((st.humanSeats || []).length, esperados), html = 'Na mesa ';
+            for (var i = 0; i < esperados; i++) html += '<span class="assento' + (i < cheios ? ' cheio' : '') + '"></span>';
+            getEl('invite-more-mesa').innerHTML = html + ' ' + cheios + ' de ' + esperados;
+        }
+
+        // CONVIDAR (Menu de Pausa): o convite em aberto pro mesmo assento volta
+        // como estava; senão, sai um novo.
         window.startInviteMoreFlow = function(fromScreen) {
             var nextPid = getNextOpenHumanSeat();
             if (!nextPid) { showMsg("A mesa já está com todos os assentos ocupados.", 'sys'); return; }
-            window._inviteMoreTargetPid = nextPid;
-
-            var expected = st.expectedHumans || 2;
-            getEl('invite-more-count').innerText = Math.max(0, expected - st.humanSeats.length);
-            getEl('invite-more-code-out').value = '';
-            getEl('invite-more-code-out').placeholder = 'Gerando código, aguarde...';
-            getEl('invite-more-answer-in').value = '';
-            getEl('invite-more-status-box').classList.add('hidden');
-
+            if (conviteAberto && conviteAberto.pid === nextPid && !conviteAberto.entrou) desenharConvite();
+            else novoConvite(nextPid);
             nav(fromScreen || 'scr-game', 'scr-webrtc-invite-more');
-
-            setupExtraGuestPeer(nextPid, function(codeStr) {
-                getEl('invite-more-code-out').value = codeStr;
-            });
         };
 
+        // A resposta é conferida na própria tela, e a tela espera a conexão: antes
+        // voltava pro jogo em 1,2 s, conectando ou não, e o erro ficava atrás dela.
         window.confirmInviteMoreAnswer = async function() {
-            var answerCodeStr = getEl('invite-more-answer-in').value.trim();
-            if (!answerCodeStr) { showMsg("Cole a resposta do novo jogador antes de confirmar.", 'sys'); return; }
-            animarJanela(getEl('scr-webrtc-invite-more'), function() {
-                getEl('invite-more-status-box').classList.remove('hidden');
-                getEl('invite-more-status-text').innerText = '🔄 Conectando...';
-            });
-            await webrtcConfirmExtraGuest(window._inviteMoreTargetPid, answerCodeStr);
-            setTimeout(function() {
-                nav('scr-webrtc-invite-more', 'scr-game');
-                maybeOfferInviteMore();
-            }, 1200);
+            var c = conviteAberto;
+            if (!c || c.momento !== 'pronto') return;
+            var lido = await lerCodigo(getEl('invite-more-answer-in').value.trim(), 'answer');
+            if (conviteAberto !== c || c.momento !== 'pronto') return;
+            if (lido.erro) { c.erro = ERROS_DA_RESPOSTA_DO_CONVITE[lido.erro]; desenharConvite(); return; }
+            if (lido.dados.nick) { st.nicks = st.nicks || {}; st.nicks[c.pid] = lido.dados.nick.substring(0, 15); }
+            if (lido.dados.appVersion !== APP_VERSION) showVersionMismatchWarning(lido.dados.appVersion);
+            c.momento = 'conectando'; c.erro = null;
+            desenharConvite();
+            c.peer.pc.setRemoteDescription(lido.desc).catch(function() { conviteFalhou(c.peer, 'resposta'); });
         };
 
-        window.skipInviteMore = function() {
-            nav('scr-webrtc-invite-more', 'scr-game');
+        function conviteFalhou(peer, motivo) {
+            var c = conviteAberto;
+            if (!c || c.peer !== peer || c.entrou) return;
+            c.momento = 'falhou'; c.motivo = motivo; c.erro = null;
+            desenharConvite();
+        }
+        window.retryInviteMore = function() {
+            var pid = conviteAberto ? conviteAberto.pid : getNextOpenHumanSeat();
+            if (pid) novoConvite(pid);
         };
+
+        // Alguém entrou pelo convite. Com a tela aberta, ela mostra quem entrou e já
+        // prepara o código do próximo; com a mesa completa, volta sozinha pro jogo.
+        // O código usado sai da caixa na hora: copiá-lo de novo não serviria pra ninguém.
+        function conviteConectou(peer, pid) {
+            var c = conviteAberto, nome = getPlayerName(pid);
+            if (!c || c.peer !== peer || getEl('scr-webrtc-invite-more').classList.contains('hidden')) {
+                if (c && c.peer === peer) conviteAberto = null;
+                showMsg({ quem: nome, texto: 'Entrou na mesa!' }, 'sys');
+                return;
+            }
+            c.entrou = true;
+            var proximo = st.humanSeats.length < (st.expectedHumans || 2) ? getNextOpenHumanSeat() : 0;
+            if (proximo) { novoConvite(proximo, nome); return; }
+            c.momento = 'entrou'; c.nome = nome; c.erro = null; c.codigo = ''; c.copiado = true;
+            desenharConvite();
+            setTimeout(function() {
+                if (conviteAberto === c && !getEl('scr-webrtc-invite-more').classList.contains('hidden')) voltarDoConvite();
+            }, 1800);
+        }
+
+        // VOLTAR AO JOGO: o convite em aberto continua guardado. O CONVIDAR fica no
+        // Menu de Pausa, e o jogo voltava com ele aberto.
+        function voltarDoConvite() {
+            if (conviteAberto && conviteAberto.entrou) conviteAberto = null;
+            nav('scr-webrtc-invite-more', 'scr-game');
+            if (isPaused) { isPaused = false; getEl('action-bar').classList.remove('pause-zone'); updateUI(); }
+        }
+        window.skipInviteMore = voltarDoConvite;
 
         // Depois de conectar com alguém (o guest principal ou um extra),
         // avisa discretamente se ainda tem gente esperada faltando — sem
@@ -7043,20 +7384,21 @@
             if (!isHostWebRTC || gameMode !== 'webrtc') return;
             var expected = st.expectedHumans || 2;
             if (st.humanSeats.length < expected && getNextOpenHumanSeat()) {
-                showMsg("Ainda faltam jogadores — use CONVIDAR no menu de pausa.", 'sys', 3500);
+                showMsg({ quem: 'Ainda faltam jogadores', texto: 'Convide no Menu de Pausa' }, 'sys', 3500);
             }
         }
 
         function setupExtraPeerDataChannel(pid, peer) {
             peer.dc.onopen = function() {
+                peer.aberto = true;
                 if (!st.humanSeats) st.humanSeats = [1, 2];
                 if (st.humanSeats.indexOf(pid) === -1) st.humanSeats.push(pid);
                 st.version++;
                 var payload = JSON.stringify(st);
                 if (dc && dc.readyState === 'open') { dc.send(payload); }
                 webrtcBroadcastToExtras(payload);
-                showMsg(getPlayerName(pid) + " entrou na mesa!", 'pos');
                 updateUI();
+                conviteConectou(peer, pid);
             };
             peer.dc.onmessage = function(event) {
                 processLoadedState(JSON.parse(event.data));
@@ -7064,12 +7406,30 @@
                 webrtcBroadcastToExtras(event.data, pid);
             };
             peer.dc.onclose = function() {
-                var idx = st.humanSeats ? st.humanSeats.indexOf(pid) : -1;
-                if (idx !== -1) st.humanSeats.splice(idx, 1);
-                delete hostPeers[pid];
-                showMsg(getPlayerName(pid) + " saiu da mesa.", 'neg');
-                updateUI();
+                // Convite que nunca conectou (descartado ou trocado por outro) não era ninguém na mesa.
+                if (!peer.aberto) return;
+                convidadoSaiu(pid, peer);
             };
+        }
+
+        // Um convidado saiu da mesa (fechou o jogo, recarregou ou perdeu a rede): o
+        // assento volta pra IA em todos os aparelhos (com o nome de IA, não o apelido
+        // de quem saiu), a IA joga na hora se era a vez dele, e o lugar fica livre
+        // pro CONVIDAR. Antes só o canal fechando avisava, e a IA não retomava a vez.
+        function convidadoSaiu(pid, peer) {
+            if (peer.saiu) return;
+            peer.saiu = true;
+            clearTimeout(peer.queda);
+            if (hostPeers[pid] === peer) delete hostPeers[pid];
+            try { peer.pc.close(); } catch (e) {}
+            var idx = st.humanSeats ? st.humanSeats.indexOf(pid) : -1;
+            if (idx === -1) return;
+            var nome = getPlayerName(pid);
+            st.humanSeats.splice(idx, 1);
+            if (st.nicks) st.nicks[pid] = '';
+            showMsg({ quem: nome, texto: 'Saiu da mesa.' }, 'sys');
+            autoSave(); updateUI(); checkAiTurn();
+            if (conviteAberto && !getEl('scr-webrtc-invite-more').classList.contains('hidden')) desenharConvite();
         }
 
         window.selectLocalMethod = function(method) {
@@ -7137,58 +7497,92 @@
             getEl('btn-ws-watch').disabled = !hasRoom;
         };
 
-        function enterWebrtcConnectScreen(fromScreen) {
-            nav(fromScreen, 'scr-webrtc-connect');
+        // aviso: [texto, estado] do começo da tela quando a conexão caiu.
+        function enterWebrtcConnectScreen(fromScreen, aviso) {
             getEl('webrtc-connect-title').innerText = isHostWebRTC ? 'VOCÊ É O HOST' : 'VOCÊ É O GUEST';
             getEl('webrtc-step-host').classList.toggle('hidden', !isHostWebRTC);
             getEl('webrtc-step-guest').classList.toggle('hidden', isHostWebRTC);
-            getEl('webrtc-guest-response-area').classList.add('hidden');
-            getEl('webrtc-btn-retry').classList.add('hidden');
-
-            if (isHostWebRTC) {
-                getEl('webrtc-data-host').value = '';
-                getEl('webrtc-data-host').placeholder = 'Gerando código, aguarde...';
-                getEl('btn-copy-host-code').disabled = true;
-                getEl('btn-share-host-code').disabled = true;
-                getEl('webrtc-answer-input').value = '';
-                webrtcSetStatus('🔄 Coletando informações de rede...', 'connecting');
-            } else {
-                getEl('webrtc-data-guest-input').value = '';
-                getEl('webrtc-data-guest-output').value = '';
-                webrtcSetStatus('Aguardando você colar o código do Host...', 'idle');
-            }
+            novaTelaDeConexao(aviso);
+            nav(fromScreen, 'scr-webrtc-connect');
             setupWebRTC();
+        }
+
+        // Cada momento da tela de Conexão Direta (v0.15.2a), desenhado de uma vez.
+        // Host: 'gerando' → 'pronto' → 'conectando'; Guest: 'colar' → 'gerando' →
+        // 'pronto'. 'falhou' mostra o TENTAR NOVAMENTE; copiado: a caixa saiu da
+        // frente; erro: aviso de código mal colado, que não pede código novo.
+        var telaConexao = {};
+        function novaTelaDeConexao(aviso) {
+            telaConexao = { momento: isHostWebRTC ? 'gerando' : 'colar', copiado: false, erro: null, aviso: aviso || null, codigo: '' };
+            getEl(isHostWebRTC ? 'webrtc-answer-input' : 'webrtc-data-guest-input').value = '';
+            desenharConexao();
+        }
+        function mudarConexao(mudancas) {
+            Object.assign(telaConexao, { erro: null }, mudancas);
+            desenharConexao();
+        }
+        function desenharConexao() {
+            var t = telaConexao, estado;
+            animarJanela(getEl('scr-webrtc-connect'), function() {
+                // Na falha só o TENTAR NOVAMENTE serve: o código e a resposta de antes saem da frente.
+                var falhou = t.momento === 'falhou';
+                getEl('webrtc-btn-retry').classList.toggle('hidden', !falhou);
+                if (isHostWebRTC) {
+                    if (getEl('webrtc-data-host').value !== t.codigo) codigoNaCaixa('webrtc-data-host', t.codigo);
+                    getEl('webrtc-data-host').placeholder = 'Gerando código, aguarde...';
+                    mostrarCaixa('webrtc-data-host', !t.copiado);
+                    getEl('btn-copy-host-code').disabled = getEl('btn-share-host-code').disabled = !t.codigo;
+                    getEl('webrtc-host-codigo').classList.toggle('hidden', falhou);
+                    getEl('webrtc-host-resposta').classList.toggle('hidden', falhou);
+                    marcarPasso('passos-host', falhou || !t.codigo || (t.momento === 'pronto' && !t.copiado) ? 0 : 1);
+                    estado = {
+                        gerando: t.aviso || ['🔄 Gerando o código...', 'connecting'],
+                        pronto: t.copiado ? ['📋 Copiado! Cole a resposta dele.', 'idle'] : ['✅ Código pronto! Envie pro outro jogador.', 'success'],
+                        conectando: ['🔄 Conectando...', 'connecting'],
+                        conectado: ['🟢 Conectado!', 'success'],
+                        falhou: [t.motivo === 'resposta' ? '❌ Código de resposta inválido.' : '❌ Falha na conexão. Toque em Tentar Novamente.', 'error']
+                    }[t.momento];
+                } else {
+                    // Depois de gerar a resposta, o Código do Host sai da frente (pedido dele).
+                    var colando = t.momento === 'colar' || t.momento === 'gerando';
+                    getEl('webrtc-guest-colar').classList.toggle('hidden', !colando);
+                    getEl('webrtc-guest-response-area').classList.toggle('hidden', colando || falhou);
+                    if (getEl('webrtc-data-guest-output').value !== t.codigo) codigoNaCaixa('webrtc-data-guest-output', t.codigo);
+                    mostrarCaixa('webrtc-data-guest-output', !t.copiado);
+                    marcarPasso('passos-guest', colando || falhou ? 0 : (t.copiado ? 2 : 1));
+                    estado = {
+                        colar: t.aviso || ['Cole o código do Host pra começar.', 'idle'],
+                        gerando: ['🔄 Gerando resposta...', 'connecting'],
+                        pronto: t.copiado ? ['⏳ Copiado! Aguardando o Host confirmar...', 'connecting'] : ['✅ Resposta pronta! Envie de volta pro Host.', 'success'],
+                        conectado: ['🟢 Conectado!', 'success'],
+                        falhou: ['❌ Falha na conexão. Toque em Tentar Novamente.', 'error']
+                    }[t.momento];
+                }
+                if (t.erro) estado = [t.erro, 'error'];
+                estadoDaConexao('webrtc-status-box', estado[0], estado[1]);
+            });
         }
 
         function setupWebRTC() {
             if (pc) { try { pc.close(); } catch(e) {} }
-            pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
-            var gatheringDone = false;
+            if (codigoDaConexao) codigoDaConexao.cancelar();
+            var conexao = pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+            var codigo = codigoDaConexao = prepararCodigo(conexao, finalizeLocalCode);
 
             if (isHostWebRTC) {
-                dc = pc.createDataChannel('truco');
+                dc = conexao.createDataChannel('truco');
                 setupDataChannel();
-                pc.createOffer().then(offer => pc.setLocalDescription(offer));
+                conexao.createOffer().then(function(offer) { return conexao.setLocalDescription(offer); }).then(codigo.comecou);
             } else {
-                pc.ondatachannel = event => { dc = event.channel; setupDataChannel(); };
+                conexao.ondatachannel = event => { dc = event.channel; setupDataChannel(); };
             }
 
-            pc.onicecandidate = function(event) {
-                if (!event.candidate && !gatheringDone) { gatheringDone = true; finalizeLocalCode(); }
-            };
-
-            // Timeout de segurança: em redes que travam a coleta de ICE, libera o código mesmo assim
-            clearTimeout(webrtcGatherTimer);
-            webrtcGatherTimer = setTimeout(function() {
-                if (!gatheringDone && pc && pc.localDescription) { gatheringDone = true; finalizeLocalCode(); }
-            }, 4000);
-
-            pc.oniceconnectionstatechange = function() {
-                if (!pc) return;
-                var state = pc.iceConnectionState;
+            conexao.oniceconnectionstatechange = function() {
+                if (conexao !== pc) return;
+                var state = conexao.iceConnectionState;
                 if (state === 'failed') {
                     if (dc && dc.readyState === 'open') { handleWebrtcDisconnect(); }
-                    else { webrtcSetStatus('❌ Falha na conexão. Toque em Tentar Novamente.', 'error'); mostrarTentarNovamente(); }
+                    else mudarConexao({ momento: 'falhou', motivo: 'conexao' });
                 } else if (state === 'disconnected') {
                     if (dc && dc.readyState === 'open') { handleWebrtcDisconnect(); }
                 }
@@ -7196,29 +7590,25 @@
         }
 
         async function finalizeLocalCode() {
-            var payload = { sdp: pc.localDescription, nick: myLocalNick, appVersion: APP_VERSION };
-            var codeStr = await packCode(payload);
-            if (isHostWebRTC && pc.localDescription.type === 'offer') {
-                getEl('webrtc-data-host').value = codeStr;
-                getEl('btn-copy-host-code').disabled = false;
-                getEl('btn-share-host-code').disabled = false;
-                webrtcSetStatus('✅ Código pronto! Copie e envie pro outro jogador.', 'success');
-            } else if (!isHostWebRTC && pc.localDescription.type === 'answer') {
-                getEl('webrtc-data-guest-output').value = codeStr;
-                animarJanela(getEl('scr-webrtc-connect'), function() { getEl('webrtc-guest-response-area').classList.remove('hidden'); });
-                webrtcSetStatus('✅ Resposta pronta! Copie e envie de volta pro Host.', 'success');
-            }
+            var conexao = pc;
+            var codeStr = await packCode({ sdp: conexao.localDescription, nick: myLocalNick, appVersion: APP_VERSION });
+            if (conexao !== pc) return;
+            var tipo = conexao.localDescription.type;
+            if ((isHostWebRTC && tipo === 'offer') || (!isHostWebRTC && tipo === 'answer')) mudarConexao({ momento: 'pronto', codigo: codeStr, aviso: null });
         }
 
         function setupDataChannel() {
             dc.onopen = () => {
-                webrtcSetStatus('🟢 Conectado!', 'success');
-                showMsg("Conectado via P2P (WebRTC)!", 'pos');
-                clearTimeout(webrtcGatherTimer);
+                mudarConexao({ momento: 'conectado' });
+                showMsg({ quem: 'Conexão Direta', texto: 'Conectado!' }, 'pos');
+                if (codigoDaConexao) codigoDaConexao.cancelar();
 
                 if (webrtcResuming) {
                     webrtcResuming = false;
                     gameMode = 'webrtc';
+                    // Quem volta por um convite novo senta no assento do código, que
+                    // pode não ser o de antes (dois saíram e voltaram em outra ordem).
+                    if (!isHostWebRTC && window._webrtcAssignedPid) myPID = window._webrtcAssignedPid;
                     nav('scr-webrtc-connect', 'scr-game');
                     renderMesa(); updateUI(); updateTurnGlow();
                     if (isHostWebRTC) { st.version++; autoSave(); }
@@ -7248,54 +7638,95 @@
             if (gameMode !== 'webrtc' || webrtcResuming) return;
             webrtcResuming = true;
             saveSessionBackup();
-            showMsg("Conexão perdida! Reconectando...", 'neg', 3000);
-            enterWebrtcConnectScreen('scr-game');
-            webrtcSetStatus('🔌 Conexão perdida. Gere um novo código para reconectar.', 'error');
+            showMsg({ quem: 'Conexão perdida', texto: 'Reconectando...' }, 'neg', 3000);
+            enterWebrtcConnectScreen('scr-game', isHostWebRTC ? ['🔌 Conexão perdida. Gere um novo código para reconectar.', 'error'] : ['🔌 Conexão perdida. Cole o código novo do Host pra reconectar.', 'error']);
         }
 
+        var ERROS_DA_RESPOSTA_DO_HOST = {
+            vazio: 'Cole a resposta do outro jogador antes de confirmar.',
+            formato: '❌ Código mal formatado. Confira e cole novamente.',
+            trocado: '❌ Esse é o seu código. Cole a resposta do outro jogador.'
+        };
+        // Código mal colado só pede pra colar de novo: o TENTAR NOVAMENTE faria um
+        // código novo e estragaria o que o outro jogador já tem (v0.15.2a).
         window.webrtcHostConnect = async function() {
-            try {
-                var ansStr = getEl('webrtc-answer-input').value.trim();
-                if(!ansStr) { webrtcSetStatus('Cole a resposta do outro jogador antes de confirmar.', 'error'); return; }
-                var parsed = await unpackCode(ansStr);
-                var answer = parsed.sdp || parsed;
-                window._webrtcRemoteNick = (parsed.nick || 'Guest').substring(0, 15);
-                if (parsed.appVersion !== APP_VERSION) showVersionMismatchWarning(parsed.appVersion);
-                webrtcSetStatus('🔄 Conectando...', 'connecting');
-                pc.setRemoteDescription(answer).catch(function() { webrtcSetStatus('❌ Código de resposta inválido.', 'error'); mostrarTentarNovamente(); });
-            } catch(e) { webrtcSetStatus('❌ Código mal formatado. Confira e cole novamente.', 'error'); mostrarTentarNovamente(); }
+            if (telaConexao.momento !== 'pronto') return; // sem código ainda, ou já conectando
+            var lido = await lerCodigo(getEl('webrtc-answer-input').value.trim(), 'answer');
+            if (telaConexao.momento !== 'pronto') return;
+            if (lido.erro) { mudarConexao({ erro: ERROS_DA_RESPOSTA_DO_HOST[lido.erro] }); return; }
+            window._webrtcRemoteNick = (lido.dados.nick || 'Guest').substring(0, 15);
+            if (lido.dados.appVersion !== APP_VERSION) showVersionMismatchWarning(lido.dados.appVersion);
+            mudarConexao({ momento: 'conectando' });
+            var conexao = pc;
+            conexao.setRemoteDescription(lido.desc).catch(function() { if (conexao === pc) mudarConexao({ momento: 'falhou', motivo: 'resposta' }); });
         };
 
+        var ERROS_DO_CODIGO_DO_HOST = {
+            vazio: 'Cole o código do Host antes de continuar.',
+            formato: '❌ Código mal formatado. Confira e cole novamente.',
+            trocado: '❌ Esse é um código de resposta. Cole o código do Host.'
+        };
         window.webrtcGuestGenerateAnswer = async function() {
-            try {
-                var offStr = getEl('webrtc-data-guest-input').value.trim();
-                if(!offStr) { webrtcSetStatus('Cole o código do Host antes de continuar.', 'error'); return; }
-                var parsed = await unpackCode(offStr);
-                var offer = parsed.sdp || parsed;
-                window._webrtcRemoteNick = (parsed.nick || 'Host').substring(0, 15);
-                window._webrtcAssignedPid = parsed.assignedPid || 2;
-                if (parsed.appVersion !== APP_VERSION) showVersionMismatchWarning(parsed.appVersion);
-                webrtcSetStatus('🔄 Gerando resposta...', 'connecting');
-                pc.setRemoteDescription(offer).then(function() {
-                    pc.createAnswer().then(function(answer) { pc.setLocalDescription(answer); });
-                }).catch(function() { webrtcSetStatus('❌ Código do Host inválido.', 'error'); mostrarTentarNovamente(); });
-            } catch(e) { webrtcSetStatus('❌ Código mal formatado. Confira e cole novamente.', 'error'); mostrarTentarNovamente(); }
+            if (telaConexao.momento !== 'colar') return;
+            var lido = await lerCodigo(getEl('webrtc-data-guest-input').value.trim(), 'offer');
+            if (telaConexao.momento !== 'colar') return;
+            if (lido.erro) { mudarConexao({ erro: ERROS_DO_CODIGO_DO_HOST[lido.erro] }); return; }
+            window._webrtcRemoteNick = (lido.dados.nick || 'Host').substring(0, 15);
+            window._webrtcAssignedPid = lido.dados.assignedPid || 2;
+            if (lido.dados.appVersion !== APP_VERSION) showVersionMismatchWarning(lido.dados.appVersion);
+            mudarConexao({ momento: 'gerando', aviso: null });
+            var conexao = pc, codigo = codigoDaConexao;
+            conexao.setRemoteDescription(lido.desc)
+                .then(function() { return conexao.createAnswer(); })
+                .then(function(answer) { return conexao.setLocalDescription(answer); })
+                .then(codigo.comecou)
+                .catch(function() {
+                    if (conexao !== pc) return;
+                    // Recusado de cara, a mesma conexão aceita outro código colado.
+                    if (!conexao.remoteDescription) mudarConexao({ momento: 'colar', erro: '❌ Código do Host inválido. Confira e cole novamente.' });
+                    else mudarConexao({ momento: 'falhou', motivo: 'conexao' });
+                });
         };
 
+        // Põe um código (ou nada) na caixa e a mostra de novo: a caixa some depois
+        // de copiada (v0.15.2a), e um código novo precisa ficar à vista.
+        function codigoNaCaixa(id, valor) { getEl(id).value = valor; mostrarCaixa(id, true); }
+        // A caixa e o texto em cima dela aparecem e somem juntos: sozinho, o texto
+        // só ocupava espaço (pedido dele).
+        function mostrarCaixa(id, visivel) {
+            var el = getEl(id), rotulo = el.previousElementSibling;
+            el.classList.toggle('copiado', !visivel);
+            if (rotulo && rotulo.classList.contains('section-label')) rotulo.classList.toggle('copiado', !visivel);
+        }
+        // Copiado ou compartilhado, o código sai da frente e a janela diminui (ideia
+        // dele, v0.15.2a), e a tela passa pro passo seguinte. Se a cópia falha, a
+        // caixa volta: é nela que se toca e segura pra copiar à mão.
+        function codigoCopiado(id, ok) {
+            if (id !== 'invite-more-code-out') { mudarConexao({ copiado: ok }); return; }
+            if (!conviteAberto) return;
+            conviteAberto.copiado = ok; conviteAberto.erro = null;
+            desenharConvite();
+        }
         window.copyWebrtcCode = function(id, btn) {
             var el = getEl(id);
-            el.select(); el.setSelectionRange(0, 999999);
-            var originalHTML = btn.innerHTML;
+            if (!el.value) return; // sem código ainda: os botões ficam apagados até ele sair
+            // O texto original fica guardado: dois toques seguidos deixavam o botão em "COPIADO!".
+            var rotulo = btn.dataset.rotulo || (btn.dataset.rotulo = btn.innerHTML);
             function feedback(ok) {
                 btn.innerHTML = ok ? '✅ COPIADO!' : '⚠️ TOQUE E SEGURE PRA COPIAR';
-                setTimeout(function(){ btn.innerHTML = originalHTML; }, 1800);
+                setTimeout(function(){ btn.innerHTML = rotulo; }, 1800);
+                codigoCopiado(id, ok);
+            }
+            // A cópia antiga copia o texto selecionado: com a caixa escondida não
+            // haveria seleção, então ela volta antes.
+            function copiaAntiga() {
+                mostrarCaixa(id, true); el.select(); el.setSelectionRange(0, 999999);
+                try { feedback(document.execCommand('copy') !== false); } catch(e) { feedback(false); }
             }
             if (navigator.clipboard && window.isSecureContext) {
-                navigator.clipboard.writeText(el.value).then(function(){ feedback(true); }).catch(function(){
-                    try { document.execCommand('copy'); feedback(true); } catch(e) { feedback(false); }
-                });
+                navigator.clipboard.writeText(el.value).then(function(){ feedback(true); }).catch(copiaAntiga);
             } else {
-                try { document.execCommand('copy'); feedback(true); } catch(e) { feedback(false); }
+                copiaAntiga();
             }
         };
 
@@ -7303,30 +7734,21 @@
         // celular — bem mais rápido que copiar e colar manualmente.
         window.shareWebrtcCode = function(id) {
             var el = getEl(id);
-            if (navigator.share) {
-                navigator.share({ text: el.value }).catch(function(){});
+            if (navigator.share && el.value) {
+                navigator.share({ text: el.value }).then(function() { codigoCopiado(id, true); }).catch(function(){});
             }
         };
 
         window.webrtcRetry = function() {
-            getEl('webrtc-btn-retry').classList.add('hidden');
+            novaTelaDeConexao();
             setupWebRTC();
-            if (isHostWebRTC) {
-                getEl('webrtc-data-host').value = '';
-                getEl('webrtc-data-host').placeholder = 'Gerando código, aguarde...';
-                getEl('btn-copy-host-code').disabled = true;
-                getEl('btn-share-host-code').disabled = true;
-                webrtcSetStatus('🔄 Coletando informações de rede...', 'connecting');
-            } else {
-                webrtcSetStatus('Aguardando você colar o código do Host...', 'idle');
-            }
         };
 
         window.webrtcAbortIfActive = function() {
             if (mpMethod === 'webrtc' && pc && gameMode !== 'webrtc') {
                 try { pc.close(); } catch(e) {}
                 pc = null; dc = null;
-                clearTimeout(webrtcGatherTimer);
+                if (codigoDaConexao) codigoDaConexao.cancelar();
             }
         };
 
@@ -7338,19 +7760,6 @@
             webrtcAbortIfActive();
             nav('scr-webrtc-connect', isHostWebRTC ? 'scr-local-rules' : 'scr-local-role-choice');
         };
-
-        function webrtcSetStatus(text, state) {
-            animarJanela(getEl('scr-webrtc-connect'), function() {
-                var box = getEl('webrtc-status-box');
-                box.classList.remove('hidden', 'status-connecting', 'status-success', 'status-error', 'status-idle');
-                box.classList.add('status-' + state);
-                getEl('webrtc-status-text').innerText = text;
-            });
-        }
-        // O botão Tentar Novamente aparece depois de uma falha: a janela cresce junto.
-        function mostrarTentarNovamente() {
-            animarJanela(getEl('scr-webrtc-connect'), function() { getEl('webrtc-btn-retry').classList.remove('hidden'); });
-        }
 
         // --- SALVAMENTO LOCAL DE SEGURANÇA (RECUPERAÇÃO DE SESSÃO) ---
         function saveSessionBackup() {
@@ -7384,8 +7793,15 @@
             mpMethod = 'webrtc';
             getEl('resume-banner').classList.add('hidden');
             isHostWebRTC = (myPID === 1);
-            enterWebrtcConnectScreen('scr-start');
-            webrtcSetStatus('Gere um novo código para reconectar à partida em andamento.', 'connecting');
+            // O Host volta com o outro jogador (assento 2), e só com ele: os convidados
+            // do CONVIDAR perderam a conexão, e os lugares deles ficam com a IA até um
+            // convite novo. Antes a mesa parava na vez do primeiro deles — e, com o
+            // jogo recarregado logo no começo, o salvamento nem tinha o assento 2.
+            if (isHostWebRTC) {
+                (st.humanSeats || []).forEach(function(p) { if (p > 2 && st.nicks) st.nicks[p] = ''; });
+                st.humanSeats = [1, 2];
+            }
+            enterWebrtcConnectScreen('scr-start', isHostWebRTC ? ['Gere um novo código para reconectar à partida em andamento.', 'connecting'] : ['Cole o código novo do Host pra voltar à partida em andamento.', 'connecting']);
         };
         window.dismissResumeBanner = function() {
             animarJanela(getEl('scr-start'), function() { getEl('resume-banner').classList.add('hidden'); });
@@ -7483,10 +7899,8 @@
                     // trucoState 'pending' — sem isso, nenhuma notificação
                     // aparecia pros outros jogadores quando alguém descartava.
                     if (st.lastFoldBy && st.lastFoldBy !== myPID) {
-                        var foldActor = trucoActor(st.lastFoldBy);
                         var isMyTeamFold = (myPID !== 0 && getTeam(st.lastFoldBy) === getTeam(myPID));
-                        var foldVerb = foldActor.plural ? 'descartaram a mão!' : 'descartou a mão!';
-                        showMsg(foldActor.name + ' ' + foldVerb, isMyTeamFold ? 'neg' : 'pos');
+                        showMsg(acaoDe(st.lastFoldBy, 'descartou a mão', 'descartaram a mão'), isMyTeamFold ? 'neg' : 'pos');
                     }
                 } 
                 else if (st.trickResults.length > oldSt.trickResults.length && st.lastTable && st.lastTable.length > 0) {
@@ -7524,19 +7938,17 @@
                 // pegava pedido novo do rival, deixando pedido do parceiro e
                 // qualquer aumento subsequente sem notificação nenhuma.
                 if (st.trucoState === 'pending' && st.trucoBy !== myPID && (oldSt.trucoState !== 'pending' || st.proposedVal !== oldSt.proposedVal)) {
-                    var pedMsg2 = trucoActionText(st.trucoBy, 'pediu', 'pediram', st.proposedVal);
                     // O parceiro-IA conta a classificação só pra quem é do time dele.
-                    if (modoDoParceiro(st.trucoBy) && ehMeuParceiro(st.trucoBy)) pedMsg2 += falaDaMao(classeDoParceiro(st.trucoBy));
-                    showMsg(pedMsg2, 'neu');
+                    showMsg(avisoDoPedido(st.trucoBy), 'neu');
                 }
                 // Pedidos do parceiro-IA chegando de outro aparelho (v0.15.1): quem
                 // coordena a IA pode não ser do time dele, então o aviso sai aqui,
                 // e só pra quem é do time.
                 else if (st.trucoState === 'partner_ask' && oldSt.trucoState !== 'partner_ask' && st.partnerAsk && ehMeuParceiro(st.partnerAsk.pid)) {
-                    showMsg(textoPedidoParceiro(st.partnerAsk), 'neu', 2600);
+                    showMsg(falaPedidoParceiro(st.partnerAsk), 'neu', 2600);
                 }
                 else if (st.trucoState === 'partner_fold' && oldSt.trucoState !== 'partner_fold' && ehMeuParceiro(st.partnerFoldPid)) {
-                    showMsg("Parceiro quer ir ao baralho!", 'warn');
+                    showMsg({ quem: rotuloParceiro(st.partnerFoldPid), texto: 'Vamos correr?' }, 'warn');
                 }
                 else if (st.trucoState === 'none' && oldSt.trucoState === 'pending') {
                     if (st.scores[1] === oldSt.scores[1] && st.scores[2] === oldSt.scores[2]) {
@@ -7545,7 +7957,9 @@
                         // Antes esse "correr" não gerava NENHUMA notificação.
                         var scoringTeam = st.scores[1] > oldSt.scores[1] ? 1 : 2;
                         var iScored = (scoringTeam === getTeam(myPID));
-                        showMsg(iScored ? (st.gameFormat === '1v1' ? "O Rival CORREU!" : "Os Rivais CORRERAM!") : "Seu time foi ao baralho!", iScored ? 'pos' : 'neg');
+                        // Quem correu foi o seu time (aqui dizia "foi ao baralho", v0.15.2a).
+                        var umRival = st.gameFormat === '1v1';
+                        showMsg(iScored ? { quem: umRival ? 'O Rival' : 'Os Rivais', texto: umRival ? 'Correu!' : 'Correram!' } : "Seu time correu!", iScored ? 'pos' : 'neg');
                     }
                 }
                 // Mão de 11/10 resolvida (aceita ou corrida) por outro jogador
@@ -7553,12 +7967,11 @@
                 else if (st.trucoState !== 'mao11' && oldSt.trucoState === 'mao11') {
                     var txt11 = st.rules === 'mineiro' ? "10" : "11";
                     var repPid11 = getTeamPIDs(oldSt.maoDeXTeam)[0];
-                    var actor11 = trucoActor(repPid11);
                     var isMyTeamMao11 = (myPID !== 0 && oldSt.maoDeXTeam === getTeam(myPID));
                     var accepted11 = (st.handVal === (st.rules === 'mineiro' ? 4 : 3));
-                    var verb11 = accepted11 ? (actor11.plural ? 'aceitaram' : 'aceitou') : (actor11.plural ? 'correram' : 'correu');
                     var type11 = accepted11 ? (isMyTeamMao11 ? 'pos' : 'neg') : (isMyTeamMao11 ? 'neg' : 'pos');
-                    showMsg(actor11.name + ' ' + verb11 + ' a Mão de ' + txt11 + '!', type11);
+                    // "correu da Mão de 11" (aqui dizia "correu a Mão de 11").
+                    showMsg(accepted11 ? acaoDe(repPid11, 'aceitou a Mão de ' + txt11, 'aceitaram a Mão de ' + txt11) : acaoDe(repPid11, 'correu da Mão de ' + txt11, 'correram da Mão de ' + txt11), type11);
                 }
 
                 updateUI(); checkAiTurn(); checkAiTrucoDecision();
