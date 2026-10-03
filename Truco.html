@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Truco - v0.15.2a</title>
+    <title>Truco - v0.15.3</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♣</text></svg>">
     <style>
         /* THEME VARIABLES */
@@ -273,14 +273,28 @@
         .hud-container.notify-neu { border-color: var(--warn); box-shadow: 0 0 20px rgba(234, 179, 8, 0.2); }
         .hud-container.notify-sys { border-color: var(--txt); box-shadow: 0 0 20px rgba(148, 163, 184, 0.25); }
 
-        .hud-side { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+        .hud-side { flex: 1; display: flex; flex-direction: row; align-items: center; gap: 9px; min-width: 0; }
         .hud-center { flex: 1.2; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 0; padding: 0 5px; }
-        .hud-right { text-align: right; align-items: flex-end; }
+        .hud-right { text-align: right; justify-content: flex-end; }
         
         #ui-turn { font-size: 0.8rem; font-weight:bold; color: var(--txt-d); white-space: nowrap; }
+        /* A linha do meio fica em até três linhas: quem diminui a letra quando passaria
+           é caberNoConselho (v0.15.3), por isso o tamanho fica aqui e não no elemento. */
+        #ui-deck-indicator { font-size: 0.65rem; }
 
-        .vaza-track { display: flex; gap: 5px; margin-top: 5px; }
-        .vaza-pip { width: 10px; height: 10px; border-radius: 50%; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); }
+        /* O placar (v0.15.3, ideia dele): a barrinha em pé, dividida em 3, no extremo de
+           cada lado, se colore de baixo pra cima, uma parte por mão (a 1ª embaixo); o
+           texto em cima e os pontos maiores embaixo, na cor de sempre. A barrinha passa
+           um pouco do texto em cima e embaixo (uns 4 px; pedido dele). */
+        .vaza-track { display: flex; flex-direction: column-reverse; gap: 2px; flex-shrink: 0; margin-left: -6px; }
+        .hud-right .vaza-track { margin-left: 0; margin-right: -6px; }
+        .vaza-pip { width: 9px; height: 14px; box-sizing: border-box; border-radius: 2px; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); }
+        .vaza-pip:first-child { border-radius: 2px 2px 4px 4px; }
+        .vaza-pip:last-child { border-radius: 4px 4px 2px 2px; }
+        .placar-texto { display: flex; flex-direction: column; min-width: 0; }
+        .hud-right .placar-texto { align-items: flex-end; }
+        #label-s0, #label-s1 { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.5px; opacity: 0.85; line-height: 1.1; }
+        #ui-s0, #ui-s1 { font-size: 1.6rem; font-weight: 900; line-height: 1; }
         .vaza-pip.win { background: var(--prim); border-color: var(--prim); box-shadow: 0 0 8px var(--prim); }
         .vaza-pip.loss { background: var(--dang); border-color: var(--dang); }
         .vaza-pip.tie { background: var(--warn); border-color: var(--warn); }
@@ -375,18 +389,18 @@
         .played-area { display: flex; justify-content: center; align-items: center; width: 100%; height: 100%; position: relative; }
         #box-table { position: relative; width: 180px; height: 180px; display: flex; align-items: center; justify-content: center; }
 
-        #deck-area { position: absolute; top: 15px; right: 10px; z-index: 10; display: flex; flex-direction: row; align-items: center; gap: 8px; }
-        #deck-area-label { font-size: 0.75rem; color: var(--txt-d); font-weight: bold; letter-spacing: 2px; writing-mode: vertical-rl; opacity: 0.8; margin-bottom: 4px; }
+        /* O monte e a carta da Manilha continuam onde ficavam quando os textos VIRA e
+           MANILHA iam em pé ao lado deles; os textos foram pra linha da mesa (v0.15.3). */
+        #deck-area { position: absolute; top: 15px; right: 34px; z-index: 10; display: flex; flex-direction: row; align-items: center; }
         .deck-stack-container { position: relative; width: 50px; height: 75px; }
         #deck-pile { width: 50px; height: 75px; position: absolute; top: 0; left: 0; box-shadow: -2px 2px 10px rgba(0,0,0,0.3); }
         #deck-pile::after { font-size: 1.8rem; }
         
         #vira-container { position: absolute; top: 15px; left: -35px; transform: rotate(-15deg); z-index: 5; }
 
-        #ghost-manilha { position: absolute; top: 15px; left: 10px; z-index: 10; display: flex; flex-direction: row; align-items: center; gap: 8px; }
+        #ghost-manilha { position: absolute; top: 15px; left: 34px; z-index: 10; display: flex; flex-direction: row; align-items: center; }
         #ghost-manilha.hidden { display: none !important; }
-        #ghost-m-label { font-size: 0.75rem; color: var(--prim); font-weight: bold; letter-spacing: 2px; writing-mode: vertical-rl; transform: rotate(180deg); opacity: 0.8; margin-bottom: 4px; }
-        
+
         #ghost-m-card { 
             width: 50px; height: 75px; background: var(--btn-s-bg); 
             backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); 
@@ -454,6 +468,11 @@
         .key-box.warn-highlight { background: rgba(234, 179, 8, 0.2); border-color: var(--warn); color: var(--warn); }
         
         .static-info { font-size: 0.8rem; color: var(--txt-d); display: flex; align-items: center; gap: 6px; pointer-events: none; user-select: none; text-transform: uppercase; }
+        /* O pedido do parceiro (v0.15.3): numa linha quando cabe junto dos botões; senão
+           o nome em cima, menor, e o pedido embaixo, como na notificação (encaixarPedido). */
+        .static-info .pedido-quem, .static-info .pedido-acao { white-space: nowrap; }
+        .static-info.duas-linhas { flex-direction: column; gap: 1px; line-height: 1.15; text-align: center; }
+        .static-info.duas-linhas .pedido-quem { font-size: 0.68rem; opacity: 0.85; }
 
         .danger-zone { animation: dangerPulse 1s infinite alternate ease-in-out; }
         @keyframes dangerPulse { 0% { border-color: rgba(234, 179, 8, 0.4); box-shadow: 0 0 10px rgba(234, 179, 8, 0.2); } 100% { border-color: rgba(234, 179, 8, 1); box-shadow: 0 0 30px rgba(234, 179, 8, 0.6); } }
@@ -573,14 +592,6 @@
 
         #resume-banner { background: var(--btn-s-bg); border: 1px solid var(--prim); border-radius: 12px; padding: 12px; margin-bottom: 15px; font-size: 0.8rem; text-align: left; }
 
-        .nick-tooltip { position: absolute; background: rgba(0,0,0,0.75); color: white; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; pointer-events: none; white-space: nowrap; border: 1px solid var(--glass-border); z-index: 20; box-shadow: 0 4px 10px rgba(0,0,0,0.3); text-transform: uppercase; }
-        .hand-my .nick-tooltip { top: -25px; left: 50%; transform: translateX(-50%); }
-        .hand-top .nick-tooltip { bottom: -25px; left: 50%; transform: translateX(-50%); }
-        .hand-left .nick-tooltip { left: 40px; top: 50%; transform: translateY(-50%); }
-        .hand-right .nick-tooltip { right: 40px; top: 50%; transform: translateY(-50%); }
-        .hand-left2 .nick-tooltip { left: 40px; top: 50%; transform: translateY(-50%); }
-        .hand-right2 .nick-tooltip { right: 40px; top: 50%; transform: translateY(-50%); }
-
         /* ═══ v0.14.0 — MODO LEVE e MOVIMENTO REDUZIDO ═══
            Tudo abaixo depende de uma classe no <body> (lite-mode /
            reduced-motion): com as duas opções desligadas nenhuma dessas
@@ -621,7 +632,7 @@
         body.lite-mode .panel, body.lite-mode .glass-panel, body.lite-mode .stadium-display, body.lite-mode #version-warn-banner, body.lite-mode #ghost-m-card, body.lite-mode #btn-hide-card, body.lite-mode #sync-ui, body.lite-mode #scr-end {
             backdrop-filter: none; -webkit-backdrop-filter: none;
         }
-        body.lite-mode .panel, body.lite-mode .glass-panel, body.lite-mode #version-warn-banner, body.lite-mode .card, body.lite-mode .card.active-turn, body.lite-mode #deck-pile, body.lite-mode #ghost-m-card, body.lite-mode .end-content, body.lite-mode .nick-tooltip, body.lite-mode .vaza-pip.win, body.lite-mode .diff-btn.active, body.lite-mode .action-btn:hover, body.lite-mode .hud-container.notify-pos, body.lite-mode .hud-container.notify-neg, body.lite-mode .hud-container.notify-neu, body.lite-mode .hud-container.notify-sys, body.lite-mode.theme-dark #btn-hide-card.escondendo, body.lite-mode.theme-light #btn-hide-card.escondendo, body.lite-mode .status-conexao .webrtc-status-dot, body.lite-mode .mesa-assentos .assento.cheio {
+        body.lite-mode .panel, body.lite-mode .glass-panel, body.lite-mode #version-warn-banner, body.lite-mode .card, body.lite-mode .card.active-turn, body.lite-mode #deck-pile, body.lite-mode #ghost-m-card, body.lite-mode .end-content, body.lite-mode .vaza-pip.win, body.lite-mode .diff-btn.active, body.lite-mode .action-btn:hover, body.lite-mode .hud-container.notify-pos, body.lite-mode .hud-container.notify-neg, body.lite-mode .hud-container.notify-neu, body.lite-mode .hud-container.notify-sys, body.lite-mode.theme-dark #btn-hide-card.escondendo, body.lite-mode.theme-light #btn-hide-card.escondendo, body.lite-mode .status-conexao .webrtc-status-dot, body.lite-mode .mesa-assentos .assento.cheio {
             box-shadow: none;
         }
         body.lite-mode .end-content h1 { text-shadow: none; }
@@ -774,9 +785,12 @@
             .btn-theme-pause.visible { opacity: 0.6; }
             
             #ui-turn { font-size: clamp(0.65rem, 2.5vw, 0.8rem); }
+            .vaza-pip { width: 8px; height: 12px; }
+            #label-s0, #label-s1 { font-size: 0.62rem; }
+            #ui-s0, #ui-s1 { font-size: 1.35rem; }
             
-            #ghost-manilha { left: 5px; gap: 4px; }
-            #deck-area { right: 5px; gap: 4px; }
+            #ghost-manilha { left: 25px; }
+            #deck-area { right: 25px; }
             #ghost-m-card, .deck-stack-container, #deck-pile { width: 45px; height: 65px; }
             #vira-container { left: -30px; }
             .hand-left { left: -25px; width: 50px; }
@@ -795,6 +809,42 @@
             .end-content p { margin: 8px 0 16px; }
             #scr-end .btn-stack { gap: 8px; }
             #scr-end .btn-stack button { padding: 10px; }
+        }
+
+        /* Nome na mesa (v0.15.3, desenho dele): a placa em pílula fica em cima da linha
+           tracejada, no meio da posição das cartas de cada jogador (cobre só a ponta das
+           cartas, que estão viradas); a de quem é a vez acende na cor do lado, com vidro
+           fosco. Ela fica fora da mesa, que corta o que passa da borda. No computador
+           a letra cresce junto com as cartas (70 px de largura contra 55 no celular);
+           a altura fica a mesma, porque a placa precisa caber nos 10 px entre a mesa e
+           a Barra Superior (e a borda da tela, nas laterais). */
+        .nome-mesa { position: absolute; z-index: 16; pointer-events: none; white-space: nowrap; font-size: 0.78rem; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; line-height: 1; color: var(--txt-d); padding: 2px 12px; border-radius: 999px; background: var(--glass-bg); border: 1px solid var(--glass-border); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease; }
+        @media (max-width: 768px), (pointer: coarse) {
+            .nome-mesa { font-size: 0.62rem; padding: 3px 9px; }
+        }
+        .nome-mesa.vez.aliado { color: var(--prim); border-color: rgba(16, 185, 129, 0.75); background: rgba(16, 185, 129, 0.16); box-shadow: 0 0 14px rgba(16, 185, 129, 0.35); }
+        .nome-mesa.vez.rival { color: var(--dang); border-color: rgba(239, 68, 68, 0.75); background: rgba(239, 68, 68, 0.16); box-shadow: 0 0 14px rgba(239, 68, 68, 0.35); }
+        body.lite-mode .nome-mesa { backdrop-filter: none; -webkit-backdrop-filter: none; box-shadow: none; }
+        /* Sem o vidro fosco, a cor da placa acesa ficava transparente (as cartas
+           apareciam através dela): no Modo Leve ela vai por cima do --glass-bg, quase
+           opaco, e sem o brilho (pedido dele). */
+        body.lite-mode .nome-mesa.vez.aliado { background: linear-gradient(rgba(16, 185, 129, 0.16), rgba(16, 185, 129, 0.16)), var(--glass-bg); box-shadow: none; }
+        body.lite-mode .nome-mesa.vez.rival { background: linear-gradient(rgba(239, 68, 68, 0.16), rgba(239, 68, 68, 0.16)), var(--glass-bg); box-shadow: none; }
+        body.reduced-motion .nome-mesa { transition: none; }
+        /* MANILHA e VIRA também em cima da linha (ideia dele), centrados na carta da
+           Manilha e no monte: só o texto, e a linha some atrás dele. A mesa ganha uma
+           máscara com um furo na faixa da borda de cima pra cada texto; as pontas dos
+           furos vêm de posicionarRotulosDaMesa. */
+        .rotulo-mesa { position: absolute; z-index: 16; pointer-events: none; white-space: nowrap; font-size: 0.75rem; font-weight: bold; letter-spacing: 2px; padding-left: 2px; line-height: 1; opacity: 0.8; transform: translate(-50%, -50%); }
+        #rotulo-manilha { color: var(--prim); }
+        #rotulo-vira { color: var(--txt-d); }
+        @media (max-width: 768px), (pointer: coarse) {
+            .rotulo-mesa { font-size: 0.62rem; letter-spacing: 1px; padding-left: 1px; }
+        }
+        .table {
+            --furo-m1: 0px; --furo-m2: 0px; --furo-v1: 100%; --furo-v2: 100%;
+            -webkit-mask: linear-gradient(#000 0 0) 0 7px / 100% calc(100% - 7px) no-repeat, linear-gradient(to right, #000 var(--furo-m1), transparent var(--furo-m1) var(--furo-m2), #000 var(--furo-m2) var(--furo-v1), transparent var(--furo-v1) var(--furo-v2), #000 var(--furo-v2)) 0 0 / 100% 7px no-repeat;
+            mask: linear-gradient(#000 0 0) 0 7px / 100% calc(100% - 7px) no-repeat, linear-gradient(to right, #000 var(--furo-m1), transparent var(--furo-m1) var(--furo-m2), #000 var(--furo-m2) var(--furo-v1), transparent var(--furo-v1) var(--furo-v2), #000 var(--furo-v2)) 0 0 / 100% 7px no-repeat;
         }
     </style>
 </head>
@@ -834,7 +884,8 @@
                 <button class="btn-s" id="btn-lite-mode" onclick="toggleLiteMode()">🍃 MODO LEVE</button>
                 <button class="btn-s" id="btn-theme-toggle" onclick="toggleTheme()">🌙 TEMA ESCURO</button>
             </div>
-            <button class="btn-s" id="btn-manilha-hint" onclick="toggleManilhaHint()">🃏 COM DICA DE MANILHA</button>
+            <button class="btn-s active" id="btn-manilha-hint" onclick="toggleManilhaHint()">🃏 COM DICA DE MANILHA</button>
+            <button class="btn-s active" id="btn-nomes-ia" onclick="toggleNomesIA()">🏷️ COM NOMES DA IA</button>
             <button class="btn-s options-divider" onclick="refreshStatsScreen(); nav('scr-options', 'scr-stats')">📊 ESTATÍSTICAS</button>
         </div>
         <button class="btn-s danger" data-nav-back style="width: 100%; margin-top: 15px;" onclick="nav('scr-options', 'scr-start')">VOLTAR</button>
@@ -1266,18 +1317,18 @@
             <div id="stadium-text" class="stadium-display">Notificação</div>
             <div class="hud-content">
                 <div class="hud-side">
-                    <div><span id="label-s0">NÓS:</span> <b id="ui-s0" style="color:var(--prim); font-size: 1.1rem;">0</b></div>
                     <div id="vazas-my" class="vaza-track"></div>
+                    <div class="placar-texto"><span id="label-s0">NÓS</span><b id="ui-s0" style="color:var(--prim);">0</b></div>
                 </div>
                 <div class="hud-center">
                     <span id="ui-turn">Preparando...</span>
                     <div style="margin-top: 2px;">
                         <span style="font-size: 0.85rem;">VALE</span> <b id="ui-val" style="color: var(--txt); font-size: 0.85rem;">1</b>
                     </div>
-                    <div id="ui-deck-indicator" style="font-size: 0.65rem; color: var(--prim); margin-top: 2px; text-transform: uppercase;">BARALHO SUJO</div>
+                    <div id="ui-deck-indicator" style="color: var(--prim); margin-top: 2px; text-transform: uppercase;">BARALHO SUJO</div>
                 </div>
                 <div class="hud-side hud-right">
-                    <div><span id="label-s1">ELES:</span> <b id="ui-s1" style="color:var(--dang); font-size: 1.1rem;">0</b></div>
+                    <div class="placar-texto"><span id="label-s1">RIVAIS</span><b id="ui-s1" style="color:var(--dang);">0</b></div>
                     <div id="vazas-opp" class="vaza-track"></div>
                 </div>
             </div>
@@ -1285,7 +1336,6 @@
 
         <div class="table">
             <div id="ghost-manilha" class="hidden">
-                <span id="ghost-m-label">MANILHA</span>
                 <div id="ghost-m-card" class="card"></div>
             </div>
 
@@ -1294,7 +1344,6 @@
                     <div id="vira-container"></div>
                     <div id="deck-pile" class="card back"></div>
                 </div>
-                <span id="deck-area-label">VIRA</span>
             </div>
 
             <div id="box-top" class="hand-top"></div>
@@ -1316,6 +1365,9 @@
                 <span id="sync-timer-txt">Sincronizando...</span>
             </div>
         </div>
+        <!-- Em cima da linha da mesa (v0.15.3): fora dela, que corta o que passa da borda. -->
+        <span id="rotulo-manilha" class="rotulo-mesa" style="display: none;">MANILHA</span>
+        <span id="rotulo-vira" class="rotulo-mesa" style="display: none;">VIRA</span>
 
         <div id="action-bar" class="glass-panel legend-container">
 
@@ -1337,7 +1389,7 @@
             </div>
 
             <div id="grp-partner-fold" class="legend-group">
-                <span class="static-info" style="color: var(--warn); font-weight: bold;">Parceiro quer correr!</span>
+                <span id="txt-partner-fold" class="static-info" style="color: var(--warn); font-weight: bold;">Parceiro quer correr!</span>
                 <button class="action-btn danger" data-confirma onclick="respondPartnerFold(true)">CORRER</button>
                 <button class="action-btn primary" data-confirma onclick="respondPartnerFold(false)">JOGAR</button>
             </div>
@@ -1399,7 +1451,7 @@
         var SUITS = ['♦', '♠', '♥', '♣']; 
         var VALS_SUJO = ['4', '5', '6', '7', 'Q', 'J', 'K', 'A', '2', '3'];
         var VALS_LIMPO = ['Q', 'J', 'K', 'A', '2', '3'];
-        var APP_VERSION = '0.15.2a';
+        var APP_VERSION = '0.15.3';
 
         // ═══════════════════════════════════════════════════════════════
         // FORMATO DE `st` (estado sincronizado entre jogadores)
@@ -1634,10 +1686,16 @@
         };
 
         var manilhaHintHidden = false;
+        // Ligada = botão verde, desligada = cinza, como o Modo Leve (v0.15.3, pedido dele).
+        function mostrarDicaDeManilha() {
+            var btn = getEl('btn-manilha-hint');
+            if (!btn) return;
+            btn.innerText = manilhaHintHidden ? "🃏 SEM DICA DE MANILHA" : "🃏 COM DICA DE MANILHA";
+            btn.classList.toggle('active', !manilhaHintHidden);
+        }
         window.toggleManilhaHint = function() {
             manilhaHintHidden = !manilhaHintHidden;
-            var btn = getEl('btn-manilha-hint');
-            if (btn) btn.innerText = manilhaHintHidden ? "🃏 SEM DICA DE MANILHA" : "🃏 COM DICA DE MANILHA";
+            mostrarDicaDeManilha();
             try { localStorage.setItem('trucoHideManilhaHint', manilhaHintHidden ? '1' : '0'); } catch(e) {}
             updateGhostManilha();
         };
@@ -1656,7 +1714,9 @@
             acelerado: { ai: 800,  trick: 800 }
         };
         function isPace(p) { return Object.prototype.hasOwnProperty.call(PACES, p); }
-        var prefs = { lite: false, reducedMotion: false, pace: 'padrao', confirmPlay: false };
+        // nomesIA (v0.15.3): os bots do Single Player aparecem pelo nome; desligado,
+        // ficam "Parceiro", "Parceira" e "Rival" (o gênero continua).
+        var prefs = { lite: false, reducedMotion: false, pace: 'padrao', confirmPlay: false, nomesIA: true };
         function currentPace() { return (gameMode === 'pc' && isPace(prefs.pace)) ? PACES[prefs.pace] : PACES.padrao; }
         // Notificações e a pausa antes do resultado da vaza acompanham o
         // tempo da vaza, na mesma proporção.
@@ -1669,11 +1729,12 @@
                     prefs.reducedMotion = !!raw.reducedMotion;
                     prefs.pace = isPace(raw.pace) ? raw.pace : 'padrao';
                     prefs.confirmPlay = !!raw.confirmPlay;
+                    prefs.nomesIA = raw.nomesIA !== false;
                 }
             } catch(e) {}
         }
         function savePrefs() {
-            try { localStorage.setItem('trucoPrefsV1', JSON.stringify({ v: 1, lite: prefs.lite, reducedMotion: prefs.reducedMotion, pace: prefs.pace, confirmPlay: prefs.confirmPlay })); } catch(e) {}
+            try { localStorage.setItem('trucoPrefsV1', JSON.stringify({ v: 1, lite: prefs.lite, reducedMotion: prefs.reducedMotion, pace: prefs.pace, confirmPlay: prefs.confirmPlay, nomesIA: prefs.nomesIA })); } catch(e) {}
         }
         function onOffLabel(on) { return on ? 'ATIVADO' : 'DESATIVADO'; }
         function applyPrefs() {
@@ -1694,10 +1755,13 @@
             b = getEl('btn-confirm-play-title'); if (b) b.innerText = '👆 CONFIRMAR JOGADA: ' + onOffLabel(prefs.confirmPlay);
             b = getEl('btn-confirm-play'); if (b) b.classList.toggle('active', prefs.confirmPlay);
             Object.keys(PACES).forEach(function(p) { var pb = getEl('btn-pace-' + p); if (pb) pb.classList.toggle('active', p === prefs.pace); });
+            b = getEl('btn-nomes-ia');
+            if (b) { b.innerText = prefs.nomesIA ? '🏷️ COM NOMES DA IA' : '🏷️ SEM NOMES DA IA'; b.classList.toggle('active', prefs.nomesIA); }
         }
         window.toggleLiteMode = function() { prefs.lite = !prefs.lite; savePrefs(); applyPrefs(); };
         window.toggleReducedMotion = function() { prefs.reducedMotion = !prefs.reducedMotion; savePrefs(); applyPrefs(); };
         window.setPace = function(p) { if (!isPace(p)) return; prefs.pace = p; savePrefs(); applyPrefs(); };
+        window.toggleNomesIA = function() { prefs.nomesIA = !prefs.nomesIA; savePrefs(); applyPrefs(); };
         window.toggleConfirmPlay = function() { prefs.confirmPlay = !prefs.confirmPlay; if (!prefs.confirmPlay) { disarmHandCard(); disarmActionBtn(); } savePrefs(); applyPrefs(); };
 
         function updateBodyDiffClass() {
@@ -1907,17 +1971,95 @@
             return val.toString();
         }
 
+        // ─── Nomes dos Bots (v0.15.3) ─────────────────────────────────────
+        // A lista dele (.roadmaps/Nomes dos Bots.xlsx), uma linha por gênero:
+        // "Nome:dificuldades" (1 Fácil, 2 Normal, 3 Difícil, 4 Insano, 5 Adaptativa)
+        // separados por "|". Nome raro leva a chance em % no fim ("Islyp:12345@0.1").
+        // Quem mexe na planilha gera estas linhas com testes/apoio/nomes_dos_bots.js,
+        // que também confere os limites.
+        var NOMES_DOS_BOTS = {
+            m: 'Azael:5|Mão Leve:34|Seu Paulo:45|Zé Borracheiro:345|Zé Eletricista:345|Zé Mecânico:345|Zé Soldador:345|Pipoka:1|Mano Bisnaga:12|Tohonesto:12|MotoboyJoesley:1234|Simas Turbinas:1234|Tonin:4|Torobano:45|X:45|Dengo:1234|Dorme Sujo:12345|MimDePapai:1234|Miniboi:12345|NoveDoze:12345|Rei do Zap:12345|AFHKSXMQP:4|Mendez:34|Tião:234|Mr. Toba:234|Carlão do Gás:23|Desempregado:345|Camundongo:123|Buiu:1|Marcola:345|Tonhão:4|Islyp:12345@0.1|Mata o Véio:12345@0.1|TzMarcio:12345@0.1|DracoHunter:12345@0.1|Assissine:12345@0.1',
+            f: 'Ms. Salazar:5|CRY.stal:34|TatiTreta:34|Café Com Leite:1|CintiaMuito:123|TataTubarão:2345|Y:45|Carinera:2345|Sete Copas:12345|Maria Doceira:1234|Dona Francisca:345|Majuuj:123|Selma do Lanche:12345|Rita Celta:12|Saphira:34|Inadimplente:345|Lupalinda:1|Panchovilla:234|Berola:123'
+        };
+        var CHANCE_FEMININA = 0.2; // por bot (Roadmap)
+        var listaDeNomes = null;
+        function nomesDaLista() {
+            if (listaDeNomes) return listaDeNomes;
+            listaDeNomes = { m: [], f: [] };
+            ['m', 'f'].forEach(function(g) {
+                NOMES_DOS_BOTS[g].split('|').forEach(function(item) {
+                    var i = item.lastIndexOf(':'), resto = item.slice(i + 1).split('@');
+                    // O limite do apelido do Multiplayer vale pros bots também.
+                    if (i > 0) listaDeNomes[g].push({ nome: item.slice(0, i).substring(0, 15), difs: resto[0], chance: (parseFloat(resto[1]) || 0) / 100 });
+                });
+            });
+            return listaDeNomes;
+        }
+        // Sorteio separado do Math.random: as cartas e as decisões da IA continuam
+        // com o sorteio delas, e o simulador repete as mesmas partidas pela semente.
+        var sementeDosNomes = 0;
+        function sorteDosNomes() {
+            try { var a = new Uint32Array(1); window.crypto.getRandomValues(a); return a[0] / 4294967296; } catch (e) {}
+            sementeDosNomes = ((sementeDosNomes || (Date.now() % 2147483646) + 1) * 16807) % 2147483647;
+            return (sementeDosNomes - 1) / 2147483646;
+        }
+        // Cada nome raro sai só com a chance dele, a cada bot sorteado; os comuns
+        // dividem o resto por igual.
+        function escolherNome(g, dif, usados) {
+            var opcoes = nomesDaLista()[g].filter(function(n) { return !usados[n.nome] && (!dif || n.difs.indexOf(dif) !== -1); });
+            var sorte = sorteDosNomes(), soma = 0;
+            for (var i = 0; i < opcoes.length; i++) {
+                soma += opcoes[i].chance;
+                if (opcoes[i].chance && sorte < soma) return opcoes[i].nome;
+            }
+            var comuns = opcoes.filter(function(n) { return !n.chance; });
+            return comuns.length ? comuns[Math.floor(sorteDosNomes() * comuns.length)].nome : '';
+        }
+        // Cada bot da partida ganha gênero e nome, sem repetir nome na partida. Só no
+        // Single Player; o Jogar Novamente é revanche e mantém os nomes (decisão dele).
+        // Lista curta (depois de uma mudança na planilha): nome do mesmo gênero de outra
+        // Dificuldade; ainda faltando, do outro gênero.
+        function sortearBots() {
+            st.bots = null;
+            if (gameMode !== 'pc') return;
+            var bots = {}, usados = {}, dif = String(aiDifficulty);
+            for (var p = 1; p <= getNumPlayers(); p++) {
+                if (isHumanSeat(p)) continue;
+                var fem = sorteDosNomes() < CHANCE_FEMININA, g = fem ? 'f' : 'm';
+                var nome = escolherNome(g, dif, usados) || escolherNome(g, null, usados);
+                if (!nome) { fem = !fem; g = fem ? 'f' : 'm'; nome = escolherNome(g, dif, usados) || escolherNome(g, null, usados); }
+                if (nome) usados[nome] = true;
+                bots[p] = { nome: nome, fem: fem };
+            }
+            st.bots = bots;
+        }
+        // O bot de um assento no Single Player ({ nome, fem }), o nome dele quando os
+        // nomes estão ligados nas Opções e o gênero, que vale com ou sem nome.
+        function botDe(pid) { return (gameMode === 'pc' && st.bots && st.bots[pid]) || null; }
+        function nomeDoBot(pid) { var b = botDe(pid); return b && b.nome && prefs.nomesIA ? b.nome : ''; }
+        function botFeminino(pid) { var b = botDe(pid); return !!(b && b.fem); }
+        // Um grupo só fica no feminino se todos forem: grupo misto fica no masculino.
+        function grupoFeminino(pids) { return pids.length > 0 && pids.every(botFeminino); }
+        function botsDoTime(team) { return getTeamPIDs(team).filter(function(p) { return !isHumanSeat(p); }); }
+        // O rival do 1x1, que é uma pessoa só: o nome, ou "O Rival"/"A Rival".
+        function rotuloDoRival(pid) { return nomeDoBot(pid) || (botFeminino(pid) ? 'A Rival' : 'O Rival'); }
+        // Os rivais das Duplas e dos Trios, que agem como time.
+        function rotuloDosRivais(team) { return grupoFeminino(botsDoTime(team)) ? 'As Rivais' : 'Os Rivais'; }
+
         // Quem pediu/aumentou/aceitou/correu do Truco, pra montar mensagens
         // dinâmicas (item 6, v0.12.5). Usa o nickname se for um jogador
         // humano com nome definido no Multiplayer; senão cai no genérico
         // "O Rival"/"Os Rivais", já na pluralidade certa pro formato (1v1
         // é sempre uma pessoa só; Duplas/Trios são um time, por isso plural
-        // mesmo que só um jogador específico tenha clicado o botão).
+        // mesmo que só um jogador específico tenha clicado o botão). No Single
+        // Player o rival do 1x1 vem pelo nome, e o feminino vale pro grupo só
+        // quando todos são (v0.15.3).
         function trucoActor(pid) {
             var nick = (gameMode !== 'pc' && st.nicks && st.nicks[pid]) ? String(st.nicks[pid]).trim() : '';
             if (nick) return { name: nick, plural: false };
-            if (myPID !== 0 && getTeam(pid) === getTeam(myPID)) return { name: 'Seu Parceiro', plural: false };
-            return { name: (st.gameFormat === '1v1' ? 'O Rival' : 'Os Rivais'), plural: st.gameFormat !== '1v1' };
+            if (myPID !== 0 && getTeam(pid) === getTeam(myPID)) return { name: botFeminino(pid) ? 'Sua Parceira' : 'Seu Parceiro', plural: false };
+            if (st.gameFormat === '1v1') return { name: rotuloDoRival(pid), plural: false };
+            return { name: rotuloDosRivais(getTeam(pid)), plural: true };
         }
 
         // Monta "Fulano pediu Truco!" / "Os Rivais pediram Doze!" / "O Rival
@@ -1935,7 +2077,7 @@
         // o nome das falas dele: nos Trios, "Parceiro 2" diz qual dos dois foi.
         function quemFez(pid) {
             var actor = trucoActor(pid);
-            if (actor.name === 'Seu Parceiro' && !isHumanSeat(pid)) return { name: rotuloParceiro(pid), plural: false };
+            if ((actor.name === 'Seu Parceiro' || actor.name === 'Sua Parceira') && !isHumanSeat(pid)) return { name: rotuloParceiro(pid), plural: false };
             return actor;
         }
         function acaoDe(pid, verbSing, verbPlur, val) {
@@ -1981,9 +2123,15 @@
         // Pro indicador "Vez de...": no Single Player a IA não tem nick, então
         // "Vez de: O Rival" soa estranho (dois-pontos antes de um artigo) — ali
         // usamos "Vez do Parceiro"/"Vez do Rival". No Multiplayer, com nick de
-        // verdade, "Vez de: NOME" continua fazendo sentido.
+        // verdade, "Vez de: NOME" continua fazendo sentido. No Single Player o bot
+        // vem pelo nome, no gênero dele: "Vez do Zé Eletricista", "Vez da Y" (v0.15.3);
+        // com os nomes desligados, o parceiro vem como na placa dele ("Vez do Parceiro 1").
         function turnOfLabel(pid) {
-            if (gameMode === 'pc') return 'DO ' + (getTeam(pid) === getTeam(myPID) ? 'PARCEIRO' : 'RIVAL');
+            if (gameMode === 'pc') {
+                var fem = botFeminino(pid);
+                var quem = getTeam(pid) === getTeam(myPID) ? rotuloParceiro(pid) : (nomeDoBot(pid) || 'RIVAL');
+                return (fem ? 'DA ' : 'DO ') + quem.toUpperCase();
+            }
             return 'DE ' + getPlayerName(pid).toUpperCase();
         }
         // A Adaptativa pensando a mais numa decisão apertada (v0.15.2): "RIVAL PENSANDO...".
@@ -2506,6 +2654,110 @@
             var tam = parseFloat(getComputedStyle(el).fontSize);
             while (el.scrollWidth > el.clientWidth + 1 && tam > 12.5) { tam -= 0.5; el.style.fontSize = tam + 'px'; }
             if (el.scrollWidth > el.clientWidth + 1) el.classList.add('quebra');
+        }
+
+        // ─── Barras com os nomes dos bots (v0.15.3, aprovado por ele) ───
+        // A caixa do texto de um elemento (não a do elemento, que ocupa a coluna toda).
+        function caixaDoTexto(el) { var r = document.createRange(); r.selectNodeContents(el); return r.getBoundingClientRect(); }
+        // A linha da vez se ajusta sozinha: a letra só diminui o quanto precisa pra não
+        // encostar no placar dos lados (o espaço livre entre eles é maior que a coluna
+        // do meio, e o texto pode usá-lo), nunca abaixo de 7 px.
+        function caberNaVez() {
+            var t = getEl('ui-turn');
+            if (!t || !t.offsetParent) return;
+            t.style.fontSize = '';
+            var esq = Math.max(caixaDoTexto(getEl('label-s0')).right, caixaDoTexto(getEl('ui-s0')).right) + 6, dir = Math.min(caixaDoTexto(getEl('label-s1')).left, caixaDoTexto(getEl('ui-s1')).left) - 6;
+            var col = t.parentElement.getBoundingClientRect(), centro = (col.left + col.right) / 2;
+            var cabe = 2 * Math.min(centro - esq, dir - centro), larg = caixaDoTexto(t).width;
+            if (cabe <= 0 || larg <= cabe) return;
+            t.style.fontSize = Math.max(7, Math.floor(parseFloat(getComputedStyle(t).fontSize) * cabe / larg * 10) / 10) + 'px';
+        }
+        function linhasDoTexto(el) {
+            var r = document.createRange(), topos = {};
+            r.selectNodeContents(el);
+            Array.prototype.forEach.call(r.getClientRects(), function(x) { if (x.width > 0) topos[Math.round(x.top)] = 1; });
+            return Object.keys(topos).length;
+        }
+        // A linha do meio (conselho) nunca passa de três linhas, o tanto que ela já ocupava
+        // no celular antes dos nomes (decisão dele): quando passaria, a letra diminui
+        // um pouco (até 7 px).
+        function caberNoConselho() {
+            var c = getEl('ui-deck-indicator');
+            if (!c || !c.offsetParent) return;
+            c.style.fontSize = '';
+            var px = parseFloat(getComputedStyle(c).fontSize);
+            while (linhasDoTexto(c) > 3 && px > 7) { px -= 0.5; c.style.fontSize = px + 'px'; }
+        }
+        // Quando a Barra Superior cresce ou encolhe (o conselho com mais linhas), a
+        // altura muda suave; com o Movimento Reduzido, direto (pedido dele).
+        function animarAlturaDaBarra(antes) {
+            var hud = getEl('main-hud');
+            if (!hud || !hud.offsetParent || prefs.reducedMotion) return;
+            clearTimeout(hud._fimDaAltura);
+            hud.style.transition = 'none'; hud.style.height = '';
+            var depois = hud.offsetHeight;
+            if (Math.abs(depois - antes) < 2) { hud.style.transition = ''; return; }
+            hud.style.height = antes + 'px';
+            void hud.offsetHeight;
+            hud.style.transition = 'height 0.2s ease';
+            hud.style.height = depois + 'px';
+            hud._fimDaAltura = setTimeout(function() { hud.style.transition = ''; hud.style.height = ''; posicionarNomesNaMesa(); }, 240);
+            // A mesa desce (ou sobe) junto com a barra: o nome dos bots acompanha.
+            var fim = Date.now() + 260;
+            (function acompanhar() { posicionarNomesNaMesa(); if (Date.now() < fim) requestAnimationFrame(acompanhar); })();
+        }
+        function escreverConselho(texto) {
+            var c = getEl('ui-deck-indicator');
+            if (!c) return;
+            if (c.innerText === texto) { caberNoConselho(); return; }
+            var hud = getEl('main-hud'), antes = hud ? hud.offsetHeight : 0;
+            c.innerText = texto;
+            caberNoConselho();
+            animarAlturaDaBarra(antes);
+        }
+        // O pedido do parceiro na barra de baixo: numa linha quando cabe junto dos
+        // botões; senão em duas, como a notificação: o nome em cima, menor, e o pedido
+        // embaixo (pedido dele).
+        function escreverPedido(id, quem, acao) {
+            var el = getEl(id);
+            if (!el) return;
+            if (el.dataset.pedido !== quem + '|' + acao) {
+                el.dataset.pedido = quem + '|' + acao;
+                el.textContent = '';
+                var q = document.createElement('span'); q.className = 'pedido-quem'; q.textContent = quem;
+                var a = document.createElement('span'); a.className = 'pedido-acao'; a.textContent = acao;
+                // O espaço entre os dois é só pro texto (leitor de tela, copiar): no
+                // desenho quem separa é o espaçamento da caixa.
+                el.appendChild(q); el.appendChild(document.createTextNode(' ')); el.appendChild(a);
+            }
+            encaixarPedido(el);
+        }
+        // Uma linha só se o pedido e todos os botões ficam na mesma fileira, sem chegar
+        // no botão do Menu de Pausa (⋮), que fica por cima da barra no canto.
+        function encaixarPedido(el) {
+            var botoes = el.parentElement ? el.parentElement.querySelectorAll('button') : [];
+            if (!botoes.length || !el.offsetParent) return;
+            el.classList.remove('duas-linhas');
+            var a = el.getBoundingClientRect(), meio = (a.top + a.bottom) / 2, pausa = getEl('btn-pause-toggle');
+            var p = pausa && pausa.offsetParent ? pausa.getBoundingClientRect() : null;
+            var cabe = Array.prototype.every.call(botoes, function(b) {
+                var r = b.getBoundingClientRect();
+                return Math.abs((r.top + r.bottom) / 2 - meio) <= 4 && (!p || r.right <= p.left - 4 || r.bottom <= p.top || r.top >= p.bottom);
+            });
+            if (!cabe) el.classList.add('duas-linhas');
+        }
+        window.addEventListener('resize', function() {
+            if (getEl('scr-game').classList.contains('hidden')) return;
+            caberNaVez(); caberNoConselho(); posicionarNomesNaMesa();
+            ['txt-partner-ask', 'txt-partner-fold'].forEach(function(id) { var el = getEl(id); if (el && el.dataset.pedido) encaixarPedido(el); });
+        });
+
+        // O resultado da mão: o rival do 1x1 pelo nome; nos times, "as rivais" só
+        // quando todas são (v0.15.3).
+        function msgDaMao(isMyWin) {
+            var rivais = getOppTeam(getTeam(myPID === 0 ? 1 : myPID));
+            if (st.gameFormat === '1v1') return isMyWin ? "Você fez a mão!" : rotuloDoRival(getTeamPIDs(rivais)[0]) + " fez a mão!";
+            return isMyWin ? "A mão é de vocês!" : (grupoFeminino(botsDoTime(rivais)) ? "As rivais" : "Os rivais") + " fizeram a mão!";
         }
 
         // Estatísticas (trucoStatsV2): três baldes independentes — sp (Single
@@ -3081,8 +3333,10 @@
                 getEl('end-title').innerText = title;
                 
                 var msg = "";
-                if(st.gameFormat === '1v1') { msg = isWin ? "Você dominou a mesa e venceu!" : "O rival levou a melhor dessa vez."; }
-                else { msg = isWin ? "Sua equipe dominou a mesa e venceu!" : "Os rivais levaram a melhor dessa vez."; }
+                // O rival do 1x1 pelo nome; as rivais, se todas forem (v0.15.3).
+                var rivaisDoFim = getOppTeam(getTeam(myPID === 0 ? 1 : myPID));
+                if(st.gameFormat === '1v1') { msg = isWin ? "Você dominou a mesa e venceu!" : (nomeDoBot(getTeamPIDs(rivaisDoFim)[0]) || (botFeminino(getTeamPIDs(rivaisDoFim)[0]) ? "A rival" : "O rival")) + " levou a melhor dessa vez."; }
+                else { msg = isWin ? "Sua equipe dominou a mesa e venceu!" : (grupoFeminino(botsDoTime(rivaisDoFim)) ? "As rivais" : "Os rivais") + " levaram a melhor dessa vez."; }
                 getEl('end-msg').innerText = msg;
 
                 // "Sortear Novamente" só faz sentido no Jogo Rápido: é a única
@@ -3277,6 +3531,8 @@
         //              vez da conta de cada carta: 1 = sempre (Normal), 0 = nunca.
         // pedeValor    chance de pedir quando a conta manda pedir de verdade (sem
         //              o campo, sempre): um jogador comum às vezes nem pensa em pedir.
+        // veRodadaPerdida  enxerga quando a rodada já está perdida na mesa, à vista
+        //              de todos (aiRodadaPerdidaNaMesa), e aí não pede nem aumenta.
         // comunica     quando a IA atualiza a classificação pro time.
         // Só na leitura 'classe', com valores fixos por classificação:
         // pedeExcelente  chance de pedir com cartas Excelentes.
@@ -3308,7 +3564,10 @@
             // jogador comum, e blefa 10% (era 14%). O time rival pedia 52/69/82 vezes
             // a cada 100 rodadas (1x1/Duplas/Trios), agora 21/37/49 (a Difícil: 51/61/
             // 75; a Normal da v0.14.2 pedia 22 no 1x1) — robô vence 59,7/58,7/55,7.
-            2: { leitura: 'chance', ruido: 4, pesoPedido: 0, placar: true, bonus: null, margemAceitar: 0, margemAumentar: 0.08, margemPedir: 0, blefe: [0.10, 0.10], leitor: 0, segura: 0, esconde: 0.4, baralho: 0.3, baralhoAte: 0.03, erro: 0, regra: 1, pedeValor: 0.25, comunica: 'mudanca' },
+            // Ela também enxerga a rodada perdida na mesa (v0.15.3, decisão dele):
+            // pedir em cima de uma carta que já ganhou a rodada não é erro de leitura,
+            // é nem olhar a mesa. Só a Fácil continua podendo fazer isso.
+            2: { leitura: 'chance', ruido: 4, pesoPedido: 0, placar: true, bonus: null, margemAceitar: 0, margemAumentar: 0.08, margemPedir: 0, blefe: [0.10, 0.10], leitor: 0, segura: 0, esconde: 0.4, baralho: 0.3, baralhoAte: 0.03, erro: 0, regra: 1, pedeValor: 0.25, comunica: 'mudanca', veRodadaPerdida: true },
             // A Difícil e o Insano pensam um pouco mais (v0.15.2, plano 2.4, aprovados
             // por ele pro 1x1 e pros times): durante a espera, até 480 e 720 sorteios no
             // 1x1 e 240 e 360 nos times (o dobro e o triplo de antes). Mesmas sementes,
@@ -3322,13 +3581,13 @@
             // 60% das cartas pela regra simples, como quem nem sempre faz a conta:
             // 47,3 no 1x1 (1.200 partidas, Paulista sujo, meta 47).
             3: { leitura: 'chance', ruido: 0, pesoPedido: 0.3, placar: true, bonus: { frente: 0.02, atras: 0.015 }, margemAceitar: [0, 0.04], margemAumentar: 0.05, margemPedir: 0, blefe: [0.03, 0.28], reage: 0.4, leitor: 16, segura: [0.05, 0.12], esconde: 0.6, baralho: 0.15, baralhoAte: 0.02, erro: 0, regra: 0.6, comunica: 'mao',
-                 pensa: true, amostras: 480, amostrasTime: 240 },
+                 pensa: true, amostras: 480, amostrasTime: 240, veRodadaPerdida: true },
             // O Insano lê o jogador com calma, no ritmo da Difícil (leitor 16, como
             // ele já fazia nos times): lendo rápido (6) ele tirava conclusões de
             // pouca coisa. Robô vence 36,8 → 33,4 no 1x1 (1.200, meta ~32); a faixa
             // de blefe mais larga continua sendo dele, e ele blefa mais que a Difícil.
             4: { leitura: 'chance', ruido: 0, pesoPedido: 1, placar: true, bonus: { frente: 0.03, atras: 0.02 }, margemAceitar: [0, 0.05], margemAumentar: 0.03, margemPedir: -0.02, blefe: [0.02, 0.50], reage: 0.25, leitor: 16, segura: [0.02, 0.15], esconde: 0.75, baralho: 0.05, baralhoAte: 0.01, erro: 0, comunica: 'mao',
-                 pensa: true, amostras: 720, amostrasTime: 360 },
+                 pensa: true, amostras: 720, amostrasTime: 360, veRodadaPerdida: true },
             // A Adaptativa (v0.15.2) lê o jogador pela Ficha e pela partida (o jeito
             // dele, aiJeitoDoJogador) e decide tudo pela conta, sem faixa de blefe
             // nem folga pra aceitar ou aumentar. Pensa durante a espera, até
@@ -3340,7 +3599,7 @@
             // medido na Etapa 4, com 8 mil ela ficava mais fácil que o Insano, e com
             // 480 e o pedido pela conta empata com ele (18 lotes por formato).
             5: { leitura: 'chance', ruido: 0, pesoPedido: 1, placar: true, bonus: { frente: 0.03, atras: 0.02 }, margemAceitar: 0, margemAumentar: 0, margemPedir: 0, blefe: [0, 0], leitor: 0, segura: 0, esconde: 0.75, baralho: 0.05, baralhoAte: 0.01, erro: 0, comunica: 'mao',
-                 adaptativa: true, pensa: true, amostras: 960, amostrasTime: 480, pensaAte: 20000, pensaAteTime: 480 }
+                 adaptativa: true, pensa: true, amostras: 960, amostrasTime: 480, pensaAte: 20000, pensaAteTime: 480, veRodadaPerdida: true }
         };
         // Quanto a Adaptativa sorteia perto do empate da conta de pedir (em fração
         // do que o pedido vale): com ganho de 1% ela pede 73% das vezes; com 5%, 99%.
@@ -5257,10 +5516,32 @@
             return aiClassOf(aiOwnScore(v)) === 0;
         }
 
+        // A rodada já está perdida à vista de todos: a carta do outro time que leva
+        // a mão não perde nem empata com nenhuma carta que ainda pode aparecer (só
+        // conta o que todos viram — carta escondida pode ser qualquer uma), e essa
+        // mão dá a rodada a eles. Quem está do outro lado sabe que ganhou e nunca
+        // corre: blefar ali é entregar pontos. Retorno dele no ponto de teste 3 da
+        // v0.15.3: o Insano pediu em cima do Zap na última mão, e a Difícil, em cima
+        // da Copas do parceiro com o Zap já fora.
+        function aiRodadaPerdidaNaMesa(v) {
+            var deles = -1, nossa = -1;
+            v.table.forEach(function(t) { if (getTeam(t.p) === v.team) nossa = Math.max(nossa, t.pw); else deles = Math.max(deles, t.pw); });
+            if (deles < 0 || deles <= nossa) return false;
+            var vistas = v.plays.filter(function(x) { return x.pw >= 0; }).map(function(x) { return x.c; });
+            if (st.vira) vistas.push(st.vira);
+            var ameaca = buildDeck(st.rules, st.deckMode).some(function(c) {
+                return getPower(c) >= deles && !vistas.some(function(x) { return sameCard(x, c); });
+            });
+            if (ameaca) return false;
+            var tr = v.tricks.map(function(r) { return r === 3 ? 0 : (r === v.team ? 1 : -1); });
+            return aiRoundResult(tr.concat([-1])) === 0;
+        }
+
         // Devolve POR QUE a IA quer pedir — 'valor' (pedido de verdade) ou 'blefe'
         // (ver aiMaoRuim) — ou false. Os Parceiros Dinâmicos (v0.15.1) precisam
         // saber qual dos dois pra pedir permissão.
         function aiShouldAsk(v, prof, est) {
+            if (prof.veRodadaPerdida && aiRodadaPerdidaNaMesa(v)) return false;
             var h = v.handVal, N = getNextTrucoVal(h), m = aiPlayerModel(aiMainOpponent(v), prof);
             var ruim = aiMaoRuim(v);
             if (prof.leitura === 'classe') {
@@ -5345,7 +5626,7 @@
             var margemAceitar = aiFaixa(prof.margemAceitar, 1 - (m.blefe - 0.05) / 0.25);
             var uAcc = est.p * uWin + (1 - est.p) * uLose - margemAceitar * (uWin - uLose);
             var escolha = uAcc >= uRun ? 'aceita' : 'corre', melhor = Math.max(uAcc, uRun);
-            if (N < 12 && v.my !== v.thres) {
+            if (N < 12 && v.my !== v.thres && !(prof.veRodadaPerdida && aiRodadaPerdidaNaMesa(v))) {
                 var N2 = getNextTrucoVal(N);
                 var faixa2 = aiUtility(v, prof, N2, 0) - aiUtility(v, prof, 0, N2);
                 // "Aumentar exige folga maior" (plano, seção 3): a folga de aceitar
@@ -5595,19 +5876,24 @@
         }
 
         // Nome de exibição de um parceiro: usa o nick real se existir
-        // (multiplayer), senão cai pra "Parceiro 1"/"Parceiro 2" — evita que
-        // dois parceiros sem nick fiquem ambíguos ("Seu Parceiro" duas vezes).
+        // (multiplayer), senão o nome do bot (v0.15.3) ou "Parceiro"/"Parceira".
+        // O número ("Parceiro 1"/"Parceiro 2") só entra quando os dois parceiros-IA
+        // dos Trios são do mesmo gênero; um de cada já se distingue (pedido dele).
+        // idx é a posição dele entre os parceiros-IA — a mesma da placa na mesa.
         function partnerLabel(pid, idx) {
             if (window.wsPlayers && window.wsPlayers[pid]) return window.wsPlayers[pid];
             if (gameMode !== 'pc' && st.nicks && st.nicks[pid]) return st.nicks[pid];
-            return "Parceiro " + (idx + 1);
+            var nome = nomeDoBot(pid), fem = botFeminino(pid);
+            if (nome) return nome;
+            var parecido = getPartnerPIDs().some(function(p) { return p !== pid && !isHumanSeat(p) && botFeminino(p) === fem; });
+            return (fem ? "Parceira" : "Parceiro") + (parecido && idx >= 0 ? " " + (idx + 1) : "");
         }
 
         function updateTurnGlow() {
             document.querySelectorAll('.card').forEach(c => c.classList.remove('active-turn'));
             // Pensando a mais, a Adaptativa trava a mesa mas continua sendo a vez
             // dela: o contorno fica (sumia quando a Barra Superior era redesenhada).
-            if (animLock && st.trucoState !== 'mao11' && !aiPensandoMais) return;
+            if (animLock && st.trucoState !== 'mao11' && !aiPensandoMais) { desenharNomesNaMesa(); return; }
 
             if (st.trucoState === 'mao11') {
                 for(var p = 1; p <= getNumPlayers(); p++) {
@@ -5636,6 +5922,96 @@
                 var tHand = getEl('box-' + getUIPos(st.turn));
                 if(tHand) tHand.querySelectorAll('.card').forEach(c => c.classList.add('active-turn'));
             }
+            desenharNomesNaMesa();
+        }
+
+        // ─── Nome na mesa (v0.15.3, desenho dele) ────────────────────────
+        // A placa fica em cima da linha tracejada, no meio da posição das cartas de
+        // cada jogador, e acende junto com o contorno das cartas de quem é a vez. Vale
+        // pra todos os modos, pra ninguém ficar em dúvida de quem é quem: no
+        // Multiplayer, o apelido de quem joga (no lugar das etiquetas antigas do
+        // Online). A placa vive fora da mesa (a mesa corta o que passa da borda), então
+        // a posição é refeita quando a mesa muda de lugar: a Barra Superior crescendo
+        // ou a janela mudando de tamanho.
+        // O que a placa diz: o apelido, o nome do bot ou, com os nomes desligados (e
+        // nos bots do Multiplayer), o mesmo rótulo dos textos — "Parceiro"/"Parceira",
+        // com número só quando os dois parceiros dos Trios são do mesmo gênero, e
+        // "Rival" pra todos os rivais (pedido dele).
+        function rotuloDaPlaca(p) {
+            var nick = gameMode !== 'pc' ? String((window.wsPlayers && window.wsPlayers[p]) || (st.nicks && st.nicks[p]) || '').trim() : '';
+            if (nick) return nick;
+            var ref = myPID || 1;
+            if (getTeam(p) !== getTeam(ref)) return nomeDoBot(p) || 'Rival';
+            if (myPID) return rotuloParceiro(p);
+            // Quem só assiste (Online) vê a mesa pelo assento 1: os bots do lado dele
+            // são os parceiros.
+            var bots = getTeamPIDs(getTeam(ref)).filter(function(q) { return q !== ref && !isHumanSeat(q); });
+            return 'Parceiro' + (bots.length > 1 ? ' ' + (bots.indexOf(p) + 1) : '');
+        }
+        function desenharNomesNaMesa() {
+            var mesa = document.querySelector('.table');
+            if (!mesa) return;
+            var area = mesa.parentElement, placas = {}, ref = myPID || 1;
+            area.querySelectorAll('.nome-mesa').forEach(function(e) { placas[e.dataset.pid] = e; });
+            for (var p = 1; p <= 6; p++) {
+                var nome = p <= getNumPlayers() && p !== myPID ? rotuloDaPlaca(p) : '', el = placas[p];
+                if (!nome) { if (el) el.remove(); continue; }
+                if (!el) { el = document.createElement('div'); el.className = 'nome-mesa'; el.dataset.pid = p; area.appendChild(el); }
+                if (el.textContent !== nome) el.textContent = nome;
+                var aliado = getTeam(p) === getTeam(ref), mao = getEl('box-' + getUIPos(p));
+                el.classList.toggle('aliado', aliado);
+                el.classList.toggle('rival', !aliado);
+                el.classList.toggle('vez', !!(mao && mao.querySelector('.card.active-turn')));
+            }
+            posicionarNomesNaMesa();
+        }
+        function posicionarNomesNaMesa() {
+            var mesa = document.querySelector('.table');
+            if (!mesa || !mesa.offsetParent) return;
+            posicionarRotulosDaMesa();
+            var area = mesa.parentElement, a = area.getBoundingClientRect(), m = mesa.getBoundingClientRect();
+            area.querySelectorAll('.nome-mesa').forEach(function(el) {
+                var pos = getUIPos(Number(el.dataset.pid)), mao = getEl('box-' + pos);
+                if (!mao || getComputedStyle(mao).display === 'none') { el.style.display = 'none'; return; }
+                el.style.display = '';
+                // O meio da caixa das cartas (não muda quando as cartas acabam) e a linha
+                // da borda (2 px).
+                var r = mao.getBoundingClientRect();
+                if (pos === 'top' || pos === 'my') {
+                    // 'my' só tem placa pra quem assiste: o assento 1, embaixo.
+                    el.style.left = ((r.left + r.right) / 2 - a.left) + 'px';
+                    el.style.top = ((pos === 'top' ? m.top + 1 : m.bottom - 1) - a.top) + 'px';
+                    el.style.transform = 'translate(-50%, -50%)';
+                } else {
+                    var esquerda = pos.indexOf('left') === 0;
+                    el.style.left = ((esquerda ? m.left + 1 : m.right - 1) - a.left) + 'px';
+                    el.style.top = ((r.top + r.bottom) / 2 - a.top) + 'px';
+                    el.style.transform = 'translate(-50%, -50%) rotate(' + (esquerda ? 90 : -90) + 'deg)';
+                }
+            });
+        }
+        // MANILHA e VIRA na linha de cima, centrados na carta da Manilha e no monte;
+        // a mesa abre um furo na linha atrás de cada um (a máscara da .table). Sem a
+        // Dica de Manilha, o texto dela some e a linha fica inteira.
+        function posicionarRotulosDaMesa() {
+            var mesa = document.querySelector('.table');
+            if (!mesa || !mesa.offsetParent) return;
+            var a = mesa.parentElement.getBoundingClientRect(), m = mesa.getBoundingClientRect();
+            [['rotulo-manilha', 'ghost-m-card', '--furo-m'], ['rotulo-vira', 'deck-pile', '--furo-v']].forEach(function(r) {
+                var el = getEl(r[0]), carta = getEl(r[1]), c = carta ? carta.getBoundingClientRect() : null;
+                if (!el) return;
+                if (!c || !c.width) {
+                    el.style.display = 'none';
+                    mesa.style.removeProperty(r[2] + '1'); mesa.style.removeProperty(r[2] + '2');
+                    return;
+                }
+                el.style.display = '';
+                el.style.left = ((c.left + c.right) / 2 - a.left) + 'px';
+                el.style.top = (m.top + 1 - a.top) + 'px';
+                var t = el.getBoundingClientRect();
+                mesa.style.setProperty(r[2] + '1', (t.left - 4 - m.left) + 'px');
+                mesa.style.setProperty(r[2] + '2', (t.right + 4 - m.left) + 'px');
+            });
         }
 
         // Destrava a animação e SÓ ENTÃO atualiza a UI — nessa ordem, sempre.
@@ -5659,7 +6035,7 @@
             var gmContainer = getEl('ghost-manilha');
             var mCard = getEl('ghost-m-card');
 
-            if (manilhaHintHidden) { gmContainer.classList.add('hidden'); return; }
+            if (manilhaHintHidden) { gmContainer.classList.add('hidden'); posicionarRotulosDaMesa(); return; }
 
             if (st.rules === 'mineiro' || st.rules === 'goiano') {
                 gmContainer.classList.remove('hidden');
@@ -5689,6 +6065,7 @@
                     gmContainer.classList.add('hidden');
                 }
             }
+            posicionarRotulosDaMesa();
         }
 
         function updateUI() {
@@ -5703,8 +6080,8 @@
             }
 
             var refPID = myPID === 0 ? 1 : myPID;
-            getEl('label-s0').innerText = st.gameFormat === '1v1' ? "EU:" : "NÓS:";
-            getEl('label-s1').innerText = st.gameFormat === '1v1' ? "RIVAL:" : "RIVAIS:";
+            getEl('label-s0').innerText = st.gameFormat === '1v1' ? "EU" : "NÓS";
+            getEl('label-s1').innerText = st.gameFormat === '1v1' ? "RIVAL" : "RIVAIS";
 
             getEl('ui-s0').innerText = st.scores[getTeam(refPID)]; 
             getEl('ui-s1').innerText = st.scores[getOppTeam(getTeam(refPID))];
@@ -5740,14 +6117,19 @@
                     uiTurn.innerText = st.rules === 'mineiro' ? "MÃO DE 10: DECIDA!" : "MÃO DE 11: DECIDA!"; uiTurn.style.color = "var(--warn)";
                 } else {
                     if(!isExiting && !isPaused) { setBottomGroup(null); actionBar.classList.remove('danger-zone'); }
-                    var rivalWord = st.gameFormat === '1v1' ? "RIVAL PENSANDO" : "RIVAIS PENSANDO";
-                    uiTurn.innerText = st.rules === 'mineiro' ? (rivalWord + " (MÃO DE 10)...") : (rivalWord + " (MÃO DE 11)..."); uiTurn.style.color = "var(--warn)";
+                    // Quem decide pensa na linha da vez, e a Mão de 11 vai pra linha do meio,
+                    // como a Mão de Ferro (v0.15.3, aprovado por ele: com o nome do rival não
+                    // cabia tudo numa linha no celular).
+                    var quemDecide = getTeamPIDs(st.maoDeXTeam)[0];
+                    uiTurn.innerText = st.gameFormat !== '1v1' ? "RIVAIS PENSANDO..." : (gameMode === 'pc' ? textoPensando(quemDecide) : "RIVAL PENSANDO..."); uiTurn.style.color = "var(--warn)";
+                    indicatorText = st.rules === 'mineiro' ? "MÃO DE 10" : "MÃO DE 11";
                 }
             }
             else if (st.trucoState === 'partner_fold') {
                 btnHide.setAttribute('disabled', 'true'); btnHide.classList.add('disabled');
                 if (ehMeuParceiro(st.partnerFoldPid)) {
                     if (!isExiting && !isPaused) { setBottomGroup('grp-partner-fold'); actionBar.classList.add('danger-zone'); }
+                    escreverPedido('txt-partner-fold', rotuloParceiro(st.partnerFoldPid), 'quer correr!');
                     uiTurn.innerText = "DECISÃO DE FUGA!"; uiTurn.style.color = "var(--warn)";
                 } else {
                     // Quem não é do time do bot vê só a mesa esperando (v0.15.1).
@@ -5761,8 +6143,8 @@
                 var ped = st.partnerAsk;
                 if (ped && ehMeuParceiro(ped.pid)) {
                     if (!isExiting && !isPaused) { setBottomGroup('grp-partner-ask'); actionBar.classList.add('danger-zone'); }
-                    getEl('txt-partner-ask').innerText = rotuloParceiro(ped.pid) + (ped.tipo === 'blefe' ? ' quer blefar ' : ' quer pedir ') + getTrucoName(ped.valor) + '!';
-                    uiTurn.innerText = "PEDIDO DO PARCEIRO!"; uiTurn.style.color = "var(--warn)";
+                    escreverPedido('txt-partner-ask', rotuloParceiro(ped.pid), (ped.tipo === 'blefe' ? 'quer blefar ' : 'quer pedir ') + getTrucoName(ped.valor) + '!');
+                    uiTurn.innerText = gameMode === 'pc' ? "PEDIDO " + turnOfLabel(ped.pid) + "!" : "PEDIDO DO PARCEIRO!"; uiTurn.style.color = "var(--warn)";
                     indicatorText = (rotuloParceiro(ped.pid) + (ped.classe ? ': mão ' + ped.classe : '')).toUpperCase();
                 } else {
                     // Quem não é do time (o rival humano no multiplayer, ou quem só
@@ -5778,8 +6160,8 @@
                     // Ligado: os parceiros decidem primeiro; os botões só aparecem
                     // se eles passarem a decisão pra você.
                     if(!isExiting && !isPaused) { setBottomGroup(null); actionBar.classList.remove('danger-zone'); }
-                    var botsLigado = getPartnerPIDs().filter(function(p) { return !isHumanSeat(p); }).length;
-                    uiTurn.innerText = botsLigado > 1 ? "PARCEIROS DECIDINDO..." : "PARCEIRO DECIDINDO..."; uiTurn.style.color = "var(--warn)";
+                    var botsLigado = getPartnerPIDs().filter(function(p) { return !isHumanSeat(p); });
+                    uiTurn.innerText = (botsLigado.length > 1 ? rotuloDosParceiros(botsLigado) : rotuloParceiro(botsLigado[0])).toUpperCase() + " DECIDINDO..."; uiTurn.style.color = "var(--warn)";
                 } else if (getTeam(st.trucoBy) !== getTeam(myPID) && myPID !== 0) {
                     if(!isExiting && !isPaused) { setBottomGroup('grp-respond'); actionBar.classList.add('danger-zone'); }
                     uiTurn.innerText = trucoActionText(st.trucoBy, 'pediu', 'pediram', st.proposedVal).toUpperCase(); uiTurn.style.color = "var(--warn)";
@@ -5792,9 +6174,9 @@
                         // Mão verdadeira dele (o blefe é só pros rivais).
                         var partners = getPartnerPIDs().filter(function(p) { return !isHumanSeat(p); });
                         if (partners.length === 1) {
-                            var adviceCat = aiAdvice(partners[0]);
-                            var advice = adviceCat.key === 'comVoce' ? "Parceiro: é com você!"
-                                : "Parceiro: mão " + adviceCat.classe + (adviceCat.key === 'bora' ? ". Bora!" : ", sugiro " + adviceCat.verb + (adviceCat.key === 'aumentar' ? "!" : ""));
+                            var adviceCat = aiAdvice(partners[0]), quemAconselha = rotuloParceiro(partners[0]);
+                            var advice = adviceCat.key === 'comVoce' ? quemAconselha + ": é com você!"
+                                : quemAconselha + ": mão " + adviceCat.classe + (adviceCat.key === 'bora' ? ". Bora!" : ", sugiro " + adviceCat.verb + (adviceCat.key === 'aumentar' ? "!" : ""));
                             indicatorText = advice.toUpperCase();
                             if(window.lastAdviceLevel !== st.proposedVal) {
                                 window.lastAdviceLevel = st.proposedVal;
@@ -5812,13 +6194,14 @@
                             var allAgree = cats.every(function(c) { return c.cat.key === cats[0].cat.key; });
 
                             var semCartas = allAgree && cats[0].cat.key === 'comVoce';
+                            var osParceiros = rotuloDosParceiros(partners);
                             if (semCartas) {
-                                indicatorText = "PARCEIROS: É COM VOCÊ!";
+                                indicatorText = osParceiros.toUpperCase() + ": É COM VOCÊ!";
                             } else if (allAgree) {
                                 // Sem repetir as classificações aqui ("(RUIM E RUIM)"):
                                 // a frase já diz o que eles querem, e cada parceiro
                                 // conta a mão dele na própria mensagem logo abaixo.
-                                indicatorText = "PARCEIROS QUEREM " + cats[0].cat.verb.toUpperCase() + "!";
+                                indicatorText = osParceiros.toUpperCase() + " QUEREM " + cats[0].cat.verb.toUpperCase() + "!";
                             } else {
                                 indicatorText = cats.map(function(c) {
                                     return partnerLabel(c.pid, c.idx).toUpperCase() + ": " + (c.cat.key === 'comVoce' ? "É COM VOCÊ" : c.cat.classe.toUpperCase() + ", " + c.cat.label.toUpperCase());
@@ -5828,7 +6211,7 @@
                             if(window.lastAdviceLevel !== st.proposedVal) {
                                 window.lastAdviceLevel = st.proposedVal;
                                 // Os dois sem cartas falam uma vez só, no plural.
-                                var falas = semCartas ? [{ idx: 0, key: 'comVoce', aviso: { quem: 'Parceiros', texto: 'É com você!' } }] : cats.map(function(c) {
+                                var falas = semCartas ? [{ idx: 0, key: 'comVoce', aviso: { quem: osParceiros, texto: 'É com você!' } }] : cats.map(function(c) {
                                     return { idx: c.idx, key: c.cat.key, aviso: { quem: partnerLabel(c.pid, c.idx), texto: falaDoConselho(c.cat) } };
                                 });
                                 falas.forEach(function(f) {
@@ -5847,7 +6230,9 @@
                     } else { btnRaise.classList.add('hidden'); }
                 } else {
                     if(!isExiting && !isPaused) { setBottomGroup(null); actionBar.classList.remove('danger-zone'); }
-                    uiTurn.innerText = aiPensandoMais ? textoPensando(aiPensandoMais) : (st.gameFormat === '1v1' ? "AGUARDANDO RIVAL..." : "AGUARDANDO RIVAIS..."); uiTurn.style.color = "var(--warn)";
+                    // O rival do 1x1 pelo nome (v0.15.3); "rival(is)" sem nome serve pros dois gêneros.
+                    var nomeDoRival = st.gameFormat === '1v1' ? nomeDoBot(getTeamPIDs(getOppTeam(getTeam(refPID)))[0]) : '';
+                    uiTurn.innerText = aiPensandoMais ? textoPensando(aiPensandoMais) : (st.gameFormat === '1v1' ? "AGUARDANDO " + (nomeDoRival ? nomeDoRival.toUpperCase() : "RIVAL") + "..." : "AGUARDANDO RIVAIS..."); uiTurn.style.color = "var(--warn)";
                 }
             } else {
                 if (!grpConfirmFold.classList.contains('active') && !isExiting && !isPaused && myPID !== 0) { setBottomGroup('grp-normal'); actionBar.classList.remove('danger-zone'); }
@@ -5860,7 +6245,7 @@
                 if (isMyTurn && animLock) { uiTurn.innerText = "AGUARDE..."; }
                 else if (st.maoDeFerro) { uiTurn.innerText = isMyTurn ? "SUA VEZ (MÃO DE FERRO)" : ("VEZ " + turnOfLabel(st.turn)); }
                 else if (!isMyTurn && aiPensandoMais === st.turn) { uiTurn.innerText = textoPensando(st.turn); }
-                else { uiTurn.innerText = isMyTurn ? "SUA VEZ JOGAR" : ("VEZ " + turnOfLabel(st.turn)); }
+                else { uiTurn.innerText = isMyTurn ? "SUA VEZ" : ("VEZ " + turnOfLabel(st.turn)); }
                 
                 // Vez de outro assento: a cor diz de relance se é rival ou parceiro.
                 if (canPlayNow) uiTurn.style.color = "var(--prim)";
@@ -5893,8 +6278,9 @@
             }
             
             if (!(st.trucoState === 'mao11' && st.maoDeXTeam === getTeam(myPID) && st.gameFormat !== '1v1')) {
-                getEl('ui-deck-indicator').innerText = indicatorText;
+                escreverConselho(indicatorText);
             }
+            caberNaVez();
 
             var myVazas = getEl('vazas-my'); var oppVazas = getEl('vazas-opp');
             myVazas.innerHTML = ''; oppVazas.innerHTML = '';
@@ -5918,19 +6304,6 @@
             var bTb = getEl('box-table'); 
             bMy.innerHTML = ''; bTop.innerHTML = ''; bLeft.innerHTML = ''; bRight.innerHTML = ''; bTb.innerHTML = '';
             if (bLeft2) bLeft2.innerHTML = ''; if (bRight2) bRight2.innerHTML = '';
-
-            if (gameMode === 'ws') {
-                for (var p = 1; p <= getNumPlayers(); p++) {
-                    var pos = getUIPos(p);
-                    var dest = getEl('box-' + pos);
-                    if (dest) {
-                        var tt = document.createElement('div');
-                        tt.className = 'nick-tooltip';
-                        tt.innerText = getPlayerName(p);
-                        dest.appendChild(tt);
-                    }
-                }
-            }
 
             var numP = getNumPlayers();
             for (var p = 1; p <= numP; p++) {
@@ -6207,6 +6580,8 @@
             if (modeStr === 'pc') st.parceiros = st.gameFormat === '1v1' ? null : (sorteioParceiros || pendingParceiros);
             else if (myPID === 1) st.parceiros = st.gameFormat === '1v1' ? null : 'desligado';
             sorteioParceiros = null;
+            // Os nomes dos bots (v0.15.3): partida nova, nomes novos. No multiplayer não há.
+            sortearBots();
             avisoAte = 0;
             
             var fromScreen = (modeStr === 'pc') ? 'scr-mode' : (modeStr === 'json' ? (playerID === 1 ? 'scr-local-rules' : 'scr-local-role-choice') : 'scr-webrtc-connect');
@@ -6304,13 +6679,13 @@
                     var advice = "";
                     if (partners.length) {
                         var probComb = aiEstimate(aiView(partners[0]), { leitura: 'chance', ruido: 0, leitor: 0 }, false).p;
-                        var advPrefix = partners.length > 1 ? "Parceiros: " : "Parceiro: ";
+                        var advPrefix = (partners.length > 1 ? rotuloDosParceiros(partners) : rotuloParceiro(partners[0])) + ": ";
                         if (probComb < 0.35) advice = advPrefix + "Melhor correr";
                         else if (probComb < 0.55) advice = advPrefix + "Não tô confiante...";
                         else if (probComb < 0.70) advice = advPrefix + "Acho que dá pra ganhar";
                         else advice = advPrefix + "Bora!";
                     }
-                    if (advice) getEl('ui-deck-indicator').innerText = advice.toUpperCase();
+                    if (advice) escreverConselho(advice.toUpperCase());
                     showMsg({ quem: 'Mão de ' + (st.rules === 'mineiro' ? '10' : '11'), texto: 'Analise as cartas' }, 'warn', 3000);
                 } else {
                     showMsg({ quem: 'Sua Mão de ' + (st.rules === 'mineiro' ? '10' : '11'), texto: 'Deseja jogar?' }, 'warn', 3000);
@@ -6493,7 +6868,7 @@
             } else { 
                 var myTeam = getTeam(refPID);
                 var isMyWin = (myTeam === trickWinnerTeam);
-                var msg = st.gameFormat === '1v1' ? (isMyWin ? "Você fez a mão!" : "O Rival fez a mão!") : (isMyWin ? "A mão é de vocês!" : "Os rivais fizeram a mão!");
+                var msg = msgDaMao(isMyWin);
                 showMsg(msg, isMyWin ? 'pos' : 'neg', 1300); 
                 nextTurn = winners[0]; 
             }
@@ -6663,8 +7038,10 @@
         function ehMeuParceiro(pid) { return myPID !== 0 && pid !== myPID && getTeam(pid) === getTeam(myPID); }
         function rotuloParceiro(pid) {
             var bots = getPartnerPIDs().filter(function(p) { return !isHumanSeat(p); });
-            return bots.length > 1 ? partnerLabel(pid, bots.indexOf(pid)) : 'Parceiro';
+            return partnerLabel(pid, bots.indexOf(pid));
         }
+        // Os parceiros-IA juntos (nos Trios): "Parceiras" só quando as duas são.
+        function rotuloDosParceiros(bots) { return grupoFeminino(bots) ? 'Parceiras' : 'Parceiros'; }
         // O que o parceiro-IA diz pra você vira fala em primeira pessoa, com o nome
         // dele em cima e a mão entre parênteses (v0.15.2a, ideia dele).
         function maoEntreParenteses(classe) { return classe ? ' (mão ' + classe + ')' : ''; }
@@ -6756,7 +7133,8 @@
             var bots = getTeamPIDs(team).filter(function(p) { return !isHumanSeat(p); });
             // Só conta a mão quem ainda tem cartas (v0.15.2).
             var classes = bots.map(classeDoParceiro).filter(function(c) { return c; });
-            var fala = bots.length > 1 ? 'Seus Parceiros deixaram com você' : 'Seu Parceiro deixou com você';
+            var fala = bots.length > 1 ? (grupoFeminino(bots) ? 'Suas Parceiras deixaram com você' : 'Seus Parceiros deixaram com você')
+                : (nomeDoBot(bots[0]) || (botFeminino(bots[0]) ? 'Sua Parceira' : 'Seu Parceiro')) + ' deixou com você';
             if (classes.length > 1) return fala + ' — mãos ' + classes.join(' e ');
             return fala + falaDaMao(classes[0]);
         }
@@ -6765,7 +7143,7 @@
             var bots = getTeamPIDs(team).filter(function(p) { return !isHumanSeat(p); });
             var classes = bots.map(classeDoParceiro).filter(function(c) { return c; });
             var maos = classes.length > 1 ? ' (mãos ' + classes.join(' e ') + ')' : maoEntreParenteses(classes[0]);
-            return bots.length > 1 ? { quem: 'Parceiros', texto: 'Deixamos com você' + maos } : { quem: rotuloParceiro(bots[0]), texto: 'Deixo com você' + maos };
+            return bots.length > 1 ? { quem: rotuloDosParceiros(bots), texto: 'Deixamos com você' + maos } : { quem: rotuloParceiro(bots[0]), texto: 'Deixo com você' + maos };
         }
 
         function checkAiTrucoDecision() {
@@ -7920,7 +8298,7 @@
                     if(lastWinner === 3) { showMsg("Canga (Empate)!", 'neu', 1300); } else { 
                         var refPID = myPID === 0 ? 1 : myPID;
                         var isMyWin = (lastWinner === getTeam(refPID));
-                        var msg = st.gameFormat === '1v1' ? (isMyWin ? "Você fez a mão!" : "O Rival fez a mão!") : (isMyWin ? "A mão é de vocês!" : "Os rivais fizeram a mão!");
+                        var msg = msgDaMao(isMyWin);
                         showMsg(msg, isMyWin ? 'pos' : 'neg', 1300); 
                     }
                     animLock = true;
@@ -8078,8 +8456,7 @@
         try {
             if (localStorage.getItem('trucoHideManilhaHint') === '1') {
                 manilhaHintHidden = true;
-                var manilhaBtn = getEl('btn-manilha-hint');
-                if (manilhaBtn) manilhaBtn.innerText = "🃏 SEM DICA DE MANILHA";
+                mostrarDicaDeManilha();
             }
         } catch(e) {}
 
