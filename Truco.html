@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Truco - v0.15.3</title>
+    <title>Truco - v0.15.5</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♣</text></svg>">
     <style>
         /* THEME VARIABLES */
@@ -147,7 +147,8 @@
            como os outros, ela ganhava 14 a 20 px e passava das bordas do botão de
            jogar (pedido dele). Cresce o mesmo tanto que um botão da fileira de
            cima — um quarto da largura —, e na altura igual a eles. */
-        .diff-btn.adaptativa.active { background: rgba(147, 51, 234, 0.25); border-color: rgba(147, 51, 234, 0.8); box-shadow: 0 4px 15px rgba(147, 51, 234, 0.4); transform: scale(1.0125, 1.05); }
+        /* A Escalada Mestre (v0.15.5, Bancada do Arcade) também fica sozinha na fileira, em roxo. */
+        .diff-btn.adaptativa.active, .diff-btn.mestre.active { background: rgba(147, 51, 234, 0.25); border-color: rgba(147, 51, 234, 0.8); box-shadow: 0 4px 15px rgba(147, 51, 234, 0.4); transform: scale(1.0125, 1.05); }
         .diff-btn:disabled { opacity: 0.3; pointer-events: none; }
         /* Travada, a Adaptativa diz quantas partidas faltam (v0.15.2): com o
            apagado de sempre o texto quase não se lia. Continua com cara de botão
@@ -180,7 +181,53 @@
            override de largura/raio/padding) — mesmo padrão retangular que
            todo o resto do app usa em telas de menu, em vez do pill pequeno
            herdado da extinta gaveta de Opções. */
-        #options-version-tag { margin-top: 14px; text-align: center; font-size: 0.65rem; color: var(--txt-d); opacity: 0.35; }
+        /* A versão nas Opções vira botão (v0.15.5, pedido dele): a pílula do ⚙️ OPÇÕES,
+           menor, abrindo as Novidades. O número fica legível mesmo desativada. Com a
+           borda, a pílula a 14 px parecia grudada no VOLTAR (o texto antigo tinha folga
+           em volta): ela fica mais longe que os botões ficam um do outro. */
+        .versao-container { margin-top: 24px; display: flex; justify-content: center; }
+        .btn-versao { padding: 4px 14px; font-size: 0.72rem; font-weight: bold; color: var(--txt-d); letter-spacing: 0.5px; text-transform: none; }
+        .btn-versao:disabled { opacity: 0.6; cursor: default; }
+        .btn-versao:disabled:hover { background: transparent; }
+
+        /* A tela de Novidades: o título só em negrito (pedido dele) e o texto do
+           Release do jeito do GitHub — tópicos, itálico, citação com a barra do lado. */
+        #scr-novidades { display: flex; flex-direction: column; overflow: hidden; }
+        .novidades-titulo { font-weight: 800; font-size: 1.05rem; color: var(--txt); margin-bottom: 12px; flex: 0 0 auto; }
+        .novidades-texto { flex: 1 1 auto; min-height: 0; overflow-y: auto; text-align: left; font-size: 0.86rem; line-height: 1.5; color: var(--txt); padding-right: 6px; scrollbar-width: thin; scrollbar-color: var(--scroll-thumb) transparent; }
+        .novidades-texto > :first-child { margin-top: 0; }
+        .novidades-texto > :last-child { margin-bottom: 0; }
+        .novidades-texto p { margin: 0 0 10px; }
+        .novidades-texto ul, .novidades-texto ol { margin: 0 0 10px; padding-left: 1.6em; }
+        .novidades-texto li { margin: 0 0 10px; }
+        .novidades-texto li > p { margin: 0 0 6px; }
+        .novidades-texto em { color: var(--txt-d); }
+        .novidades-texto blockquote { margin: 0 0 10px; padding: 0 0 0 0.9em; border-left: 3px solid var(--glass-border); color: var(--txt-d); }
+        .novidades-texto a { color: var(--prim); }
+        .novidades-texto code { font-size: 0.9em; background: var(--btn-s-bg); padding: 1px 4px; border-radius: 4px; }
+        .novidades-texto h1, .novidades-texto h2, .novidades-texto h3, .novidades-texto h4 { font-size: 0.95rem; margin: 0 0 8px; }
+
+        /* Verificador de Atualização (v0.15.5, pedido dele): a janela pequena desliza de
+           baixo da janela da Tela Inicial. A gaveta fica colada na borda de baixo dela
+           (posicionarAtualizacao) e corta a janela, que desce lá de dentro. A folga em
+           volta deixa a sombra aparecer. */
+        #atualizacao-gaveta { position: fixed; z-index: 49; overflow: hidden; padding: 0 14px 18px; box-sizing: border-box; pointer-events: none; }
+        #atualizacao-janela { margin-top: 10px; padding: 10px 14px; transform: translateY(calc(-100% - 12px)); transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
+        #atualizacao-gaveta.aberta #atualizacao-janela { transform: translateY(0); pointer-events: auto; }
+        body.reduced-motion #atualizacao-janela { transition: none; }
+        /* A barrinha fica parada no canto esquerdo e o texto centralizado no espaço ao
+           lado dela, não na janela toda (pedido dele: o texto comprido da falha ou da
+           versão nova ficava torto). O vão é a folga dos lados da janela (14 px), então
+           o texto fica no meio entre a barrinha e a borda direita. As partes trocam de
+           cor suave; no Modo Leve, na hora, como o resto. */
+        .atualizacao-linha { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: 14px; font-size: 0.8rem; font-weight: bold; color: var(--txt); text-align: center; }
+        #atualizacao-barra .vaza-pip { transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease; }
+        body.lite-mode #atualizacao-barra .vaza-pip { transition: none; }
+        /* Os dois botões lado a lado e dentro da janela: o TENTAR NOVAMENTE passava da
+           borda no celular (achado dele). Menos folga dos lados e, se ainda não couber,
+           a letra deles diminui o quanto precisa (caberOsBotoesDaAtualizacao). */
+        .atualizacao-botoes { display: flex; gap: 8px; margin-top: 10px; }
+        .atualizacao-botoes .action-btn { flex: 1; justify-content: center; white-space: nowrap; padding-left: 8px; padding-right: 8px; }
         /* Separa visualmente o botão de Estatísticas dos demais (mesma cor
            de borda usada em todo o resto da UI) — ele leva a uma tela com
            uma ação sensível (apagar dados), então precisa se destacar como
@@ -298,6 +345,12 @@
         .vaza-pip.win { background: var(--prim); border-color: var(--prim); box-shadow: 0 0 8px var(--prim); }
         .vaza-pip.loss { background: var(--dang); border-color: var(--dang); }
         .vaza-pip.tie { background: var(--warn); border-color: var(--warn); }
+        /* A mesma barrinha, deitada (v0.15.5, pedido dele): no Convidar Jogadores e na
+           janela de atualização da Tela Inicial. A 1ª parte fica à esquerda. */
+        .barrinha-deitada { display: inline-flex; gap: 2px; flex-shrink: 0; vertical-align: middle; }
+        .barrinha-deitada .vaza-pip { width: 14px; height: 9px; }
+        .barrinha-deitada .vaza-pip:first-child { border-radius: 4px 2px 2px 4px; }
+        .barrinha-deitada .vaza-pip:last-child { border-radius: 2px 4px 4px 2px; }
 
         .table { flex: 1 1 auto; position: relative; border-radius: 16px; border: 2px dashed var(--glass-border); display: flex; flex-direction: column; justify-content: space-between; padding: 15px; overflow: hidden; z-index: 10; }
 
@@ -471,6 +524,9 @@
         /* O pedido do parceiro (v0.15.3): numa linha quando cabe junto dos botões; senão
            o nome em cima, menor, e o pedido embaixo, como na notificação (encaixarPedido). */
         .static-info .pedido-quem, .static-info .pedido-acao { white-space: nowrap; }
+        /* Numa linha, o vão entre o nome e o pedido é o de um espaço comum: os 6 px da
+           caixa pareciam um espaço duplo (achado dele, v0.15.5). */
+        .static-info.pedido { gap: 0.27em; }
         .static-info.duas-linhas { flex-direction: column; gap: 1px; line-height: 1.15; text-align: center; }
         .static-info.duas-linhas .pedido-quem { font-size: 0.68rem; opacity: 0.85; }
 
@@ -523,8 +579,8 @@
         .hold-reset-fill { position: absolute; top: 0; left: 0; bottom: 0; width: 0%; background: rgba(239, 68, 68, 0.5); z-index: 0; pointer-events: none; }
         .hold-reset-btn span { position: relative; z-index: 1; }
 
-        #scr-end { position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; display: flex; align-items: center; justify-content: center; z-index: 200; flex-direction: column; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); opacity: 0; pointer-events: none; transition: opacity 0.8s ease, background 0.8s ease; }
-        #scr-end.show { opacity: 1; pointer-events: auto; }
+        #scr-end, #scr-apagar { position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; display: flex; align-items: center; justify-content: center; z-index: 200; flex-direction: column; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); opacity: 0; pointer-events: none; transition: opacity 0.8s ease, background 0.8s ease; }
+        #scr-end.show, #scr-apagar.show { opacity: 1; pointer-events: auto; }
         .end-win { background: rgba(16, 185, 129, 0.65); }
         .end-loss { background: rgba(239, 68, 68, 0.65); }
         .end-content { text-align: center; padding: 40px; background: var(--glass-bg); border-radius: 20px; border: 1px solid var(--glass-border); box-shadow: 0 25px 50px rgba(0,0,0,0.3); transform: translateY(20px); transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -535,7 +591,7 @@
                mais estreita que as outras janelas (pedido dele, v0.15.2). Nunca
                menos que elas: 400 px mais o preenchimento e a borda de uma janela. */
             min-width: calc(400px + 4rem + 2px); }
-        #scr-end.show .end-content { transform: translateY(0); }
+        #scr-end.show .end-content, #scr-apagar.show .end-content { transform: translateY(0); }
         .end-content h1 { font-size: 3rem; margin: 0 0 10px; text-shadow: 0 4px 10px rgba(0,0,0,0.3); }
         .end-content p { font-size: 1.1rem; margin-bottom: 30px; opacity: 0.9; text-wrap: balance; }
 
@@ -585,10 +641,9 @@
         .status-conexao.status-connecting .webrtc-status-dot { background: var(--warn); box-shadow: 0 0 6px var(--warn); animation: blink 1.2s infinite ease-in-out; }
         .status-conexao.status-success .webrtc-status-dot { background: var(--prim); box-shadow: 0 0 6px var(--prim); }
         .status-conexao.status-error .webrtc-status-dot { background: var(--dang); box-shadow: 0 0 6px var(--dang); }
-        /* Convidar Jogadores: os humanos que já estão na mesa e os que faltam. */
+        /* Convidar Jogadores: os humanos que já estão na mesa e os que faltam, na
+           barrinha deitada (uma parte por humano das Regras, verde quando entra). */
         .mesa-assentos { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.72rem; font-weight: bold; color: var(--txt-d); letter-spacing: 1px; margin: -6px 0 12px; text-transform: uppercase; }
-        .mesa-assentos .assento { width: 10px; height: 10px; border-radius: 50%; border: 1px solid var(--glass-border); background: rgba(0,0,0,0.2); }
-        .mesa-assentos .assento.cheio { background: var(--prim); border-color: var(--prim); box-shadow: 0 0 6px var(--prim); }
 
         #resume-banner { background: var(--btn-s-bg); border: 1px solid var(--prim); border-radius: 12px; padding: 12px; margin-bottom: 15px; font-size: 0.8rem; text-align: left; }
 
@@ -629,7 +684,7 @@
            inferior destacada (parada) e a cor de fundo da dificuldade. */
         body.lite-mode.theme-dark { --glass-bg: rgba(15, 23, 42, 0.94); }
         body.lite-mode.theme-light { --glass-bg: rgba(248, 250, 252, 0.94); }
-        body.lite-mode .panel, body.lite-mode .glass-panel, body.lite-mode .stadium-display, body.lite-mode #version-warn-banner, body.lite-mode #ghost-m-card, body.lite-mode #btn-hide-card, body.lite-mode #sync-ui, body.lite-mode #scr-end {
+        body.lite-mode .panel, body.lite-mode .glass-panel, body.lite-mode .stadium-display, body.lite-mode #version-warn-banner, body.lite-mode #ghost-m-card, body.lite-mode #btn-hide-card, body.lite-mode #sync-ui, body.lite-mode #scr-end, body.lite-mode #scr-apagar {
             backdrop-filter: none; -webkit-backdrop-filter: none;
         }
         body.lite-mode .panel, body.lite-mode .glass-panel, body.lite-mode #version-warn-banner, body.lite-mode .card, body.lite-mode .card.active-turn, body.lite-mode #deck-pile, body.lite-mode #ghost-m-card, body.lite-mode .end-content, body.lite-mode .vaza-pip.win, body.lite-mode .diff-btn.active, body.lite-mode .action-btn:hover, body.lite-mode .hud-container.notify-pos, body.lite-mode .hud-container.notify-neg, body.lite-mode .hud-container.notify-neu, body.lite-mode .hud-container.notify-sys, body.lite-mode.theme-dark #btn-hide-card.escondendo, body.lite-mode.theme-light #btn-hide-card.escondendo, body.lite-mode .status-conexao .webrtc-status-dot, body.lite-mode .mesa-assentos .assento.cheio {
@@ -710,6 +765,21 @@
         #stats-scroll::-webkit-scrollbar-track { background: transparent; }
         #stats-scroll::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 10px; border: 3px solid transparent; background-clip: padding-box; }
         #stats-scroll::-webkit-scrollbar-thumb:hover { background: var(--scroll-thumb-hov); background-clip: padding-box; }
+        /* Abas das Estatísticas (v0.15.5, pedido dele): SINGLE, PERFIL e MULTIPLAYER em
+           cima; as de baixo numa gaveta embaixo de SINGLE e de MULTIPLAYER, que abre e
+           fecha junto com a altura da janela (setStatsTab). A folga por dentro e a margem
+           negativa por fora deixam o botão marcado crescer e brilhar sem corte, como na
+           gaveta dos Parceiros; aberta, ela sobe um pouco pra ficar perto das de cima. */
+        /* Em coluna flex, as margens das duas gavetas somam em vez de se sobrepor: no
+           fluxo comum a gaveta de baixo ficava mais longe das abas de cima. */
+        #stats-head { display: flex; flex-direction: column; }
+        /* Fechada ela some de verdade (visibility): a folga deixava um pedaço das abas
+           de baixo "à vista" pro foco do teclado e do controle. Ao fechar, o sumiço
+           espera a animação acabar. */
+        .stats-gaveta { max-height: 0; overflow: hidden; opacity: 0; visibility: hidden; padding: 6px 20px 20px; margin: -6px -20px -20px; transition: max-height 0.35s cubic-bezier(0.16, 1, 0.3, 1), margin-top 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease, visibility 0s linear 0.35s; }
+        .stats-gaveta.aberta { max-height: 76px; opacity: 1; visibility: visible; margin-top: -13px; transition: max-height 0.35s cubic-bezier(0.16, 1, 0.3, 1), margin-top 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease, visibility 0s; }
+        .stats-gaveta .diff-btn { font-size: 0.7rem; white-space: nowrap; }
+        body.reduced-motion .stats-gaveta, body.reduced-motion .stats-gaveta.aberta { transition: none; }
 
         /* Opção ligada = botão verde, o mesmo sinal que o .choice-card.active
            já dava — usado no Modo Leve, dentro de Opções (v0.14.2). */
@@ -786,6 +856,7 @@
             
             #ui-turn { font-size: clamp(0.65rem, 2.5vw, 0.8rem); }
             .vaza-pip { width: 8px; height: 12px; }
+            .barrinha-deitada .vaza-pip { width: 12px; height: 8px; }
             #label-s0, #label-s1 { font-size: 0.62rem; }
             #ui-s0, #ui-s1 { font-size: 1.35rem; }
             
@@ -801,14 +872,72 @@
             #btn-hide-card { right: 5px; bottom: 5px; padding: 6px 10px; font-size: 0.7rem; }
             #sync-ui { left: 5px; bottom: 5px; padding: 6px 10px; font-size: 0.7rem; }
         }
+        /* O fim de cada partida do Arcade (v0.15.5, pedido dele): a fase e as vidas em
+           cima, o título pequeno (como o das Novidades), a Pontuação Total em destaque e
+           os detalhes embaixo, como as linhas das Estatísticas. No fim da Escalada o
+           título continua grande. */
+        #end-arcade-topo { display: flex; justify-content: center; align-items: center; gap: 10px; font-size: 0.8rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--txt-d); margin-bottom: 10px; }
+        .coracoes { color: var(--dang); letter-spacing: 2px; }
+        #end-arcade-topo .coracoes { font-size: 1.05rem; }
+        .coracoes .perdida { opacity: 0.35; }
+        /* A vida que o Chefe devolveu. */
+        .coracoes .devolvida { color: var(--warn); }
+        /* No fim de fase (teste, pedido dele), o título fica à esquerda e a Pontuação
+           Total à direita, do mesmo tamanho, com o rótulo pequeno embaixo do número, na
+           coluna dele (nunca embaixo do título). A letra acompanha a largura pra
+           "⚠️ ÚLTIMA CHANCE" e uma pontuação de 6 dígitos caberem numa linha (medido do
+           celular de 320 ao de 430 e no computador). */
+        #scr-end.arcade-fase .end-content { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 14px; align-items: baseline; }
+        #scr-end.arcade-fase #end-arcade { display: contents; }
+        #scr-end.arcade-fase #end-arcade-topo, #scr-end.arcade-fase #end-arcade-detalhes, #scr-end.arcade-fase .btn-stack { grid-column: 1 / -1; }
+        #scr-end.arcade-fase #end-title, #scr-end.arcade-fase #end-arcade-total { grid-row: 2; font-size: clamp(0.9rem, calc(6.9vw - 7px), 1.5rem); line-height: 1.2; }
+        #scr-end.arcade-fase #end-title { grid-column: 1; margin: 0; text-align: left; text-shadow: none; }
+        #scr-end.arcade-fase #end-arcade-total { grid-column: 2; justify-self: end; }
+        #scr-end.arcade-fase .end-arcade-rotulo { grid-row: 3; grid-column: 2; justify-self: end; white-space: nowrap; font-size: 0.65rem; font-weight: 700; letter-spacing: 0; text-transform: none; }
+        #scr-end.arcade-fase #end-arcade-detalhes { grid-row: 4; margin-bottom: 24px; }
+        /* Na grade, a margem automática encolhia os botões: a largura de sempre. */
+        #scr-end.arcade-fase .btn-stack { grid-row: 5; width: 100%; }
+        /* No fim da Escalada, o título numa linha só (pedido dele): a letra diminui o
+           quanto precisa (caberOTituloDoFim). Com largura 0 e mínima, o título ocupa a
+           janela sem alargá-la, e ela fica da largura das outras. Sem o subtexto (pedido
+           dele), o título avança 12 px sobre a folga de cada lado pra ficar um pouco
+           maior, e ganha distância da Pontuação Total. */
+        #scr-end.arcade-fim #end-title { white-space: nowrap; width: 0; min-width: calc(100% + 24px); margin: 0 -12px 18px; }
+        #end-arcade { margin: 0 auto 24px; max-width: 320px; }
+        .end-arcade-rotulo { font-size: 0.7rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--txt-d); }
+        #end-arcade-total { font-size: 2.6rem; font-weight: 900; line-height: 1.1; }
+        #end-arcade-recorde { font-size: 0.95rem; font-weight: 800; margin-top: 2px; }
+        #end-arcade-detalhes { margin-top: 12px; font-size: 0.85rem; text-align: left; }
+        #end-arcade-detalhes .soma { border-top: 1px solid var(--glass-border); margin-top: 4px; padding-top: 4px; }
+        /* Bancada do Arcade (v0.15.5): a tela de testes escondida (#arcade-teste). */
+        .bancada-dica { font-size: 0.8rem; color: var(--txt-d); text-align: center; margin: -6px 0 12px; text-wrap: balance; }
+        .bancada-info { font-size: 0.85rem; color: var(--txt-d); text-align: center; margin: 6px 0 10px; line-height: 1.4; }
+        .bancada-info b { color: var(--txt); }
+        /* O aviso do Abandonar: no tema claro o amarelo some no fundo claro. */
+        .bancada-alerta { color: var(--warn); font-weight: bold; }
+        body.theme-light .bancada-alerta { color: #a16207; }
+        .bancada-fases { font-size: 0.8rem; color: var(--txt-d); margin: 4px 0 12px; padding-left: 1.4em; line-height: 1.45; text-align: left; }
         /* Fim de jogo em tela baixa (celular deitado): título, espaços e botões
            mais compactos, pra caixa caber com folga em vez de rolar. */
         @media (max-height: 500px) {
             .end-content { padding: 20px 32px; }
             .end-content h1 { font-size: 2rem; margin-bottom: 4px; }
             .end-content p { margin: 8px 0 16px; }
-            #scr-end .btn-stack { gap: 8px; }
-            #scr-end .btn-stack button { padding: 10px; }
+            #scr-end .btn-stack, #scr-apagar .btn-stack { gap: 8px; }
+            #scr-end .btn-stack button, #scr-apagar .btn-stack button { padding: 10px; }
+            #end-arcade { margin-bottom: 14px; }
+            #end-arcade-total { font-size: 2rem; }
+            #end-arcade-detalhes { margin-top: 8px; }
+            #scr-end.arcade-fase #end-arcade-detalhes { margin-bottom: 14px; }
+        }
+        /* A janela do Apagar Dados (v0.15.5, pedido dele) é a da Tela de Fim de Jogo,
+           vermelha; o texto é longo, então a letra é um pouco menor. */
+        #scr-apagar .end-content p { font-size: 0.95rem; line-height: 1.45; }
+        /* E fica da largura das outras janelas (achado dele): o texto longo esticava a
+           caixa até a borda da tela nas telas grandes. */
+        #scr-apagar .end-content { max-width: calc(400px + 4rem + 2px); }
+        @media (max-width: 768px), (pointer: coarse) {
+            #scr-apagar .end-content { max-width: min(calc(400px + 2.5rem + 2px), calc(100% - 2 * var(--folga-lateral) - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px))); }
         }
 
         /* Nome na mesa (v0.15.3, desenho dele): a placa em pílula fica em cima da linha
@@ -822,15 +951,37 @@
         @media (max-width: 768px), (pointer: coarse) {
             .nome-mesa { font-size: 0.62rem; padding: 3px 9px; }
         }
+        /* As vidas do Arcade na placa de quem joga (v0.15.5): os corações um pouco maiores
+           que a letra das placas, que eles não têm texto do lado. */
+        .nome-mesa.placa-vidas { font-size: 0.9rem; padding: 1px 10px; }
+        @media (max-width: 768px), (pointer: coarse) {
+            .nome-mesa.placa-vidas { font-size: 0.74rem; padding: 2px 8px; }
+        }
         .nome-mesa.vez.aliado { color: var(--prim); border-color: rgba(16, 185, 129, 0.75); background: rgba(16, 185, 129, 0.16); box-shadow: 0 0 14px rgba(16, 185, 129, 0.35); }
         .nome-mesa.vez.rival { color: var(--dang); border-color: rgba(239, 68, 68, 0.75); background: rgba(239, 68, 68, 0.16); box-shadow: 0 0 14px rgba(239, 68, 68, 0.35); }
-        body.lite-mode .nome-mesa { backdrop-filter: none; -webkit-backdrop-filter: none; box-shadow: none; }
+        /* No Modo Leve a cor troca na hora, como no resto do jogo (troca de tema e
+           placa acendendo na vez); antes as placas trocavam suave ali (achado dele). */
+        body.lite-mode .nome-mesa { backdrop-filter: none; -webkit-backdrop-filter: none; box-shadow: none; transition: none; }
         /* Sem o vidro fosco, a cor da placa acesa ficava transparente (as cartas
            apareciam através dela): no Modo Leve ela vai por cima do --glass-bg, quase
            opaco, e sem o brilho (pedido dele). */
         body.lite-mode .nome-mesa.vez.aliado { background: linear-gradient(rgba(16, 185, 129, 0.16), rgba(16, 185, 129, 0.16)), var(--glass-bg); box-shadow: none; }
         body.lite-mode .nome-mesa.vez.rival { background: linear-gradient(rgba(239, 68, 68, 0.16), rgba(239, 68, 68, 0.16)), var(--glass-bg); box-shadow: none; }
         body.reduced-motion .nome-mesa { transition: none; }
+        /* O Chefe do Arcade (v0.15.5, escolha dele): a coroa no canto diz que é ele. Na
+           vez dele, a placa fica dourada no lugar do vermelho dos Rivais, com um brilho
+           dourado que respira devagar. No Movimento Reduzido o brilho fica parado; no
+           Modo Leve, sem brilho. */
+        .nome-mesa.chefe::before { content: '👑'; position: absolute; left: 0; top: 0; font-size: 1.4em; line-height: 1; transform: translate(-30%, -60%) rotate(-25deg); }
+        .nome-mesa.chefe.vez.rival { color: #eab308; border-color: rgba(234, 179, 8, 0.9); background: rgba(234, 179, 8, 0.16); box-shadow: 0 0 12px rgba(234, 179, 8, 0.6); animation: chefe-respira 2.6s ease-in-out infinite; }
+        /* No tema claro, o amarelo some no fundo claro. */
+        body.theme-light .nome-mesa.chefe.vez.rival { color: #a16207; }
+        @keyframes chefe-respira {
+            0%, 100% { box-shadow: 0 0 6px rgba(234, 179, 8, 0.35); }
+            50% { box-shadow: 0 0 16px rgba(234, 179, 8, 0.8); }
+        }
+        body.reduced-motion .nome-mesa.chefe.vez.rival { animation: none; }
+        body.lite-mode .nome-mesa.chefe.vez.rival { animation: none; box-shadow: none; background: linear-gradient(rgba(234, 179, 8, 0.16), rgba(234, 179, 8, 0.16)), var(--glass-bg); }
         /* MANILHA e VIRA também em cima da linha (ideia dele), centrados na carta da
            Manilha e no monte: só o texto, e a linha some atrás dele. A mesa ganha uma
            máscara com um furo na faixa da borda de cima pra cada texto; as pontas dos
@@ -876,6 +1027,20 @@
         </div>
     </div>
 
+    <!-- Verificador de Atualização (v0.15.5): desliza de baixo da janela da Tela Inicial. -->
+    <div id="atualizacao-gaveta" class="hidden" data-foco-da-tela="scr-start">
+        <div id="atualizacao-janela" class="glass-panel" role="status" aria-live="polite">
+            <div class="atualizacao-linha">
+                <span class="barrinha-deitada" id="atualizacao-barra"><span class="vaza-pip"></span><span class="vaza-pip"></span><span class="vaza-pip"></span></span>
+                <span id="atualizacao-texto">Verificando Atualizações...</span>
+            </div>
+            <div id="atualizacao-botoes" class="atualizacao-botoes hidden">
+                <button class="action-btn primary" id="btn-atualizacao-sim" onclick="acaoDaAtualizacao()">BAIXAR</button>
+                <button class="action-btn" id="btn-atualizacao-nao" onclick="agoraNaoAtualizacao()">AGORA NÃO</button>
+            </div>
+        </div>
+    </div>
+
     <div id="scr-options" class="panel hidden">
         <h2>OPÇÕES</h2>
         <div class="btn-stack">
@@ -889,7 +1054,14 @@
             <button class="btn-s options-divider" onclick="refreshStatsScreen(); nav('scr-options', 'scr-stats')">📊 ESTATÍSTICAS</button>
         </div>
         <button class="btn-s danger" data-nav-back style="width: 100%; margin-top: 15px;" onclick="nav('scr-options', 'scr-start')">VOLTAR</button>
-        <div id="options-version-tag"></div>
+        <div class="versao-container"><button id="btn-versao" class="btn-options btn-versao" disabled onclick="abrirNovidades()"></button></div>
+    </div>
+
+    <!-- Novidades (v0.15.5): o texto do Release desta versão, puxado do GitHub. -->
+    <div id="scr-novidades" class="panel hidden">
+        <div id="novidades-titulo" class="novidades-titulo"></div>
+        <div id="novidades-texto" class="novidades-texto" data-gp-scroll></div>
+        <button class="btn-s danger" data-nav-back style="width: 100%; margin-top: 15px;" onclick="nav('scr-novidades', 'scr-options')">VOLTAR</button>
     </div>
 
     <div id="scr-a11y" class="panel hidden">
@@ -1018,11 +1190,63 @@
         </div>
     </div>
 
+    <!-- Bancada do Arcade (v0.15.5, aprovada por ele): escondida, abre pelo endereço
+         #arcade-teste. É onde a preparação do Arcade é testada e balanceada, até o
+         menu do Arcade existir. -->
+    <div id="scr-arcade-bancada" class="panel hidden">
+        <h2>BANCADA DO ARCADE</h2>
+        <p id="bancada-dica" class="bancada-dica">Tela de testes, fora dos menus.</p>
+        <div id="bancada-corrida" class="hidden">
+            <div class="section-label">Escalada guardada</div>
+            <div id="bancada-corrida-info" class="bancada-info"></div>
+            <div id="bancada-corrida-botoes" class="btn-stack">
+                <button class="btn-p" onclick="bancadaContinuar()">CONTINUAR ESCALADA</button>
+                <button class="btn-s danger" onclick="bancadaAbandonar(false)">ABANDONAR ESCALADA</button>
+            </div>
+            <div id="bancada-confirmar" class="btn-stack hidden">
+                <div class="bancada-info bancada-alerta">Abandonar? Sua pontuação atual será salva, mas todo o progresso será perdido. Segure <span style="color: var(--dang);">SIM</span> por 3 segundos para confirmar.</div>
+                <div class="diff-selector">
+                    <button id="btn-bancada-sim" class="action-btn danger hold-reset-btn" style="flex: 1;"
+                        onpointerdown="holdResetPointerDown('btn-bancada-sim', true)" onpointerup="holdResetPointerUp()" onpointerleave="holdResetPointerLeave()" onpointercancel="holdResetPointerUp()">
+                        <div id="bancada-sim-fill" class="hold-reset-fill"></div>
+                        <span>SIM</span>
+                    </button>
+                    <button class="diff-btn" onclick="bancadaCancelar()">NÃO</button>
+                </div>
+            </div>
+        </div>
+        <div id="bancada-nova">
+            <div class="section-label">Região</div>
+            <div class="diff-selector">
+                <button class="diff-btn active" id="btn-bancada-paulista" onclick="bancadaRegiao('paulista')">PAULISTA</button>
+                <button class="diff-btn" id="btn-bancada-mineiro" onclick="bancadaRegiao('mineiro')">MINEIRO</button>
+                <button class="diff-btn" id="btn-bancada-goiano" onclick="bancadaRegiao('goiano')">GOIANO</button>
+            </div>
+            <div class="section-label">Dificuldade de Escalada</div>
+            <div class="diff-selector" style="flex-wrap: wrap;">
+                <button class="diff-btn facil" id="btn-bancada-facil" onclick="bancadaEscalada('facil')">FÁCIL</button>
+                <button class="diff-btn active" id="btn-bancada-normal" onclick="bancadaEscalada('normal')">NORMAL</button>
+                <button class="diff-btn dificil" id="btn-bancada-dificil" onclick="bancadaEscalada('dificil')">DIFÍCIL</button>
+                <button class="diff-btn insano" id="btn-bancada-insano" onclick="bancadaEscalada('insano')">INSANO</button>
+            </div>
+            <div class="diff-selector">
+                <button class="diff-btn mestre" id="btn-bancada-mestre" onclick="bancadaEscalada('mestre')">MESTRE</button>
+            </div>
+            <div id="bancada-escalada-info" class="bancada-info"></div>
+            <div class="section-label">Fases de teste</div>
+            <ul id="bancada-fases" class="bancada-fases"></ul>
+            <div class="btn-stack rules-actions">
+                <button class="btn-p" onclick="bancadaComecar()">COMEÇAR ESCALADA</button>
+            </div>
+        </div>
+        <button class="btn-s danger" data-nav-back style="width: 100%; margin-top: 15px;" onclick="nav('scr-arcade-bancada', 'scr-start')">VOLTAR</button>
+    </div>
+
     <div id="scr-local-choice" class="panel hidden">
         <h2>MULTIPLAYER LOCAL</h2>
 
         <div class="section-label">Seu Nickname:</div>
-        <input type="text" id="local-nick" maxlength="15" placeholder="Seu Nickname" style="padding: 8px; border-radius: 8px; border: 1px solid var(--glass-border); background: var(--btn-s-bg); color: var(--txt); width: 100%; box-sizing: border-box; text-align: center; font-weight: bold; margin-bottom: 15px;">
+        <input type="text" id="local-nick" data-gp-nao-comeca maxlength="15" placeholder="Seu Nickname" style="padding: 8px; border-radius: 8px; border: 1px solid var(--glass-border); background: var(--btn-s-bg); color: var(--txt); width: 100%; box-sizing: border-box; text-align: center; font-weight: bold; margin-bottom: 15px;">
 
         <div class="section-label">Como deseja conectar?</div>
         <div class="btn-stack">
@@ -1194,7 +1418,7 @@
         <h2>MULTIPLAYER ONLINE</h2>
 
         <div class="section-label">Seu Nickname:</div>
-        <input type="text" id="ws-nick" maxlength="15" placeholder="Seu Nickname" style="padding: 8px; border-radius: 8px; border: 1px solid var(--glass-border); background: var(--btn-s-bg); color: var(--txt); width: 100%; box-sizing: border-box; text-align: center; font-weight: bold; margin-bottom: 15px;">
+        <input type="text" id="ws-nick" data-gp-nao-comeca maxlength="15" placeholder="Seu Nickname" style="padding: 8px; border-radius: 8px; border: 1px solid var(--glass-border); background: var(--btn-s-bg); color: var(--txt); width: 100%; box-sizing: border-box; text-align: center; font-weight: bold; margin-bottom: 15px;">
 
         <div class="btn-stack">
             <button class="choice-card" disabled>
@@ -1287,10 +1511,22 @@
             <h2>ESTATÍSTICAS</h2>
 
             <div class="diff-selector">
+                <button class="diff-btn" id="tab-stats-single" onclick="setStatsTab('single')">SINGLE</button>
                 <button class="diff-btn active" id="tab-stats-perfil" onclick="setStatsTab('perfil')">PERFIL</button>
-                <button class="diff-btn" id="tab-stats-sp" onclick="setStatsTab('sp')">SINGLE</button>
-                <button class="diff-btn" id="tab-stats-mpOnline" onclick="setStatsTab('mpOnline')">ONLINE</button>
-                <button class="diff-btn" id="tab-stats-mpLocal" onclick="setStatsTab('mpLocal')">LOCAL</button>
+                <button class="diff-btn" id="tab-stats-multi" onclick="setStatsTab('multi')">MULTIPLAYER</button>
+            </div>
+            <div class="stats-gaveta" id="stats-gaveta-single">
+                <div class="diff-selector">
+                    <button class="diff-btn" id="tab-stats-arcade" onclick="setStatsTab('arcade')">ARCADE</button>
+                    <!-- O GERAL é o Personalizado e o Jogo Rápido (nome dele, v0.15.5). -->
+                    <button class="diff-btn" id="tab-stats-sp" onclick="setStatsTab('sp')">GERAL</button>
+                </div>
+            </div>
+            <div class="stats-gaveta" id="stats-gaveta-multi">
+                <div class="diff-selector">
+                    <button class="diff-btn" id="tab-stats-mpOnline" onclick="setStatsTab('mpOnline')">ONLINE</button>
+                    <button class="diff-btn" id="tab-stats-mpLocal" onclick="setStatsTab('mpLocal')">LOCAL</button>
+                </div>
             </div>
         </div>
 
@@ -1302,11 +1538,7 @@
         </div>
 
         <div id="stats-foot">
-            <button id="btn-reset-stats" class="action-btn danger hold-reset-btn"
-                onpointerdown="holdResetPointerDown()" onpointerup="holdResetPointerUp()" onpointerleave="holdResetPointerUp()" onpointercancel="holdResetPointerUp()">
-                <div id="reset-stats-fill" class="hold-reset-fill"></div>
-                <span>🗑️ APAGAR DADOS SALVOS</span>
-            </button>
+            <button id="btn-apagar-dados" class="action-btn danger" style="width: 100%; justify-content: center;" onclick="abrirApagarDados()">🗑️ APAGAR DADOS SALVOS</button>
 
             <button class="btn-s danger" data-nav-back style="width: 100%;" onclick="nav('scr-stats', 'scr-options')">VOLTAR</button>
         </div>
@@ -1434,12 +1666,37 @@
 
     <div id="scr-end">
         <div class="end-content">
+            <!-- No Arcade (v0.15.5, pedido dele), a primeira coisa da janela: a fase e as vidas. -->
+            <div id="end-arcade-topo" class="hidden"></div>
             <h1 id="end-title">🏆 PARABÉNS!</h1>
             <p id="end-msg">Você venceu a partida!</p>
+            <!-- A Pontuação Total em destaque e, embaixo, o que deu mais ou menos pontos. -->
+            <div id="end-arcade" class="hidden">
+                <div class="end-arcade-rotulo">Pontuação total</div>
+                <div id="end-arcade-total"></div>
+                <div id="end-arcade-recorde" class="hidden">🏆 Novo recorde!</div>
+                <div id="end-arcade-detalhes"></div>
+            </div>
             <div class="btn-stack" style="max-width: 250px; margin: 0 auto;">
-                <button class="btn-p" style="background: var(--prim); color: white;" onclick="playAgain()">JOGAR NOVAMENTE</button>
+                <button id="btn-end-again" class="btn-p" style="background: var(--prim); color: white;" onclick="playAgain()">JOGAR NOVAMENTE</button>
+                <button id="btn-end-arcade" class="btn-p hidden" style="background: var(--prim); color: white;" onclick="seguirEscalada()">PRÓXIMA FASE</button>
                 <button class="btn-s hidden" id="btn-end-reroll" onclick="rerollQuickGame()">🎲 SORTEAR NOVAMENTE</button>
                 <button class="btn-s" onclick="location.reload()">MENU PRINCIPAL</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="scr-apagar" class="end-loss" role="dialog" aria-modal="true" aria-labelledby="apagar-titulo">
+        <div class="end-content">
+            <h1 id="apagar-titulo">TEM CERTEZA?</h1>
+            <p>Você vai perder o progresso e desbloqueios dos modos Single Player, todas as suas Estatísticas, recordes, configurações e seus nomes definidos nos modos Multiplayer. Para apagar <b>DEFINITIVAMENTE</b>, segure o botão por 5 segundos.</p>
+            <div class="btn-stack" style="max-width: 250px; margin: 0 auto;">
+                <button id="btn-reset-stats" class="action-btn danger hold-reset-btn" data-gp-nao-comeca
+                    onpointerdown="holdResetPointerDown(null, true)" onpointerup="holdResetPointerUp()" onpointerleave="holdResetPointerLeave()" onpointercancel="holdResetPointerUp()">
+                    <div id="reset-stats-fill" class="hold-reset-fill"></div>
+                    <span>APAGAR</span>
+                </button>
+                <button class="btn-s" data-nav-back onclick="fecharApagarDados()">VOLTAR</button>
             </div>
         </div>
     </div>
@@ -1451,7 +1708,7 @@
         var SUITS = ['♦', '♠', '♥', '♣']; 
         var VALS_SUJO = ['4', '5', '6', '7', 'Q', 'J', 'K', 'A', '2', '3'];
         var VALS_LIMPO = ['Q', 'J', 'K', 'A', '2', '3'];
-        var APP_VERSION = '0.15.3';
+        var APP_VERSION = '0.15.5';
 
         // ═══════════════════════════════════════════════════════════════
         // FORMATO DE `st` (estado sincronizado entre jogadores)
@@ -1524,6 +1781,10 @@
             document.getElementById(f).classList.add('hidden');
             document.getElementById(t).classList.remove('hidden');
             assumirRegrasDaTela(t);
+            // O Verificador de Atualização só roda com a Tela Inicial à vista, e as
+            // Novidades são pedidas quando as Opções aparecem (v0.15.5).
+            acompanharTelaInicial();
+            if (t === 'scr-options') buscarNovidades();
         };
 
         function getEl(id) { return document.getElementById(id); }
@@ -1646,13 +1907,20 @@
         // jogador já sabe que escolheu o Jogo Rápido). A primeira jogada da IA espera
         // o aviso acabar: a notificação troca a mensagem atual pela próxima, sem
         // fila, e um "Pediu truco!" do parceiro logo de cara cortaria o aviso no meio.
+        // As fases do Arcade abrem com o mesmo aviso (Roadmap v0.15.5); quando os
+        // Parceiros jogam noutra Dificuldade, ele diz as duas.
         var avisoAte = 0;
         function avisarSorteio() {
             var formato = { '1v1': '1 X 1', '2v2': 'DUPLAS', '3v3': 'TRIOS' }[st.gameFormat] || st.gameFormat;
-            var embaixo = [];
+            var embaixo = [], rotulo = function(d) { return String(DIFF_LABELS[d] || '').toUpperCase(); };
             if (st.parceiros) embaixo.push('DINÂMICOS: ' + st.parceiros.toUpperCase());
-            embaixo.push(String(DIFF_LABELS[aiDifficulty] || '').toUpperCase());
-            var dur = 3600;
+            if (st.difParceiros) {
+                var parc = botsDoTime(getTeam(1));
+                var quem = parc.length > 1 ? (grupoFeminino(parc) ? 'PARCEIRAS ' : 'PARCEIROS ') : (botFeminino(parc[0]) ? 'PARCEIRA ' : 'PARCEIRO ');
+                embaixo.push('RIVAIS ' + rotulo(aiDifficulty), quem + rotulo(st.difParceiros));
+            } else embaixo.push(rotulo(aiDifficulty));
+            // 5 s no Ritmo Padrão (eram 3,6 s; pedido dele na v0.15.5, e vai servir pras fases do Arcade).
+            var dur = 5000;
             showMsg({ quem: formato + ' | BARALHO ' + (st.deckMode === 'limpo' ? 'LIMPO' : 'SUJO'), texto: embaixo.join(' | ') }, 'sys', dur);
             avisoAte = Date.now() + Math.round(dur * paceScale());
         }
@@ -1775,7 +2043,10 @@
         // como convidado; desistência não conta). Até lá o botão diz quantas faltam.
         var ADAPTATIVA_PARTIDAS = 10;
         function partidasTerminadas() {
-            var buckets = loadStats().buckets || {}, total = 0;
+            // As do Arcade contam também, comuns e especiais (decisão dele, v0.15.5): são
+            // partidas terminadas.
+            var arcade = carregarArcade().buckets, total = 0;
+            var buckets = Object.assign({}, loadStats().buckets || {}, { arcade: arcade.arcade, arcadeEspecial: arcade.arcadeEspecial });
             Object.keys(buckets).forEach(function(k) {
                 var byConfig = (buckets[k] && buckets[k].byConfig) || {};
                 Object.keys(byConfig).forEach(function(c) { total += (byConfig[c].w || 0) + (byConfig[c].l || 0); });
@@ -2018,13 +2289,18 @@
         // Cada bot da partida ganha gênero e nome, sem repetir nome na partida. Só no
         // Single Player; o Jogar Novamente é revanche e mantém os nomes (decisão dele).
         // Lista curta (depois de uma mudança na planilha): nome do mesmo gênero de outra
-        // Dificuldade; ainda faltando, do outro gênero.
-        function sortearBots() {
+        // Dificuldade; ainda faltando, do outro gênero. Numa fase do Arcade, os nomes
+        // fixos dela entram primeiro, e cada bot sorteado sai da lista da Dificuldade do
+        // time dele (os Parceiros podem jogar noutra, v0.15.5).
+        function sortearBots(fixos) {
             st.bots = null;
             if (gameMode !== 'pc') return;
-            var bots = {}, usados = {}, dif = String(aiDifficulty);
+            var bots = {}, usados = {};
+            Object.keys(fixos || {}).forEach(function(p) { if (fixos[p] && fixos[p].nome) usados[fixos[p].nome] = true; });
             for (var p = 1; p <= getNumPlayers(); p++) {
                 if (isHumanSeat(p)) continue;
+                if (fixos && fixos[p] && fixos[p].nome) { bots[p] = { nome: fixos[p].nome, fem: !!fixos[p].fem }; continue; }
+                var dif = String(dificuldadeDe(p));
                 var fem = sorteDosNomes() < CHANCE_FEMININA, g = fem ? 'f' : 'm';
                 var nome = escolherNome(g, dif, usados) || escolherNome(g, null, usados);
                 if (!nome) { fem = !fem; g = fem ? 'f' : 'm'; nome = escolherNome(g, dif, usados) || escolherNome(g, null, usados); }
@@ -2088,6 +2364,8 @@
         function getTeam(pid) { if(!pid || pid === 0) return 0; return (pid % 2 === 1) ? 1 : 2; }
         function getOppTeam(team) { return team === 1 ? 2 : 1; }
         function getNumPlayers() { return FORMAT_SEATS[st.gameFormat] || 2; }
+        // A mão completa na mesa, esperando ser decidida.
+        function mesaCheia() { return st.table.length >= getNumPlayers(); }
         function getNextTurn(curr) { return (curr % getNumPlayers()) + 1; }
 
         // Mapa de posições visuais por número de assentos, sempre no sentido
@@ -2173,6 +2451,50 @@
         // togglePauseMenu/requestExit/cancelExit logo abaixo.
         var isPaused = false;
 
+        // Pausa (v0.15.5, pedido dele). No Single Player ela é de verdade: o menu abre a
+        // qualquer momento, e a jogada ou decisão de um bot que chegar com ele aberto fica
+        // guardada até o menu fechar (a mesa, a distribuição e os avisos seguem). No
+        // Multiplayer o jogo segue pros outros, então o menu continua abrindo só fora das
+        // animações, e na sua vez a Barra Superior deles diz que você está nos menus.
+        var botsEsperando = [];
+        function botEsperaAPausa(fn) {
+            if (!(gameMode === 'pc' && isPaused)) return false;
+            botsEsperando.push(fn);
+            return true;
+        }
+        function entrarNaPausa() {
+            fixarAviso(gameMode === 'pc' ? 'Jogo Pausado' : 'Menu de Pausa', 'sys');
+            marcarVezNosMenus();
+        }
+        function sairDaPausa() {
+            soltarAviso();
+            marcarVezNosMenus();
+            var fila = botsEsperando; botsEsperando = [];
+            fila.forEach(function(fn) { fn(); });
+        }
+        // A partida acabou com o menu aberto: o que estava esperando não vale mais.
+        function esquecerAPausa() {
+            if (!isPaused) return;
+            isPaused = false; botsEsperando = [];
+            getEl('action-bar').classList.remove('pause-zone', 'exit-zone');
+            soltarAviso();
+        }
+        // No Multiplayer, só na própria vez e com a mesa esperando a jogada: aí ninguém
+        // mais está agindo, e mandar o estado não atropela a jogada de outro. A marca
+        // leva a rodada e a posição da mesa, então perde a validade sozinha na jogada
+        // seguinte (até se o lugar passar pra IA).
+        function marcaDaVez(pid) { return pid + '|' + st.roundId + '|' + st.trickResults.length + '|' + st.table.length; }
+        function marcarVezNosMenus() {
+            if (gameMode === 'pc' || myPID === 0) return;
+            var esperandoMim = st.turn === myPID && !animLock && st.trucoState === 'none' && st.table.length < getNumPlayers();
+            var marca = isPaused && esperandoMim ? marcaDaVez(myPID) : '';
+            if ((st.vezNosMenus || '') === marca) return;
+            if (!marca && st.vezNosMenus !== marcaDaVez(myPID)) return; // a marca é de outro (ou já venceu)
+            st.vezNosMenus = marca;
+            autoSave();
+        }
+        function estaNosMenus(pid) { return gameMode !== 'pc' && pid !== myPID && isHumanSeat(pid) && st.vezNosMenus === marcaDaVez(pid); }
+
         window.toggleHide = function() {
             if(animLock || st.turn !== myPID || st.trucoState !== 'none' || st.isMaoDeX || st.maoDeFerro || isPaused) return;
             
@@ -2209,7 +2531,8 @@
         // estado desatualizado caso algo tenha mudado — ex: a IA pediu Truco —
         // enquanto o menu estava aberto). De qualquer outro estado, abre o menu.
         window.togglePauseMenu = function() {
-            if(animLock && st.trucoState !== 'mao11') return;
+            if (animLock && st.trucoState !== 'mao11' && gameMode !== 'pc') return;
+            if (getEl('scr-end').classList.contains('show')) return;
             var actionBar = getEl('action-bar');
 
             if (getEl('grp-confirm-exit').classList.contains('active')) {
@@ -2223,6 +2546,7 @@
                 isPaused = false;
                 actionBar.classList.remove('pause-zone');
                 updateUI();
+                sairDaPausa();
                 return;
             }
 
@@ -2231,6 +2555,7 @@
             actionBar.classList.add('pause-zone');
             setBottomGroup('grp-pause-menu');
             updateUI();
+            entrarNaPausa();
         };
 
         // Só chamado pelo botão SAIR de dentro do Menu de Pausa.
@@ -2313,6 +2638,9 @@
         function getActiveMenuScreen() {
             var endScr = getEl('scr-end');
             if (endScr && endScr.classList.contains('show')) return endScr;
+            // A janela do Apagar Dados (v0.15.5) fica por cima das Estatísticas.
+            var apagar = getEl('scr-apagar');
+            if (apagar && apagar.classList.contains('show')) return apagar;
             var panels = document.querySelectorAll('.panel');
             for (var i = 0; i < panels.length; i++) { if (!panels[i].classList.contains('hidden')) return panels[i]; }
             return null;
@@ -2321,7 +2649,10 @@
 
         function getFocusableList(screen) {
             if (!screen) return [];
-            var candidates = screen.querySelectorAll('button, input, textarea');
+            var candidates = Array.prototype.slice.call(screen.querySelectorAll('button, input, textarea'));
+            // O que mora fora da janela, mas é dela: a janela de atualização embaixo da
+            // Tela Inicial (v0.15.5).
+            if (screen.id) candidates = candidates.concat(Array.prototype.slice.call(document.querySelectorAll('[data-foco-da-tela="' + screen.id + '"] button')));
             var list = [];
             for (var i = 0; i < candidates.length; i++) { if (isReallyVisible(candidates[i])) list.push(candidates[i]); }
             return list;
@@ -2366,7 +2697,7 @@
                 // Segurança extra pro bug do botão de apagar dados: se o foco
                 // sai dele por QUALQUER motivo (troca de tela, navegação),
                 // cancela um hold em andamento em vez de deixar preso.
-                if (gpFocusedEl.id === 'btn-reset-stats') cancelHoldReset();
+                if (eBotaoDeSegurar(gpFocusedEl)) cancelHoldReset();
             }
             gpFocusedEl = el || null;
             if (gpFocusedEl) {
@@ -2447,9 +2778,12 @@
         // linha centraliza o gate de animLock que antes estava espalhado
         // (handleGameKey, gpInGameGateOpen, keydown) num lugar só.
         function getInGameFocusRows() {
-            if (animLock && st.trucoState !== 'mao11') return [];
+            // O Menu de Pausa vem antes da trava: no Single Player ele abre até no meio
+            // da jogada dos bots (v0.15.5), e no Multiplayer a mesa pode travar com ele
+            // aberto, por uma jogada de outro.
             if (getEl('grp-confirm-exit').classList.contains('active')) return [collectVisibleButtons([getEl('grp-confirm-exit')])];
             if (isPaused) return [collectVisibleButtons([getEl('btn-theme-pause'), getEl('grp-pause-menu')])];
+            if (animLock && st.trucoState !== 'mao11') return [];
             if (getEl('grp-confirm-fold').classList.contains('active')) return [collectVisibleButtons([getEl('grp-confirm-fold')])];
             if (st.trucoState === 'partner_fold') return ehMeuParceiro(st.partnerFoldPid) ? [collectVisibleButtons([getEl('grp-partner-fold')])] : [];
             if (st.trucoState === 'partner_ask') return st.partnerAsk && ehMeuParceiro(st.partnerAsk.pid) ? [collectVisibleButtons([getEl('grp-partner-ask')])] : [];
@@ -2486,7 +2820,12 @@
                 setGpFocus(first[Math.min(gpLastCardIdx, first.length - 1)]);
                 return;
             }
-            setGpFocus(first[0]);
+            // Nas telas com o apelido, quem chega pelo teclado ou controle começa na
+            // primeira opção abaixo da caixa (v0.15.5, pedido dele); a caixa continua
+            // a uma seta pra cima. Com mouse ou toque, nada muda.
+            var r = 0;
+            while (gpFocusVisible && r < rows.length - 1 && rows[r][0].hasAttribute('data-gp-nao-comeca')) r++;
+            setGpFocus(rows[r][0]);
         }
 
         function moveMenuFocus(dir) {
@@ -2510,7 +2849,7 @@
         // o índice pela posição atual na mão em vez de disparar clique.
         function confirmMenuFocus() {
             if (!gpFocusedEl) return;
-            if (gpFocusedEl.id === 'btn-reset-stats') { window.holdResetPointerDown(); return; }
+            if (eBotaoDeSegurar(gpFocusedEl)) { window.holdResetPointerDown(gpFocusedEl.id); return; }
             if (gpFocusedEl.classList.contains('card')) {
                 var idx = Array.from(getHandCardEls()).indexOf(gpFocusedEl);
                 // Pelo mesmo caminho do toque: com Confirmar Jogada ligado, o
@@ -2521,7 +2860,7 @@
             if (typeof gpFocusedEl.click === 'function') gpFocusedEl.click();
         }
         function releaseMenuFocusHold() {
-            if (gpFocusedEl && gpFocusedEl.id === 'btn-reset-stats') window.holdResetPointerUp();
+            if (eBotaoDeSegurar(gpFocusedEl)) window.holdResetPointerUp();
         }
 
         // Prioridade: aviso de versão ativo fecha primeiro (B/Escape também
@@ -2565,7 +2904,7 @@
             spModesResizeTimer = setTimeout(calibrateSpOtherModesHeight, 150);
         });
 
-        document.querySelectorAll('.panel, #scr-game, #scr-end').forEach(function(el) {
+        document.querySelectorAll('.panel, #scr-game, #scr-end, #scr-apagar').forEach(function(el) {
             new MutationObserver(function() { refreshMenuFocus(); calibrateSpOtherModesHeight(); }).observe(el, { attributes: true, attributeFilter: ['class'] });
         });
 
@@ -2616,7 +2955,10 @@
             // de COMO a partida tinha acabado (v0.14.1).
             var endScr = getEl('scr-end');
             var onEndScreen = !!endScr && endScr.classList.contains('show');
-            if (!onEndScreen && isInGameScreen() && animLock && st.trucoState !== 'mao11') return;
+            // O Menu de Pausa passa pela trava: aberto, ele navega mesmo com a mesa
+            // travada, e no Single Player o Esc o abre até na jogada dos bots (v0.15.5).
+            var peloMenuDePausa = isPaused || (gameMode === 'pc' && e.key === 'Escape');
+            if (!onEndScreen && isInGameScreen() && animLock && st.trucoState !== 'mao11' && !peloMenuDePausa) return;
             if (!onEndScreen && isInGameScreen() && e.key.toUpperCase() === 'E') {
                 if (st.turn === myPID && st.trucoState === 'none' && !getEl('btn-hide-card').hasAttribute('disabled')) toggleHide();
                 e.preventDefault();
@@ -2629,8 +2971,28 @@
         // ideia dele): quem fala ou o assunto pequeno em cima, o que diz maior
         // embaixo. Sem quem, uma linha só.
         function showMsg(m, type, durOverride) {
+            desenharAviso(m, type);
+            var duration = Math.round((durOverride || 1300) * paceScale());
+            msgTimeout = setTimeout(function() {
+                msgTimeout = null;
+                if (avisoFixo) desenharAviso(avisoFixo.m, avisoFixo.type);
+                else esconderAviso();
+            }, duration);
+        }
+        // O aviso que fica (v0.15.5): o "Jogo Pausado" (ou "Menu de Pausa", no
+        // Multiplayer) enquanto o menu está aberto. Um aviso comum que chegar no meio
+        // passa por cima e, quando acaba, o fixo volta.
+        var avisoFixo = null;
+        function fixarAviso(m, type) { avisoFixo = { m: m, type: type }; desenharAviso(m, type); }
+        function soltarAviso() {
+            if (!avisoFixo) return;
+            avisoFixo = null;
+            if (!msgTimeout) esconderAviso();
+        }
+        function esconderAviso() { getEl('main-hud').classList.remove('show-msg', 'notify-pos', 'notify-neg', 'notify-neu', 'notify-sys'); }
+        function desenharAviso(m, type) {
             var hud = getEl('main-hud'); var display = getEl('stadium-text');
-            clearTimeout(msgTimeout);
+            clearTimeout(msgTimeout); msgTimeout = null;
             hud.classList.remove('show-msg', 'notify-pos', 'notify-neg', 'notify-neu', 'notify-sys');
             void hud.offsetWidth;
             var aviso = typeof m === 'object' ? m : { texto: m };
@@ -2643,9 +3005,6 @@
             else { hud.classList.add('notify-neu'); display.style.color = 'var(--warn)'; }
             hud.classList.add('show-msg');
             caberNaLinha(texto);
-
-            var duration = Math.round((durOverride || 1300) * paceScale());
-            msgTimeout = setTimeout(function() { hud.classList.remove('show-msg', 'notify-pos', 'notify-neg', 'notify-neu', 'notify-sys'); }, duration);
         }
         function linhaDoAviso(classe, texto) { var el = document.createElement('div'); el.className = classe; el.textContent = texto; return el; }
         // A linha de baixo não quebra: se não cabe, a letra diminui até ~0,78rem, e
@@ -2721,6 +3080,7 @@
         function escreverPedido(id, quem, acao) {
             var el = getEl(id);
             if (!el) return;
+            el.classList.add('pedido');
             if (el.dataset.pedido !== quem + '|' + acao) {
                 el.dataset.pedido = quem + '|' + acao;
                 el.textContent = '';
@@ -2783,7 +3143,7 @@
         var RECENT_SHOW = 10;   // outra janela depois sem precisar recoletar
         function statsBucketFor() {
             if (myPID === 0) return null; // espectador não joga
-            if (gameMode === 'pc') return 'sp';
+            if (gameMode === 'pc') return st.arcade ? (st.arcade.especial ? 'arcadeEspecial' : 'arcade') : 'sp';
             if (gameMode === 'ws') return 'mpOnline';
             if (gameMode === 'json' || gameMode === 'webrtc') return 'mpLocal';
             return null;
@@ -2798,6 +3158,28 @@
         function saveStats(data) {
             try { localStorage.setItem('trucoStatsV2', JSON.stringify(data)); } catch(e) {}
         }
+        // O Arcade (v0.15.5) guarda numa chave própria, como a Ficha: uma versão antiga
+        // aberta no mesmo navegador regrava a trucoStatsV2 inteira e apagaria o balde que
+        // não conhece. Dentro, os baldes têm o formato dos outros (byConfig + recent):
+        // 'arcade' guarda as partidas comuns, que entram no Perfil, e 'arcadeEspecial'
+        // as especiais (decisão dele: ver partidaEspecial). Ao lado fica o que é só do
+        // Arcade, o que a aba ARCADE mostra (htmlDoArcade).
+        var ARCADE_CHAVE = 'trucoArcadeV1';
+        function carregarArcade() {
+            var d = null;
+            try { d = JSON.parse(localStorage.getItem(ARCADE_CHAVE)); } catch(e) {}
+            if (!d || d.v !== 1) d = { v: 1 };
+            d.buckets = d.buckets || {}; d.escaladas = d.escaladas || {}; d.chefes = d.chefes || {};
+            d.fasesVencidas = d.fasesVencidas || 0; d.vidasPerdidas = d.vidasPerdidas || 0;
+            d.vidasDevolvidas = d.vidasDevolvidas || 0; d.feitos = d.feitos || {}; d.ultimas = d.ultimas || [];
+            return d;
+        }
+        function salvarArcade(d) {
+            try { localStorage.setItem(ARCADE_CHAVE, JSON.stringify(d)); } catch(e) {}
+        }
+        function baldeDoArcade(bucket) { return bucket === 'arcade' || bucket === 'arcadeEspecial'; }
+        function dadosDoBalde(bucket) { return baldeDoArcade(bucket) ? carregarArcade() : loadStats(); }
+        function salvarDoBalde(bucket, dados) { if (baldeDoArcade(bucket)) salvarArcade(dados); else saveStats(dados); }
         // Chave de configuração na MESMA ordem em que o jogador escolhe as
         // regras (região, mesa, baralho, dificuldade). Até a v0.14.2 era
         // formato|regiao|dificuldade, sem o baralho: registros antigos
@@ -2830,12 +3212,12 @@
         function mutateStats(fn) {
             var bucket = statsBucketFor();
             if (!bucket) return;
-            var data = loadStats();
+            var data = dadosDoBalde(bucket);
             var b = statsBucketOf(data, bucket);
             var key = statsKey();
             if (!b.byConfig[key]) b.byConfig[key] = emptyStatsRecord();
             fn(b.byConfig[key], b);
-            saveStats(data);
+            salvarDoBalde(bucket, data);
         }
         // Margem da partida do MEU ponto de vista. Espectador (myPID 0) não
         // grava estatística, mas a referência cai no assento 1 pelo mesmo
@@ -2873,7 +3255,8 @@
             if (!isInGameScreen() || matchResultRecorded) return;
             mutateStats(function(rec) { rec.quit = (rec.quit || 0) + 1; rec.streak = 0; });
         }
-        window.confirmExitGame = function() { recordQuit(); location.reload(); };
+        // No Arcade, sair não é desistir: a Escalada fica guardada onde estava (v0.15.5).
+        window.confirmExitGame = function() { if (!st.arcade) recordQuit(); location.reload(); };
 
         // ---- Taxa de acerto ao trucar: julgada pelo DESFECHO DA MÃO ----
         // Responder "aceitei/corri" na hora diz pouco: quem truca e leva um
@@ -2956,18 +3339,49 @@
             return out.join(' · ');
         }
 
-        // Aba ativa da tela de Estatísticas (só estado de UI, não é salvo).
-        var STATS_TABS = ['perfil', 'sp', 'mpOnline', 'mpLocal'];
+        // Aba ativa da tela de Estatísticas (só estado de UI, não é salvo). Desde a
+        // v0.15.5 SINGLE e MULTIPLAYER são grupos com abas embaixo; tocar no grupo
+        // volta pra última aba de baixo usada nele (da primeira vez, a primeira com
+        // partidas fora do Arcade: o Geral, que é o Personalizado e o Rápido, e o Online).
+        var STATS_TABS = ['perfil', 'arcade', 'sp', 'mpOnline', 'mpLocal'];
+        var STATS_GRUPOS = { single: ['arcade', 'sp'], multi: ['mpOnline', 'mpLocal'] };
+        var statsUltimaDoGrupo = { single: 'sp', multi: 'mpOnline' };
         var statsTab = 'perfil';
+        function grupoDaAba(tab) {
+            return Object.keys(STATS_GRUPOS).filter(function(g) { return STATS_GRUPOS[g].indexOf(tab) !== -1; })[0] || null;
+        }
+        function abrirGavetaDasAbas(grupo, suave) {
+            Object.keys(STATS_GRUPOS).forEach(function(g) {
+                var gaveta = getEl('stats-gaveta-' + g);
+                if (!gaveta) return;
+                if (!suave) gaveta.style.transition = 'none';
+                gaveta.classList.toggle('aberta', g === grupo);
+                if (!suave) { void gaveta.offsetHeight; gaveta.style.transition = ''; }
+            });
+        }
         window.setStatsTab = function(tab) {
+            if (STATS_GRUPOS[tab]) tab = statsUltimaDoGrupo[tab];
+            var grupo = grupoDaAba(tab), grupoAntes = grupoDaAba(statsTab);
+            if (grupo) statsUltimaDoGrupo[grupo] = tab;
             statsTab = tab;
             STATS_TABS.forEach(function(t) {
                 var b = getEl('tab-stats-' + t);
                 if (b) b.classList.toggle('active', t === tab);
             });
+            Object.keys(STATS_GRUPOS).forEach(function(g) {
+                var b = getEl('tab-stats-' + g);
+                if (b) b.classList.toggle('active', g === grupo);
+            });
             // A janela cresce ou encolhe até o tamanho da aba nova (v0.15.1); o
             // título, as abas e os botões de baixo ficam parados, só a altura anima.
-            animarJanela(getEl('scr-stats'), renderStatsBody);
+            // A janela mede o tamanho final com a gaveta já no lugar; depois a gaveta
+            // volta e anda junto com ela, pra nada pular.
+            var painel = getEl('scr-stats');
+            animarJanela(painel, function() { abrirGavetaDasAbas(grupo, false); renderStatsBody(); });
+            if (grupo !== grupoAntes && !prefs.reducedMotion && !painel.classList.contains('hidden')) {
+                abrirGavetaDasAbas(grupoAntes, false);
+                abrirGavetaDasAbas(grupo, true);
+            }
             // Trocar de aba volta pro topo: a aba nova pode ser bem mais curta
             // que a anterior, e a rolagem antiga ficava "no vazio".
             var sc = getEl('stats-scroll');
@@ -2989,7 +3403,7 @@
         // quebra devolve as linhas por configuração já ordenadas.
         var AGG_FIELDS = ['w','l','quit','marginWinSum','marginLossSum','askTotal','askHit','askRanFromRaise','askLost','respAccepted','respRan','hands','folds'];
         function aggregateBucket(bucket) {
-            var b = (loadStats().buckets || {})[bucket] || null;
+            var b = (dadosDoBalde(bucket).buckets || {})[bucket] || null;
             var agg = emptyStatsRecord();
             var rows = [];
             if (b && b.byConfig) {
@@ -3062,11 +3476,61 @@
                 + '<div style="display:flex; justify-content:space-between; font-size:0.65rem; color:var(--txt-d); opacity:0.75; margin-top:3px;"><span>Seguro</span><span>Agressivo</span></div>';
         }
 
+        // A aba ARCADE (v0.15.5) só com dados do Arcade, nada copiado dos outros modos
+        // (pedido dele; os números de sempre das partidas comuns ficam no Perfil): a
+        // maior pontuação de todas em destaque, cada Dificuldade de Escalada, as
+        // Escaladas, as fases e vidas, os Chefes, os feitos e as últimas Escaladas.
+        // Vazia enquanto nenhuma Escalada acabou.
+        function htmlDoArcade() {
+            var a = carregarArcade(), melhor = null, jogadas = 0, completadas = 0, abandonadas = 0, porDificuldade = '';
+            var secao = function(t) { return '<div class="section-label" style="margin:12px 0 4px; text-align:left;">' + t + '</div>'; };
+            var detalhe = function(t) { return '<div style="font-size:0.68rem; color:var(--txt-d); opacity:0.8; margin:-3px 0 3px;">' + t + '</div>'; };
+            ORDEM_DAS_ESCALADAS.forEach(function(d) {
+                var e = a.escaladas[d];
+                if (!e || !e.jogadas) return;
+                jogadas += e.jogadas; completadas += e.completadas || 0; abandonadas += e.abandonadas || 0;
+                porDificuldade += statLine(ESCALADAS[d].nome, e.recorde ? pontosDoArcade(e.recorde.pontos) : '—', false)
+                    + detalhe((e.completadas || 0) + ' de ' + e.jogadas + (e.jogadas === 1 ? ' completa' : ' completas')
+                        + (e.maisLonge ? ' · até a fase ' + e.maisLonge.fase + ' de ' + e.maisLonge.fases : ''));
+                if (e.recorde && (!melhor || e.recorde.pontos > melhor.pontos)) melhor = { pontos: e.recorde.pontos, dif: d, regiao: e.recorde.regiao };
+            });
+            if (!jogadas) return '';
+            var html = '';
+            if (melhor) {
+                html += '<div style="text-align:center; padding:6px 0 12px;">'
+                    + '<div class="section-label" style="margin:0 0 2px;">🏆 Maior pontuação</div>'
+                    + '<div style="font-size:2.2rem; font-weight:900; line-height:1.1; color:var(--warn);">' + pontosDoArcade(melhor.pontos) + '</div>'
+                    + '<div style="font-size:0.72rem; color:var(--txt-d);">Escalada ' + ESCALADAS[melhor.dif].nome
+                    + (melhor.regiao ? ' · ' + (STATS_REGION_LABEL[melhor.regiao] || melhor.regiao) : '') + '</div></div>';
+            }
+            html += secao('Por Dificuldade') + porDificuldade;
+            html += secao('Escaladas') + statLine('Jogadas', jogadas, false) + statLine('Completadas', completadas, false) + statLine('Abandonadas', abandonadas, false);
+            html += secao('Fases') + statLine('Vencidas', a.fasesVencidas, false) + statLine('Perdidas', a.vidasPerdidas, false)
+                + statLine('Vidas devolvidas pelos Chefes', a.vidasDevolvidas, false);
+            html += secao('Chefes') + statLine('Vencidos', Object.keys(a.chefes).length, false);
+            html += secao('Feitos') + FEITOS.map(function(f) { return statLine(f[1], a.feitos[f[0]] || 0, false); }).join('');
+            if (a.ultimas.length) {
+                html += secao('Últimas Escaladas');
+                a.ultimas.slice().reverse().forEach(function(u) {
+                    var como = u.completou ? 'completa' : (u.abandonou ? 'abandonada na fase ' : 'até a fase ') + u.fase + ' de ' + u.fases;
+                    html += statLine(ESCALADAS[u.escalada].nome + ' <span style="opacity:0.7">· ' + como + '</span>', pontosDoArcade(u.pontos), false);
+                });
+                if (a.ultimas.length > 1) html += '<div style="font-size:0.65rem; color:var(--txt-d); opacity:0.7; padding-bottom:2px;">mais recente → mais antiga</div>';
+            }
+            return html;
+        }
+        var FEITOS = [['perfeitas', 'Vitórias Perfeitas'], ['viradas', 'Viradas'], ['viradasEpicas', 'Viradas Épicas'], ['maosDeFerro', 'Mãos de Ferro vencidas']];
+        function pontosDoArcade(n) { return (n < 0 ? '−' : '') + Math.round(Math.abs(n)).toLocaleString('pt-BR'); }
+
         function renderStatsBody() {
             var el = getEl('stats-body');
             if (!el) return;
             if (statsTab === 'perfil') { renderPerfilBody(el); return; }
 
+            if (statsTab === 'arcade') {
+                el.innerHTML = htmlDoArcade() || '<div class="static-info" style="justify-content:center; padding:14px 0;">Sem Partidas nas Escaladas</div>';
+                return;
+            }
             var info = aggregateBucket(statsTab);
             var agg = info.agg, rows = info.rows, total = info.matches;
             if (total === 0 && !agg.quit) {
@@ -3164,7 +3628,14 @@
         // A hipótese que motivou isso é que quase todo mundo joga mais solto
         // contra bot ("bot é fácil") e mais estratégico contra humano — se o
         // número confirmar isso, ele vira alvo de calibração de IA depois.
-        var PERFIL_COLS = [ { k: 'sp', label: 'SINGLE', name: 'Single' }, { k: 'mpOnline', label: 'ONLINE', name: 'Online' }, { k: 'mpLocal', label: 'LOCAL', name: 'Local' } ];
+        // O SINGLE soma as partidas COMUNS do Arcade às do Geral (v0.15.5, pedido dele);
+        // as especiais ('arcadeEspecial', ver partidaEspecial) ficam fora.
+        var PERFIL_COLS = [ { k: 'sp', baldes: ['sp', 'arcade'], label: 'SINGLE', name: 'Single' }, { k: 'mpOnline', label: 'ONLINE', name: 'Online' }, { k: 'mpLocal', label: 'LOCAL', name: 'Local' } ];
+        function infoDoPerfil(col) {
+            var infos = (col.baldes || [col.k]).map(aggregateBucket), agg = emptyStatsRecord();
+            infos.forEach(function(i) { AGG_FIELDS.forEach(function(f) { agg[f] += i.agg[f]; }); });
+            return { agg: agg, matches: agg.w + agg.l };
+        }
         var PERFIL_ROWS = [
             { label: 'Partidas', get: function(i) { return i.matches ? String(i.matches) : '—'; } },
             { label: 'Pedidos por partida', get: function(i) { return i.matches ? (i.agg.askTotal / i.matches).toFixed(1) : '—'; } },
@@ -3174,7 +3645,7 @@
             { label: 'Margem de vitória', get: function(i) { return i.agg.w ? statAvg(i.agg.marginWinSum, i.agg.w) : '—'; } }
         ];
         function renderPerfilBody(el) {
-            var info = PERFIL_COLS.map(function(c) { return aggregateBucket(c.k); });
+            var info = PERFIL_COLS.map(infoDoPerfil);
             if (!info[0].matches && !info[1].matches && !info[2].matches) {
                 el.innerHTML = '<div class="static-info" style="justify-content:center; padding:14px 0;">Jogue algumas partidas para montar seu perfil!</div>';
                 return;
@@ -3281,49 +3752,76 @@
         // apagar tudo mesmo soltando a tecla ou saindo da tela. Agora tem
         // keyup, blur/visibilitychange (aba perde foco) e troca de foco
         // (setGpFocus) todos cancelando o hold em andamento.
-        var holdResetRAF = null, holdResetStart = 0;
+        // Os botões de segurar, cada um com o tempo e o que faz: o Apagar Dados (5 s) e,
+        // desde a v0.15.5, o SIM do Abandonar Escalada (3 s, pedido dele). O toque, o
+        // teclado e o controle passam pelo mesmo caminho.
+        var BOTOES_DE_SEGURAR = {
+            'btn-reset-stats': { ms: 5000, enche: 'reset-stats-fill', acao: function() { executeFullReset(); } },
+            'btn-bancada-sim': { ms: 3000, enche: 'bancada-sim-fill', acao: function() { cancelHoldReset(); bancadaAbandonar(true); } }
+        };
+        function eBotaoDeSegurar(el) { return !!(el && el.id && BOTOES_DE_SEGURAR[el.id]); }
+        var holdResetRAF = null, holdResetStart = 0, holdResetPeloPonteiro = false;
         function cancelHoldReset() {
             if (holdResetRAF) { cancelAnimationFrame(holdResetRAF); holdResetRAF = null; }
-            var fill = getEl('reset-stats-fill');
-            if (fill) fill.style.width = '0%';
+            Object.keys(BOTOES_DE_SEGURAR).forEach(function(id) { var fill = getEl(BOTOES_DE_SEGURAR[id].enche); if (fill) fill.style.width = '0%'; });
         }
         function executeFullReset() {
             cancelHoldReset();
             try { localStorage.clear(); } catch(e) {}
             location.reload();
         }
-        window.holdResetPointerDown = function() {
+        window.holdResetPointerDown = function(id, peloPonteiro) {
             // Segurar Enter/Espaço dispara keydown repetido pelo auto-repeat do
             // sistema; sem esta guarda cada repetição reiniciava a contagem e a
             // barra nunca chegava ao fim pelo teclado.
             if (holdResetRAF) return;
+            holdResetPeloPonteiro = !!peloPonteiro;
+            var botao = BOTOES_DE_SEGURAR[id || 'btn-reset-stats'];
             holdResetStart = Date.now();
-            var fill = getEl('reset-stats-fill');
+            var fill = getEl(botao.enche);
             (function tick() {
-                var pct = Math.min(100, ((Date.now() - holdResetStart) / 5000) * 100);
+                var pct = Math.min(100, ((Date.now() - holdResetStart) / botao.ms) * 100);
                 if (fill) fill.style.width = pct + '%';
-                if (pct >= 100) { executeFullReset(); return; }
+                if (pct >= 100) { holdResetRAF = null; botao.acao(); return; }
                 holdResetRAF = requestAnimationFrame(tick);
             })();
         };
         window.holdResetPointerUp = function() { cancelHoldReset(); };
+        // O ponteiro "sair" do botão só cancela a contagem que ele começou: segurando
+        // pelo teclado ou pelo controle com o mouse parado em cima do botão, o
+        // navegador avisava uma saída sem o mouse se mexer, e a contagem nem andava
+        // (v0.15.5, apareceu com a janela do Apagar na largura das outras).
+        window.holdResetPointerLeave = function() { if (holdResetPeloPonteiro) cancelHoldReset(); };
+        // O APAGAR DADOS SALVOS das Estatísticas só abre a janela de confirmação
+        // (v0.15.5, pedido dele); é lá dentro que se segura os 5 s.
+        window.abrirApagarDados = function() { getEl('scr-apagar').classList.add('show'); };
+        window.fecharApagarDados = function() {
+            cancelHoldReset();
+            getEl('scr-apagar').classList.remove('show');
+            // Quem navega pelo teclado ou controle volta pro botão de onde abriu.
+            setGpFocus(getEl('btn-apagar-dados'));
+        };
         document.addEventListener('keyup', function(e) { if (e.key === 'Enter' || e.key === ' ') cancelHoldReset(); });
         window.addEventListener('blur', cancelHoldReset);
         document.addEventListener('visibilitychange', function() { if (document.hidden) cancelHoldReset(); });
 
         var matchResultRecorded = false;
         function triggerEndGame(isWin) {
+            // Uma Escalada que foi pra outra aba não conta mais nada daqui.
+            if (corridaNoutraAba && st.arcade) return;
             // A partida acabou: a mesa trava na hora. Sem isso, nos 0,8 s até a
             // tela de fim aparecer o jogo ainda aceitava carta — e no multiplayer
             // essa carta começava outra rodada, que apagava a tela de fim dos
             // dois lados (a rodada nova fecha a tela, pro "Jogar Novamente").
             animLock = true;
+            esquecerAPausa();
             updateUI();
             // A última mão da partida pontua e cai direto aqui, sem um
             // updateUI()/setBottomGroup() depois — sem esta chamada o desfecho
             // do truco que FECHOU o jogo nunca seria contabilizado.
             settleTrucoAsk();
-            if (!matchResultRecorded) { matchResultRecorded = true; recordMatchResult(isWin); anotarFicha(st.nextRoundFoldBy, true); }
+            var fimDoArcade = null;
+            if (!matchResultRecorded) { matchResultRecorded = true; recordMatchResult(isWin); anotarFicha(st.nextRoundFoldBy, true); fimDoArcade = arcadeFimDaPartida(isWin); }
             clearSessionBackup();
             setTimeout(function() {
                 var endScr = getEl('scr-end');
@@ -3343,7 +3841,8 @@
                 // entrada que sorteia formato/baralho/dificuldade.
                 var rerollBtn = getEl('btn-end-reroll');
                 if (rerollBtn) rerollBtn.classList.toggle('hidden', !(gameMode === 'pc' && lastStartWasQuick));
-                
+                // No Arcade não há "Jogar Novamente": perder custa uma vida (v0.15.5).
+                mostrarFimDoArcade(fimDoArcade);
             }, 800);
         }
 
@@ -3646,9 +4145,15 @@
             AI_PERFIS_TIMES[d] = Object.assign({}, AI_PERFIS[d], AI_AJUSTE_TIMES[d] || {});
             AI_PERFIS_TRIOS[d] = Object.assign({}, AI_PERFIS_TIMES[d], AI_AJUSTE_TRIOS[d] || {});
         });
-        function aiPerfil() {
+        // A Dificuldade de cada lugar da mesa. Fora do Arcade é uma só pra mesa toda;
+        // numa fase do Arcade os Parceiros podem jogar noutra (st.difParceiros, v0.15.5,
+        // decisão dele) — o time de quem joga é o 1 no Single Player.
+        function dificuldadeDe(pid) {
+            return pid && st.difParceiros && gameMode === 'pc' && getTeam(pid) === getTeam(1) ? st.difParceiros : aiDifficulty;
+        }
+        function aiPerfil(pid) {
             var tabela = st.gameFormat === '3v3' ? AI_PERFIS_TRIOS : (st.gameFormat === '2v2' ? AI_PERFIS_TIMES : AI_PERFIS);
-            return tabela[aiDifficulty] || tabela[2];
+            return tabela[dificuldadeDe(pid)] || tabela[2];
         }
 
         // Sorteio próprio do motor: o teste de honestidade fixa esta função sem
@@ -4555,17 +5060,21 @@
         var fichaRodadasAnotadas = {};
         function anotarFicha(quemDescartou, fimDaPartida) {
             if (gameMode !== 'pc' || myPID === 0 || !st.roundId || fichaRodadasAnotadas[st.roundId]) return;
+            // A partida especial do Arcade não entra na Ficha (decisão dele).
+            if (st.arcade && st.arcade.especial) return;
             var todas = (st.roundPlays || []).concat(st.table || []);
             if (!(st.aiLog || []).length && !todas.length && !quemDescartou) return;
             fichaRodadasAnotadas[st.roundId] = true;
             var f = carregarFicha();
             var b = f.formatos[st.gameFormat] || (f.formatos[st.gameFormat] = fichaBlocoVazio());
             var peso = aiDifficulty === 5 ? FICHA_PESO_ADAPTATIVA : 1;
+            // Na última vida de uma Escalada do Arcade, quem joga está sob pressão (v0.15.5).
+            var marcar = function(o) { o.w = peso; o.p = st.partidaId || 0; if (st.arcade && st.arcade.sobPressao) o.sp = 1; return o; };
             // A Ficha é memória da IA, não regra do jogo: um defeito nela não pode
             // parar a partida (isto roda no começo de toda rodada).
             try {
-                if (getNumPlayers() === 2) aiAnotacoesDaRodada(myPID).forEach(function(o) { o.w = peso; o.p = st.partidaId || 0; b.obs.push(o); });
-                if (getNumPlayers() === 2) aiEscolhasDaRodada(myPID).forEach(function(o) { o.w = peso; o.p = st.partidaId || 0; (b.escolhas || (b.escolhas = [])).push(o); });
+                if (getNumPlayers() === 2) aiAnotacoesDaRodada(myPID).forEach(function(o) { b.obs.push(marcar(o)); });
+                if (getNumPlayers() === 2) aiEscolhasDaRodada(myPID).forEach(function(o) { (b.escolhas || (b.escolhas = [])).push(marcar(o)); });
             } catch(e) { if (window.console) console.warn('Ficha: rodada não anotada', e); }
             if (b.obs.length > FICHA_ANOTACOES) b.obs = b.obs.slice(b.obs.length - FICHA_ANOTACOES);
             if (b.escolhas && b.escolhas.length > FICHA_ESCOLHAS) b.escolhas = b.escolhas.slice(b.escolhas.length - FICHA_ESCOLHAS);
@@ -4644,6 +5153,21 @@
             var taxa = (venceu + 1) / (contra.length + 3);
             return Math.max(0.3, Math.min(1, 1 - 2.5 * Math.max(0, taxa - 0.3)));
         }
+        // Relaxado ou sob pressão (v0.15.5, aprovado por ele): a anotação feita na última
+        // vida de uma Escalada do Arcade é "sob pressão" (o.sp). A Adaptativa lê
+        // principalmente as anotações do mesmo estado da partida de agora; as do outro
+        // estado completam o que falta até FICHA_PRESSAO_BASTA (em peso), e com o
+        // bastante não entram. Sem anotação sob pressão, fora do Arcade, nada muda.
+        var FICHA_PRESSAO_BASTA = 60;
+        function aiPesoDaPressao(lista, sobPressao) {
+            var mesmo = 0, outro = 0;
+            lista.forEach(function(o) { if (!!o.sp === sobPressao) mesmo += o.w; else outro += o.w; });
+            if (!outro) return lista;
+            var f = Math.min(1, Math.max(0, FICHA_PRESSAO_BASTA - mesmo) / outro);
+            if (f === 1) return lista;
+            return lista.filter(function(o) { return f > 0 || !!o.sp === sobPressao; })
+                .map(function(o) { return !!o.sp === sobPressao ? o : Object.assign({}, o, { w: o.w * f }); });
+        }
         // As anotações da Ficha separadas em duas: as de outras partidas (que pesam
         // pelo termômetro) e as da partida atual (que pesam mais conforme a partida
         // avança).
@@ -4652,6 +5176,7 @@
             ((b && b.obs) || []).forEach(function(o) { if (o.p && o.p === st.partidaId) obsDaPartida.push(o); else daFicha.push(o); });
             ((b && b.escolhas) || []).forEach(function(o) { if (o.p && o.p === st.partidaId) escolhasDaPartida.push(o); else daFicha.push(o); });
             daPartida = obsDaPartida.concat(escolhasDaPartida);
+            daFicha = aiPesoDaPressao(daFicha, !!(st.arcade && st.arcade.sobPressao));
             return { semente: b && b.semente, confianca: aiTermometro(formato), daFicha: daFicha, daPartida: daPartida,
                      obsDaPartida: obsDaPartida, escolhasDaPartida: escolhasDaPartida,
                      pesoPartida: Math.min(6, 2 + 0.1 * daPartida.length) };
@@ -5294,7 +5819,7 @@
         // Começa a pensar na decisão de `pids`: um assento, ou o time inteiro
         // quando a resposta ao truco é do grupo.
         function aiComecarAPensar(pids, querCartas) {
-            var prof = aiPerfil();
+            var prof = aiPerfil(pids[0]);
             aiPensamento = null;
             if (!prof.pensa || !AI_PENSA_NO_TEMPO || prof.ruido || prof.erro || prof.leitura !== 'chance') return;
             // No jogo, quem tem `pensaAte` pensa até esse teto (ou até a espera acabar).
@@ -5315,7 +5840,7 @@
         // andar. Ela não depende da mesa: só para quando a rodada acaba ou quando a
         // Adaptativa começa a pensar numa decisão (que continua a mesma conta).
         function aiAdiantarJeito() {
-            if (!AI_PENSA_NO_TEMPO || gameMode !== 'pc' || myPID === 0 || getNumPlayers() !== 2 || !aiPerfil().adaptativa) return;
+            if (!AI_PENSA_NO_TEMPO || gameMode !== 'pc' || myPID === 0 || getNumPlayers() !== 2 || !aiPerfil(3 - myPID).adaptativa) return;
             var ajuste = aiAjusteDaRodada(myPID);
             if (!ajuste) return;
             var p = aiPensamento = { rodada: st.roundId, alvo: 0, tarefas: [], ajuste: ajuste, montar: function() {} };
@@ -5659,7 +6184,7 @@
         }
 
         function aiDecideResponse(pid, folga) {
-            var v = aiView(pid), prof = aiComFolga(aiPerfil(), folga);
+            var v = aiView(pid), prof = aiComFolga(aiPerfil(pid), folga);
             var est = aiEstimativaPensada(pid, v, prof, false, function(e) { return aiRespostaApertada(v, prof, e); });
             if (prof.resposta) return aiRespostaPorClasse(v, prof, est);
             return aiRespostaDaChance(v, prof, est);
@@ -5744,7 +6269,7 @@
         function aiMao11Decision(team) {
             var seats = getTeamPIDs(team).filter(function (p) { return !isHumanSeat(p); });
             if (!seats.length) seats = [getTeamPIDs(team)[0]];
-            var prof = aiPerfil(), v = aiView(seats[0]), soma = 0;
+            var prof = aiPerfil(seats[0]), v = aiView(seats[0]), soma = 0;
             seats.forEach(function (p) {
                 var est = aiEstimativaPensada(p, p === seats[0] ? v : aiView(p), prof, false);
                 soma += est.pRaw === undefined ? est.p : est.pRaw;
@@ -5781,7 +6306,7 @@
         // está 0,50 — a melhor mão sozinha enxergava 0,62 e o time pagava pra ver
         // o que não dava.
         function aiRespostaDoTime(team, fala, folga) {
-            var prof = aiComFolga(aiPerfil(), folga);
+            var prof = aiComFolga(aiPerfil(getTeamPIDs(team)[0]), folga);
             var seats = getTeamPIDs(team).filter(function (p) { return !isHumanSeat(p); });
             if (getNumPlayers() === 2 || seats.length < 2) return aiDecideResponse(fala, folga);
             var minha = null, soma = 0;
@@ -5843,9 +6368,9 @@
         function aiAnnounceClasses(momento) {
             if (getNumPlayers() === 2) return;
             if (!st.aiClasses || momento === 'inicio') st.aiClasses = {};
-            var prof = aiPerfil();
             for (var p = 1; p <= getNumPlayers(); p++) {
                 if (isHumanSeat(p)) continue;
+                var prof = aiPerfil(p);
                 var cls = aiClassOf(aiOwnScore(aiView(p))), antes = st.aiClasses[p];
                 if (antes === undefined || prof.comunica === 'mao' || (prof.comunica === 'mudanca' && Math.abs(cls - antes) >= 2)) st.aiClasses[p] = cls;
             }
@@ -5955,13 +6480,19 @@
             area.querySelectorAll('.nome-mesa').forEach(function(e) { placas[e.dataset.pid] = e; });
             for (var p = 1; p <= 6; p++) {
                 var nome = p <= getNumPlayers() && p !== myPID ? rotuloDaPlaca(p) : '', el = placas[p];
-                if (!nome) { if (el) el.remove(); continue; }
+                // As vidas do Arcade (v0.15.5, escolha dele): na placa de quem joga, embaixo
+                // das cartas, só os corações. Ela não acende na vez.
+                var vidas = p === myPID && st.arcade && st.arcade.vidasMax ? coracoesHTML(st.arcade.vidas, st.arcade.vidasMax) : '';
+                if (!nome && !vidas) { if (el) el.remove(); continue; }
                 if (!el) { el = document.createElement('div'); el.className = 'nome-mesa'; el.dataset.pid = p; area.appendChild(el); }
-                if (el.textContent !== nome) el.textContent = nome;
+                if (vidas) { if (el.innerHTML !== vidas) el.innerHTML = vidas; }
+                else if (el.textContent !== nome) el.textContent = nome;
+                el.classList.toggle('placa-vidas', !!vidas);
                 var aliado = getTeam(p) === getTeam(ref), mao = getEl('box-' + getUIPos(p));
                 el.classList.toggle('aliado', aliado);
                 el.classList.toggle('rival', !aliado);
-                el.classList.toggle('vez', !!(mao && mao.querySelector('.card.active-turn')));
+                el.classList.toggle('vez', !vidas && !!(mao && mao.querySelector('.card.active-turn')));
+                el.classList.toggle('chefe', !!(st.arcade && st.arcade.chefe === p));
             }
             posicionarNomesNaMesa();
         }
@@ -6069,6 +6600,8 @@
         }
 
         function updateUI() {
+            // A vez pode ter chegado com o Menu de Pausa aberto (Multiplayer).
+            marcarVezNosMenus();
             var tableEl = document.querySelector('.table');
             if (tableEl) tableEl.classList.toggle('fmt-3v3', st.gameFormat === '3v3');
 
@@ -6241,9 +6774,12 @@
                 // Na própria vez, mas com a mesa travada (pausa da vaza, fim da mão,
                 // distribuição, espera depois de uma corrida), o jogo ignora qualquer
                 // jogada — então a barra não diz que é a vez nem oferece botão.
-                var canPlayNow = isMyTurn && !animLock;
-                if (isMyTurn && animLock) { uiTurn.innerText = "AGUARDE..."; }
-                else if (st.maoDeFerro) { uiTurn.innerText = isMyTurn ? "SUA VEZ (MÃO DE FERRO)" : ("VEZ " + turnOfLabel(st.turn)); }
+                var canPlayNow = isMyTurn && !animLock && !mesaCheia();
+                if (isMyTurn && !canPlayNow) { uiTurn.innerText = "AGUARDE..."; }
+                // Multiplayer: quem tem a vez está no Menu de Pausa (v0.15.5, pedido dele).
+                else if (!isMyTurn && estaNosMenus(st.turn)) { uiTurn.innerText = turnOfLabel(st.turn).replace(/^D[OAE] /, '') + " ESTÁ NOS MENUS"; }
+                // A linha do meio já diz que é Mão de Ferro (v0.15.5, pedido dele).
+                else if (st.maoDeFerro) { uiTurn.innerText = isMyTurn ? "SUA VEZ" : ("VEZ " + turnOfLabel(st.turn)); }
                 else if (!isMyTurn && aiPensandoMais === st.turn) { uiTurn.innerText = textoPensando(st.turn); }
                 else { uiTurn.innerText = isMyTurn ? "SUA VEZ" : ("VEZ " + turnOfLabel(st.turn)); }
                 
@@ -6557,8 +7093,518 @@
                     }
                 }, 550); 
 
-            }, delay + 420); 
+            }, delay + 420);
         }
+
+        // ─── Modo Arcade (v0.15.5: a preparação; o menu vem numa versão depois) ───
+        // Uma Escalada: quem joga escolhe a Região (vale a Escalada toda) e a
+        // Dificuldade de Escalada, e joga as fases em ordem. As fases vêm da planilha
+        // dele; até lá, as de teste da Bancada. Fora do Arcade nada daqui faz conta:
+        // sem uma corrida, cada gancho no jogo volta na primeira linha.
+        //
+        // As Dificuldades de Escalada (decisões dele): quantas partidas e quantas vidas, o
+        // bônus de cada vida que sobra no fim e o multiplicador. Os pontos das partidas
+        // são os mesmos em toda Dificuldade; o multiplicador vale no fim, sobre o total
+        // da Escalada com o bônus das vidas.
+        var ESCALADAS = {
+            facil:   { nome: 'Fácil',   partidas: 5,  vidas: 5, bonusVida: 1000, mult: 1 },
+            normal:  { nome: 'Normal',  partidas: 10, vidas: 4, bonusVida: 1500, mult: 1.5 },
+            dificil: { nome: 'Difícil', partidas: 15, vidas: 3, bonusVida: 2000, mult: 2 },
+            insano:  { nome: 'Insano',  partidas: 20, vidas: 2, bonusVida: 3000, mult: 3 },
+            mestre:  { nome: 'Mestre',  partidas: 30, vidas: 2, bonusVida: 5000, mult: 5 }
+        };
+        var ORDEM_DAS_ESCALADAS = ['facil', 'normal', 'dificil', 'insano', 'mestre'];
+        // Os pontos (os números dele). Só resultado conta, nunca a sorte das cartas.
+        var ARCADE_PONTOS = {
+            vitoria: 1000, margem: 50, perfeita: 2000, perfeitaChefe: 5000, chefe: 1500,
+            nivelDoTruco: 150, rivalCorreu: 50, descarteSemJogar: -100, maoDeFerro: 200,
+            virada: 500, viradaEpica: 1500, vidaPerdida: -1000
+        };
+        // Os cadeados (decisão dele): Insano e Mestre pedem a Adaptativa liberada, e o
+        // Mestre também uma Escalada Difícil ou Insano completada.
+        function escaladaLiberada(d) {
+            if ((d === 'insano' || d === 'mestre') && !adaptativaLiberada()) return false;
+            if (d !== 'mestre') return true;
+            var e = carregarArcade().escaladas;
+            return !!((e.dificil && e.dificil.completadas) || (e.insano && e.insano.completadas));
+        }
+
+        // A fase diz como a partida começa, e o que ela não fixa é sorteado. Campos, todos
+        // opcionais: formato ('1v1', '2v2', '3v3'), baralho ('sujo', 'limpo'), parceiros
+        // (os Dinâmicos), rivais e parceiro (a Dificuldade de cada time, 1 a 5), nomes
+        // ({ assento: { nome, fem } }), placar ([nós, eles]) e chefe (true). Dificuldade
+        // sorteada vale pros dois lados (decisão dele). A fase resolvida fica na corrida:
+        // perder e jogar de novo é contra a mesma mesa, com cartas novas.
+        function resolverFase(fase, regiao) {
+            var f = Object.assign({}, fase);
+            if (!f.formato) f.formato = ['1v1', '2v2', '3v3'][Math.floor(Math.random() * 3)];
+            // O Mineiro só existe no Baralho Sujo.
+            f.baralho = regiao === 'mineiro' ? 'sujo' : (f.baralho || (Math.random() < 0.5 ? 'sujo' : 'limpo'));
+            if (!f.rivais) { f.rivais = dificuldadeDoJogoRapido(Math.random()); f.parceiro = f.rivais; }
+            if (f.formato === '1v1') { f.parceiro = null; f.parceiros = null; }
+            else {
+                if (!f.parceiro) f.parceiro = f.rivais;
+                if (!f.parceiros) f.parceiros = PARCEIROS_MODOS[Math.floor(Math.random() * PARCEIROS_MODOS.length)];
+            }
+            return f;
+        }
+
+        // A corrida: a Escalada em andamento, guardada a cada ação de qualquer um
+        // (decisão dele, contra abuso) numa chave própria. Uma por vez; enquanto ela
+        // espera, os outros modos ficam livres. Continuar a mesma Escalada em outra aba
+        // passa a corrida pra aba nova, e a velha para onde está.
+        var CORRIDA_CHAVE = 'trucoArcadeCorridaV1';
+        var corrida = null, faseDaVez = null, corridaNoutraAba = false;
+        // A marca desta aba sai do sorteio dos nomes (crypto), nunca do Math.random: o
+        // embaralhar usa o Math.random, e o simulador depende da sequência dele.
+        var corridaDona = '';
+        function donaDestaAba() { return corridaDona || (corridaDona = Math.floor(sorteDosNomes() * 1e9).toString(36) + Date.now().toString(36)); }
+        // A versão 2 tem os pontos sem o multiplicador (ele vale no fim): as corridas dos
+        // pontos de teste anteriores não continuam.
+        function carregarCorrida() {
+            try { var c = JSON.parse(localStorage.getItem(CORRIDA_CHAVE)); if (c && c.v === 2 && ESCALADAS[c.escalada]) return c; } catch(e) {}
+            return null;
+        }
+        // Grava sem conferir de quem era: começar ou continuar uma Escalada faz desta aba a dona.
+        function tomarACorrida() {
+            corrida.dona = donaDestaAba();
+            try { localStorage.setItem(CORRIDA_CHAVE, JSON.stringify(corrida)); } catch(e) {}
+        }
+        function gravarCorrida() {
+            if (!corrida) return;
+            var guardada = carregarCorrida();
+            if (guardada && guardada.dona !== donaDestaAba()) { corridaEmOutraAba(); return; }
+            tomarACorrida();
+        }
+        function apagarCorrida() { corrida = null; try { localStorage.removeItem(CORRIDA_CHAVE); } catch(e) {} }
+        // Chamado pelo autoSave depois de cada ação no Single Player: a partida vai
+        // inteira dentro da corrida (o `st`, uns 3 KB).
+        function salvarPartidaDoArcade() {
+            if (!corrida || !st.arcade) return;
+            // A mão decidida com a mesa ainda cheia não é guardada: recarregar ali decide
+            // a mão de novo, igual, em vez de contá-la duas vezes.
+            if (st.table.length >= getNumPlayers() && st.trickResults.length * getNumPlayers() > (st.roundPlays || []).length) return;
+            corrida.partida = st;
+            gravarCorrida();
+        }
+        // Outra aba continuou (ou encerrou) esta Escalada: esta para onde está e não
+        // grava mais nada. Os bots esperam como na pausa, e só resta o Menu Principal.
+        function corridaEmOutraAba() {
+            if (!corrida) return;
+            corrida = null; corridaNoutraAba = true;
+            if (!st.arcade || !isInGameScreen()) return;
+            isPaused = true; animLock = true;
+            getEl('scr-end').className = 'show end-loss';
+            getEl('end-title').innerText = '⚠️ OUTRA ABA';
+            getEl('end-msg').innerText = 'Esta Escalada foi aberta em outra aba, e só uma pode continuar.';
+            getEl('end-msg').classList.remove('hidden');
+            ['end-arcade', 'end-arcade-topo', 'btn-end-again', 'btn-end-arcade', 'btn-end-reroll'].forEach(function(id) { getEl(id).classList.add('hidden'); });
+        }
+        window.addEventListener('storage', function(e) {
+            // Sem chave: o Apagar Dados de outra aba limpou tudo.
+            if (!corrida || (e.key !== null && e.key !== CORRIDA_CHAVE)) return;
+            var c = carregarCorrida();
+            if (!c || c.dona !== donaDestaAba()) corridaEmOutraAba();
+        });
+
+        // Começar uma Escalada nova. Uma por vez: a guardada, se houver, termina e conta antes.
+        function comecarEscalada(dificuldade, regiao, fases) {
+            if (carregarCorrida()) abandonarEscalada();
+            corridaNoutraAba = false;
+            corrida = { v: 2, escalada: dificuldade, regiao: regiao, fases: fases, faseAtual: 0,
+                        vidas: ESCALADAS[dificuldade].vidas, vidasMax: ESCALADAS[dificuldade].vidas,
+                        pontos: 0, faseResolvida: null, partida: null, inicio: Date.now() };
+            tomarACorrida();
+            comecarFase();
+        }
+        // A fase da vez, ou a mesma de novo depois de perder uma vida. Quem chama
+        // esconde a própria tela antes (o startGame só mostra a mesa).
+        function comecarFase() {
+            if (!corrida.faseResolvida) corrida.faseResolvida = resolverFase(corrida.fases[corrida.faseAtual] || {}, corrida.regiao);
+            corrida.partida = null;
+            // A fase resolvida é gravada antes da partida: recarregar no meio dela volta
+            // pra mesma mesa.
+            gravarCorrida();
+            if (!corrida) return; // outra aba ficou com a Escalada
+            var f = corrida.faseResolvida;
+            pendingRules = corrida.regiao; pendingFormat = f.formato; pendingDeckMode = f.baralho;
+            // O fundo da tela fica com a cor da Dificuldade dos Rivais (Roadmap).
+            aiDifficulty = f.rivais; updateBodyDiffClass();
+            sorteioParceiros = f.parceiros;
+            faseDaVez = f;
+            startGame('pc', 1);
+            // A fase abre com o aviso do que ela tem; a do Chefe, com o Chefe.
+            if (st.arcade && st.arcade.chefe) avisarChefe(); else avisarSorteio();
+        }
+        // No startGame, antes de sortear os nomes: os Parceiros noutra Dificuldade e os
+        // nomes fixos da fase. Toda partida passa aqui, e fora do Arcade o estado fica
+        // sem nada do Arcade.
+        function prepararFase() {
+            delete st.arcade; delete st.difParceiros; delete st.proximaRodada;
+            if (gameMode !== 'pc' || !faseDaVez || !corrida) return null;
+            if (faseDaVez.parceiro && faseDaVez.parceiro !== faseDaVez.rivais) st.difParceiros = faseDaVez.parceiro;
+            return faseDaVez.nomes || null;
+        }
+        // No startGame, depois dos nomes: o placar do começo e o caderno da partida, onde
+        // ela junta o que vale pontos. O Chefe é o primeiro Rival.
+        function aplicarFase() {
+            var f = faseDaVez;
+            faseDaVez = null;
+            if (gameMode !== 'pc' || !f || !corrida) return;
+            if (f.placar) st.scores = { 1: f.placar[0] || 0, 2: f.placar[1] || 0 };
+            // Jogar a fase de novo é revanche: os nomes sorteados ficam, como no Jogar
+            // Novamente (a fase resolvida é a mesma da corrida).
+            if (st.bots) f.nomes = JSON.parse(JSON.stringify(st.bots));
+            var chefe = f.chefe ? getTeamPIDs(2)[0] : 0;
+            st.arcade = { escalada: corrida.escalada, fase: corrida.faseAtual, chefe: chefe, especial: partidaEspecial(f),
+                          nomeDoChefe: chefe && st.bots && st.bots[chefe] ? st.bots[chefe].nome : '',
+                          // Sob pressão é na última vida (a Ficha anota, decisão dele).
+                          sobPressao: corrida.vidas <= 1,
+                          // As vidas na placa embaixo das cartas (escolha dele).
+                          vidas: corrida.vidas, vidasMax: corrida.vidasMax, fases: corrida.fases.length,
+                          maiorAtras: 0, placarDaRodada: [st.scores[1], st.scores[2]],
+                          niveis: 0, rivalCorreu: 0, descartesSemJogar: 0, maosDeFerro: 0 };
+            // A configuração e o balde da partida, pra Desistência de quem abandonar no meio.
+            corrida.chave = statsKey(); corrida.balde = statsBucketFor();
+        }
+        // Partida especial (régua aprovada por ele): a que não poderia ser um Jogo
+        // Personalizado, porque começa com outro placar ou tem os Parceiros noutra
+        // Dificuldade. Ela conta só nas Estatísticas do Arcade (e pra liberar a
+        // Adaptativa): fica fora do Perfil e a Adaptativa não aprende com ela, que o
+        // jeito de jogar muda e o número deixa de ser comparável.
+        function partidaEspecial(f) { return !!((f.placar && (f.placar[0] || f.placar[1])) || st.difParceiros); }
+        // A entrada do Chefe: "CHEFE" em cima e o nome embaixo, no tempo do aviso do Jogo
+        // Rápido. A primeira jogada da IA espera o aviso, como lá.
+        function avisarChefe() {
+            if (!st.arcade || !st.arcade.chefe) return;
+            var dur = 5000;
+            showMsg({ quem: 'CHEFE', texto: rotuloDoRival(st.arcade.chefe) }, 'sys', dur);
+            avisoAte = Date.now() + Math.round(dur * paceScale());
+        }
+
+        // Os pontos que a partida junta enquanto acontece. No começo de cada rodada
+        // (startRound, antes de ela zerar o valor e as marcas da anterior): conta a
+        // rodada que acabou e acompanha a maior desvantagem, pra Virada.
+        function arcadeNovaRodada() {
+            var a = st.arcade;
+            if (!a) return;
+            arcadeContarRodada();
+            a.maiorAtras = Math.max(a.maiorAtras, st.scores[2] - st.scores[1]);
+            a.placarDaRodada = [st.scores[1], st.scores[2]];
+            delete st.proximaRodada;
+        }
+        // A rodada que acabou, se o seu time pontuou nela, por mãos ou porque o Rival
+        // correu ou foi ao baralho: valendo Truco ou mais, cada degrau conta (Truco 1,
+        // Seis 2, Nove 3, Doze 4; no Mineiro, 4, 6, 10 e 12), e a Mão de Ferro conta à
+        // parte. A Mão de 11 não é Truco.
+        function arcadeContarRodada() {
+            var a = st.arcade;
+            if (!(st.scores[1] > a.placarDaRodada[0])) return;
+            if (st.maoDeFerro) { a.maosDeFerro++; return; }
+            if (st.isMaoDeX) return;
+            for (var v = getNextTrucoVal(st.rules === 'mineiro' ? 2 : 1), n = 1; v <= st.handVal; v = getNextTrucoVal(v), n++) {
+                if (v === st.handVal) { a.niveis += n; return; }
+                if (v >= 12) return;
+            }
+        }
+        // O Rival correu de um pedido do seu time (seu ou do seu Parceiro).
+        function arcadeCorreram(time) { if (st.arcade && time !== getTeam(1)) st.arcade.rivalCorreu++; }
+        // Descartar a mão sem ter jogado nenhuma carta nela.
+        function arcadeDescartou() { if (st.arcade && (st.hands[1] || []).length === 3) st.arcade.descartesSemJogar++; }
+
+        // Os pontos da partida que acabou, item por item (cada um é uma linha da tela de
+        // fim). São os mesmos em toda Dificuldade de Escalada: o multiplicador vale no fim.
+        function pontosDaPartida(venceu) {
+            var a = st.arcade, P = ARCADE_PONTOS, linhas = [];
+            var item = function(chave, n, base) { if (n) linhas.push({ chave: chave, n: n, pontos: n * base }); };
+            if (venceu) {
+                item('vitoria', 1, P.vitoria);
+                // Vitória Perfeita: o placar do Rival nunca saiu do 0 (como o placar só
+                // sobe, é o 0 no fim; quem começa com pontos não tem).
+                if (st.scores[2] === 0) item(a.chefe ? 'perfeitaChefe' : 'perfeita', 1, a.chefe ? P.perfeitaChefe : P.perfeita);
+                else item('margem', Math.max(0, st.scores[1] - st.scores[2]), P.margem);
+                // A Virada Épica soma com a Virada (decisão dele).
+                if (a.maiorAtras >= 6) item('virada', 1, P.virada);
+                if (a.maiorAtras >= 10) item('viradaEpica', 1, P.viradaEpica);
+                if (a.chefe) item('chefe', 1, P.chefe);
+            }
+            item('niveis', a.niveis, P.nivelDoTruco);
+            item('rivalCorreu', a.rivalCorreu, P.rivalCorreu);
+            item('maosDeFerro', a.maosDeFerro, P.maoDeFerro);
+            item('descartes', a.descartesSemJogar, P.descarteSemJogar);
+            if (!venceu) item('vidaPerdida', 1, P.vidaPerdida);
+            return { total: linhas.reduce(function(t, l) { return t + l.pontos; }, 0), linhas: linhas };
+        }
+        // Que linha dos pontos conta qual feito na aba ARCADE (a Vitória Perfeita contra o
+        // Chefe também é Vitória Perfeita).
+        var FEITOS_DAS_LINHAS = { perfeita: 'perfeitas', perfeitaChefe: 'perfeitas', virada: 'viradas', viradaEpica: 'viradasEpicas', maosDeFerro: 'maosDeFerro' };
+        // As linhas de uma partida somadas nas da Escalada (o resumo do fim dela).
+        function somarLinhas(soma, linhas) {
+            linhas.forEach(function(l) {
+                var s = soma[l.chave] || (soma[l.chave] = { chave: l.chave, n: 0, pontos: 0 });
+                s.n += l.n; s.pontos += l.pontos;
+            });
+        }
+        // O fim de uma partida do Arcade: os pontos, a fase vencida (passar pelo Chefe
+        // devolve uma vida perdida, nunca passa das do começo) ou a vida perdida (a mesma
+        // fase de novo), e o fim da Escalada quando acaba. Devolve o que a tela de fim mostra.
+        function arcadeFimDaPartida(venceu) {
+            if (!corrida || !st.arcade) return null;
+            arcadeContarRodada(); // a última rodada não passa pelo startRound
+            var a = st.arcade, d = carregarArcade(), pontos = pontosDaPartida(venceu);
+            var r = { venceu: venceu, pontos: pontos.total, linhas: pontos.linhas, fase: corrida.faseAtual + 1, fases: corrida.fases.length, vidaDevolvida: false };
+            // A Pontuação Total nunca fica abaixo de 0 (pedido dele).
+            corrida.pontos = Math.max(0, corrida.pontos + pontos.total);
+            somarLinhas(corrida.detalhes || (corrida.detalhes = {}), pontos.linhas);
+            // Os feitos da aba ARCADE saem das mesmas linhas dos pontos.
+            pontos.linhas.forEach(function(l) { var f = FEITOS_DAS_LINHAS[l.chave]; if (f) d.feitos[f] = (d.feitos[f] || 0) + l.n; });
+            if (venceu) {
+                d.fasesVencidas++;
+                if (a.chefe) {
+                    if (a.nomeDoChefe) d.chefes[a.nomeDoChefe] = (d.chefes[a.nomeDoChefe] || 0) + 1;
+                    r.vidaDevolvida = corrida.vidas < corrida.vidasMax;
+                    if (r.vidaDevolvida) { corrida.vidas++; d.vidasDevolvidas++; }
+                }
+                corrida.faseAtual++; corrida.faseResolvida = null;
+                r.completou = corrida.faseAtual >= corrida.fases.length;
+            } else {
+                d.vidasPerdidas++;
+                corrida.vidas--;
+                r.acabou = corrida.vidas <= 0;
+            }
+            corrida.partida = null;
+            salvarArcade(d);
+            r.vidas = corrida.vidas; r.vidasMax = corrida.vidasMax; r.total = corrida.pontos;
+            if (r.completou || r.acabou) r.final = encerrarEscalada(!!r.completou);
+            else gravarCorrida();
+            return r;
+        }
+        // A Escalada acabou (completada, sem vidas ou abandonada): a soma dela, com o
+        // bônus das vidas que sobram (só de quem completa), vezes o multiplicador da
+        // Dificuldade (decisão dele: o multiplicador vale no fim). Conta nas
+        // Estatísticas, com o recorde da Dificuldade, e sai do aparelho.
+        function encerrarEscalada(completou, abandonou) {
+            var c = corrida, d = carregarArcade(), esc = ESCALADAS[c.escalada];
+            var e = d.escaladas[c.escalada] || (d.escaladas[c.escalada] = { jogadas: 0, completadas: 0, abandonadas: 0, recorde: null, maisLonge: null });
+            var bonus = completou ? c.vidas * esc.bonusVida : 0;
+            var soma = c.pontos + bonus, total = Math.round(soma * esc.mult);
+            e.jogadas++;
+            if (completou) e.completadas++;
+            if (abandonou) e.abandonadas = (e.abandonadas || 0) + 1;
+            // Até onde chegou: a fase em que acabou (completa, a última).
+            var fase = Math.min(c.faseAtual + 1, c.fases.length);
+            if (!e.maisLonge || fase > e.maisLonge.fase) e.maisLonge = { fase: fase, fases: c.fases.length };
+            var recorde = total > 0 && (!e.recorde || total > e.recorde.pontos);
+            if (recorde) e.recorde = { pontos: total, regiao: c.regiao, quando: Date.now() };
+            // As últimas Escaladas da aba ARCADE (guarda 5, a mais nova no fim).
+            d.ultimas = d.ultimas.concat({ escalada: c.escalada, completou: !!completou, abandonou: !!abandonou, fase: fase, fases: c.fases.length, pontos: total, quando: Date.now() }).slice(-5);
+            salvarArcade(d);
+            apagarCorrida();
+            // O resumo da Escalada inteira, item por item, com o bônus das vidas.
+            var linhas = Object.keys(c.detalhes || {}).map(function(k) { return c.detalhes[k]; });
+            if (bonus) linhas.push({ chave: 'vidas', n: c.vidas, pontos: bonus });
+            return { pontos: total, soma: soma, escalada: c.escalada, bonus: bonus, recorde: recorde, linhas: linhas };
+        }
+        // Abandonar: a Escalada termina e conta, com os pontos que tinha. É a desistência
+        // do Arcade (decisão dele): conta nas Estatísticas, na configuração da partida
+        // em que ela estava. Sair pelo Menu de Pausa não conta, a Escalada só espera.
+        function abandonarEscalada() {
+            var c = carregarCorrida();
+            if (!c) return null;
+            corrida = c;
+            if (c.chave) {
+                var d = carregarArcade(), b = statsBucketOf(d, c.balde || 'arcade');
+                var rec = b.byConfig[c.chave] || (b.byConfig[c.chave] = emptyStatsRecord());
+                rec.quit = (rec.quit || 0) + 1; rec.streak = 0;
+                salvarArcade(d);
+            }
+            return encerrarEscalada(false, true);
+        }
+
+        // Continuar a Escalada guardada: a partida volta exatamente onde estava, com as
+        // mesmas cartas. Uma decisão dos bots que ainda não tinha aparecido é tomada de
+        // novo (quem joga não tinha visto, então recarregar não dá vantagem).
+        function continuarEscalada(daTela) {
+            corrida = carregarCorrida();
+            if (!corrida) return false;
+            corridaNoutraAba = false;
+            tomarACorrida();
+            if (daTela) nav(daTela, 'scr-game');
+            if (!corrida.partida) { comecarFase(); return true; }
+            st = corrida.partida; gameMode = 'pc'; myPID = 1;
+            aiDifficulty = st.aiDifficulty; updateBodyDiffClass();
+            window.lastAdviceLevel = 0; matchResultRecorded = false; askWatch = null;
+            lastStartWasQuick = false; avisoAte = 0; fichaRodadasAnotadas = {};
+            retomarPartida();
+            return true;
+        }
+        function retomarPartida() {
+            animLock = false;
+            // A vira já tinha aparecido; sem isto ela voltava virada pra baixo.
+            st.viraRevealed = true;
+            renderMesa(); updateUI();
+            if (st.scores[1] >= 12 || st.scores[2] >= 12) { triggerEndGame(st.scores[1] >= 12); return; }
+            // Entre uma rodada e outra (a última mão acabou, ou alguém correu).
+            if (st.proximaRodada) { startRound(st.proximaRodada); return; }
+            // A mesa cheia: a mão ainda ia ser decidida.
+            if (st.table.length >= getNumPlayers()) { animLock = true; updateUI(); setTimeout(resolveTrick, Math.round(1500 * paceScale())); return; }
+            if (st.trucoState === 'mao11') { handleMao11(); return; }
+            checkAiTurn(); checkAiTrucoDecision();
+        }
+
+        // A janela de fim no Arcade (v0.15.5, pedido dele). No fim de cada fase: a fase e
+        // as vidas em cima (só os corações; a vida que o Chefe devolveu fica dourada), o
+        // título pequeno — BOA! ao vencer, −1 VIDA ao perder, ÚLTIMA CHANCE quando sobra
+        // uma —, sem o subtexto, a Pontuação Total em destaque e embaixo o que a partida
+        // deu. No fim da Escalada, o título grande e também sem o subtexto (pedido dele),
+        // e embaixo o resumo da Escalada inteira, com o bônus das vidas que sobraram, a soma e o
+        // multiplicador da Dificuldade.
+        var CORACAO = '♥︎', CORACAO_VAZIO = '♡︎';
+        function coracoes(n, max) { var s = ''; for (var i = 0; i < max; i++) s += i < n ? CORACAO : CORACAO_VAZIO; return s; }
+        function coracoesHTML(n, max, devolvida) {
+            var s = '';
+            for (var i = 0; i < max; i++) s += i >= n ? '<span class="perdida">' + CORACAO_VAZIO + '</span>' : (devolvida && i === n - 1 ? '<span class="devolvida">' + CORACAO + '</span>' : CORACAO);
+            return '<span class="coracoes">' + s + '</span>';
+        }
+        var ORDEM_DOS_PONTOS = ['vitoria', 'perfeita', 'perfeitaChefe', 'margem', 'virada', 'viradaEpica', 'chefe', 'niveis', 'rivalCorreu', 'maosDeFerro', 'vidas', 'descartes', 'vidaPerdida'];
+        var ROTULOS_DOS_PONTOS = {
+            vitoria: ['Vitória', 'Vitórias'], perfeita: ['Vitória Perfeita', 'Vitórias Perfeitas'], perfeitaChefe: ['Vitória Perfeita contra o Chefe', 'Vitórias Perfeitas contra Chefes'],
+            virada: ['Virada', 'Viradas'], viradaEpica: ['Virada Épica', 'Viradas Épicas'], chefe: ['Chefe vencido', 'Chefes vencidos'],
+            niveis: ['Truco vencido', 'Truco vencido'], rivalCorreu: ['Rival correu', 'Rival correu'], maosDeFerro: ['Mão de Ferro vencida', 'Mãos de Ferro vencidas'],
+            vidas: ['Vida que sobrou', 'Vidas que sobraram'], descartes: ['Descarte sem jogar', 'Descartes sem jogar'], vidaPerdida: ['Vida perdida', 'Vidas perdidas']
+        };
+        function rotuloDosPontos(l) {
+            if (l.chave === 'margem') return 'Margem de ' + l.n + (l.n === 1 ? ' ponto' : ' pontos');
+            var r = ROTULOS_DOS_PONTOS[l.chave] || [l.chave, l.chave];
+            // O Truco conta degraus (um Seis vale dois), então ele vai sem a contagem.
+            return l.n > 1 && l.chave !== 'niveis' ? r[1] + ' ×' + l.n : r[0];
+        }
+        function pontosComSinal(n) { return (n > 0 ? '+' : '') + pontosDoArcade(n); }
+        function linhasDosPontos(linhas, daFase) {
+            var html = linhas.slice().sort(function(x, y) { return ORDEM_DOS_PONTOS.indexOf(x.chave) - ORDEM_DOS_PONTOS.indexOf(y.chave); })
+                .map(function(l) { return statLine(rotuloDosPontos(l), pontosComSinal(l.pontos), false); }).join('');
+            if (daFase !== undefined) html += '<div class="soma">' + statLine('Nesta fase', pontosComSinal(daFase), true) + '</div>';
+            return html;
+        }
+        // O fim da Escalada: as linhas dela, a soma e o multiplicador da Dificuldade.
+        function linhasDaEscalada(f) {
+            return linhasDosPontos(f.linhas) + '<div class="soma">' + statLine('Soma', pontosDoArcade(f.soma), true)
+                + statLine('Escalada ' + ESCALADAS[f.escalada].nome, '×' + String(ESCALADAS[f.escalada].mult).replace('.', ','), true) + '</div>';
+        }
+        function mostrarFimDoArcade(r) {
+            var faseSo = !!r && !r.final;
+            getEl('scr-end').classList.toggle('arcade-fase', faseSo);
+            getEl('scr-end').classList.toggle('arcade-fim', !!r && !!r.final);
+            ['end-arcade', 'end-arcade-topo'].forEach(function(id) { getEl(id).classList.toggle('hidden', !r); });
+            // No Arcade, sem subtexto: nem na fase, nem no fim da Escalada (pedido dele).
+            getEl('end-msg').classList.toggle('hidden', !!r);
+            getEl('btn-end-again').classList.toggle('hidden', !!r);
+            getEl('btn-end-arcade').classList.toggle('hidden', !r || !!r.final);
+            if (!r) return;
+            getEl('end-arcade-topo').innerHTML = '<span>Fase ' + r.fase + ' de ' + r.fases + '</span><span>·</span>' + coracoesHTML(r.vidas, r.vidasMax, r.vidaDevolvida);
+            getEl('end-title').innerText = r.completou ? '🏆 ESCALADA COMPLETA!' : r.acabou ? '💀 FIM DA ESCALADA'
+                : r.venceu ? '👏 BOA!' : (r.vidas === 1 ? '⚠️ ÚLTIMA CHANCE' : '💔 −1 VIDA');
+            getEl('end-arcade-total').innerText = pontosDoArcade(r.final ? r.final.pontos : r.total);
+            getEl('end-arcade-recorde').classList.toggle('hidden', !(r.final && r.final.recorde));
+            getEl('end-arcade-detalhes').innerHTML = r.final ? linhasDaEscalada(r.final) : linhasDosPontos(r.linhas, r.pontos);
+            getEl('btn-end-arcade').innerText = r.venceu ? 'PRÓXIMA FASE' : 'TENTAR DE NOVO';
+            caberOTituloDoFim();
+        }
+        // O título do fim da Escalada numa linha só: a letra diminui o quanto precisa.
+        // A conta é com a largura exata do texto: a das notificações aceita passar 1 px,
+        // e aqui isso fazia a janela rolar de lado. Volta a medir quando a tela muda de
+        // tamanho (celular virado).
+        function caberOTituloDoFim() {
+            var t = getEl('end-title');
+            t.style.fontSize = '';
+            if (!getEl('scr-end').classList.contains('arcade-fim')) return;
+            var tam = parseFloat(getComputedStyle(t).fontSize);
+            while (caixaDoTexto(t).width > t.getBoundingClientRect().width && tam > 12.5) { tam -= 0.5; t.style.fontSize = tam + 'px'; }
+        }
+        window.addEventListener('resize', function() { if (getEl('scr-end').classList.contains('arcade-fim')) caberOTituloDoFim(); });
+        window.seguirEscalada = function() {
+            // A janela some do jeito que estava e só depois perde as classes (antes o
+            // título voltava ao tamanho grande enquanto ela sumia, achado dele). A cor
+            // sai também, senão a próxima janela aparecia passando de uma cor pra outra.
+            var fim = getEl('scr-end');
+            fim.classList.remove('show');
+            fim.addEventListener('transitionend', function limpar(e) {
+                if (e.target !== fim || e.propertyName !== 'opacity') return;
+                fim.removeEventListener('transitionend', limpar);
+                if (!fim.classList.contains('show')) fim.className = '';
+            });
+            if (!corrida) { location.reload(); return; }
+            comecarFase();
+        };
+
+        // ─── Bancada do Arcade (v0.15.5, aprovada por ele) ───
+        // A tela de testes do Arcade, fora dos menus: abre pelo endereço #arcade-teste.
+        // Desligada nas versões entregues (decisão dele, na entrega da v0.15.5: a
+        // próxima é a ativação do Arcade); os testes ligam na cópia instrumentada, e
+        // pros balanceamentos é só trocar pra true na cópia de trabalho.
+        // Escolhe a Região e a Dificuldade de Escalada (todas abertas, é pra testar; os
+        // cadeados valem no motor), começa, continua ou abandona a Escalada guardada.
+        // As fases são as de teste até a planilha dele existir, com as partidas da
+        // Dificuldade: as duas primeiras testam casos, um Chefe a cada 5 (sugestão minha,
+        // até ele decidir) e as outras sorteadas.
+        var FASES_DE_TESTE = [
+            { descricao: '1ª: Duplas, Parceiro Difícil contra Rivais Fácil', formato: '2v2', parceiros: 'permissivo', rivais: 1, parceiro: 3 },
+            { descricao: '2ª: 1 x 1 começando de 0 a 6, Rivais Normal', formato: '1v1', rivais: 2, placar: [0, 6] }
+        ];
+        var CHEFE_DE_TESTE = { descricao: 'Chefe a cada 5, Rival Insano; o resto, sorteado', rivais: 4, chefe: true };
+        function fasesDaBancada(d) {
+            var fases = [];
+            for (var i = 0; i < ESCALADAS[d].partidas; i++) {
+                var f = Object.assign({}, (i + 1) % 5 === 0 ? CHEFE_DE_TESTE : FASES_DE_TESTE[i] || {});
+                delete f.descricao;
+                fases.push(f);
+            }
+            return fases;
+        }
+        var bancada = { regiao: 'paulista', escalada: 'normal', resultado: null };
+        function bancadaDesenhar() {
+            var c = carregarCorrida();
+            getEl('bancada-corrida').classList.toggle('hidden', !c);
+            getEl('bancada-nova').classList.toggle('hidden', !!c);
+            getEl('bancada-corrida-botoes').classList.remove('hidden');
+            getEl('bancada-confirmar').classList.add('hidden');
+            if (c) {
+                var e = ESCALADAS[c.escalada];
+                getEl('bancada-corrida-info').innerHTML = '<b>' + e.nome + ' · ' + (STATS_REGION_LABEL[c.regiao] || c.regiao) + '</b><br>Fase ' + Math.min(c.faseAtual + 1, c.fases.length) + ' de ' + c.fases.length
+                    + ' · Vidas ' + coracoes(c.vidas, c.vidasMax) + ' · ' + pontosDoArcade(c.pontos) + ' pontos' + (c.partida ? '<br>Partida em andamento: ' + c.partida.scores[1] + ' x ' + c.partida.scores[2] : '');
+            }
+            ['paulista', 'mineiro', 'goiano'].forEach(function(r) { getEl('btn-bancada-' + r).classList.toggle('active', r === bancada.regiao); });
+            ORDEM_DAS_ESCALADAS.forEach(function(d) { getEl('btn-bancada-' + d).classList.toggle('active', d === bancada.escalada); });
+            // Sempre duas linhas: a tela não cresce (no celular de 360 px ela cabe justa).
+            var esc = ESCALADAS[bancada.escalada];
+            getEl('bancada-escalada-info').innerHTML = esc.partidas + ' partidas · ' + esc.vidas + ' vidas' + (escaladaLiberada(bancada.escalada) ? '' : ' · 🔒 trancada no menu')
+                + '<br>pontos ×' + String(esc.mult).replace('.', ',') + ' no fim · cada vida que sobrar: ' + pontosDoArcade(esc.bonusVida);
+            getEl('bancada-fases').innerHTML = FASES_DE_TESTE.concat(CHEFE_DE_TESTE).map(function(f) { return '<li>' + f.descricao + '</li>'; }).join('');
+            // O resultado do Abandonar fica no lugar da dica, pelo mesmo motivo.
+            var r = bancada.resultado;
+            getEl('bancada-dica').innerHTML = r ? 'Escalada abandonada com <b>' + pontosDoArcade(r.pontos) + ' pontos</b>' + (r.recorde ? ' (recorde!)' : '') + '.' : 'Tela de testes, fora dos menus.';
+        }
+        var BANCADA_LIGADA = false;
+        function abrirBancada(daTela) {
+            bancada.resultado = null;
+            bancadaDesenhar();
+            nav(daTela, 'scr-arcade-bancada');
+        }
+        window.bancadaRegiao = function(r) { bancada.regiao = r; bancadaDesenhar(); };
+        window.bancadaEscalada = function(d) { bancada.escalada = d; bancadaDesenhar(); };
+        window.bancadaComecar = function() {
+            nav('scr-arcade-bancada', 'scr-game');
+            comecarEscalada(bancada.escalada, bancada.regiao, fasesDaBancada(bancada.escalada));
+        };
+        // O NÃO da confirmação volta pros botões de antes.
+        window.bancadaCancelar = function() { cancelHoldReset(); bancadaDesenhar(); refreshMenuFocus(); };
+        window.bancadaContinuar = function() { if (!continuarEscalada('scr-arcade-bancada')) bancadaDesenhar(); };
+        window.bancadaAbandonar = function(certeza) {
+            if (!certeza) { getEl('bancada-corrida-botoes').classList.add('hidden'); getEl('bancada-confirmar').classList.remove('hidden'); refreshMenuFocus(); return; }
+            bancada.resultado = abandonarEscalada();
+            bancadaDesenhar();
+            refreshMenuFocus();
+        };
 
         window.startGame = function(modeStr, playerID) {
             lastStartWasQuick = false;
@@ -6581,7 +7627,10 @@
             else if (myPID === 1) st.parceiros = st.gameFormat === '1v1' ? null : 'desligado';
             sorteioParceiros = null;
             // Os nomes dos bots (v0.15.3): partida nova, nomes novos. No multiplayer não há.
-            sortearBots();
+            // Numa fase do Arcade, antes vêm os Parceiros e os nomes fixos dela, e depois
+            // o placar do começo (v0.15.5).
+            sortearBots(prepararFase());
+            aplicarFase();
             avisoAte = 0;
             
             var fromScreen = (modeStr === 'pc') ? 'scr-mode' : (modeStr === 'json' ? (playerID === 1 ? 'scr-local-rules' : 'scr-local-role-choice') : 'scr-webrtc-connect');
@@ -6600,10 +7649,13 @@
         function scheduleNextRoundAfterRun() {
             animLock = true;
             updateUI();
+            // No Arcade a espera fica guardada: recarregar aqui começa a rodada seguinte.
+            if (st.arcade) { st.proximaRodada = getNextTurn(st.firstPlayerOfRound); autoSave(); }
             setTimeout(function(){ startRound(getNextTurn(st.firstPlayerOfRound)); }, Math.round(2000 * paceScale()));
         }
 
         function startRound(firstPlayer) {
+            arcadeNovaRodada();
             window.lastAdviceLevel = 0; st.humanAccepted = false; resetHideBtn();
             var activeVals = getActiveVals();
             st.partnerForcedPlay = false;
@@ -6728,6 +7780,8 @@
         };
 
         function aiDecideMao11(team) {
+            var rodadaDaMao11 = st.roundId;
+            if (botEsperaAPausa(function() { if (st.roundId === rodadaDaMao11 && st.trucoState === 'mao11') aiDecideMao11(team); })) return;
             var decidingTeam = team || 2;
             var seats = getTeamPIDs(decidingTeam);
             var accept = aiMao11Decision(decidingTeam);
@@ -6753,7 +7807,7 @@
         }
 
         window.requestFold = function() {
-            if(animLock || st.turn !== myPID || st.trucoState !== 'none') return;
+            if(animLock || st.turn !== myPID || st.trucoState !== 'none' || mesaCheia()) return;
             setBottomGroup('grp-confirm-fold'); getEl('action-bar').classList.add('danger-zone');
         };
 
@@ -6761,10 +7815,11 @@
             setBottomGroup('grp-normal'); getEl('action-bar').classList.remove('danger-zone');
         };
 
-        window.executeFold = function() { 
+        window.executeFold = function() {
             cancelFold();
-            if(animLock || st.turn !== myPID || st.trucoState !== 'none') return;
+            if(animLock || st.turn !== myPID || st.trucoState !== 'none' || mesaCheia()) return;
             if (myPID !== 0) recordTrucoEvent('folds');
+            arcadeDescartou();
             showMsg(st.gameFormat === '1v1' ? "Você correu!" : "Vocês correram!", 'neg'); st.scores[getOppTeam(getTeam(myPID))] += st.handVal;
             st.nextRoundFoldBy = myPID;
             if(st.scores[getOppTeam(getTeam(myPID))] >= 12) { autoSave(); triggerEndGame(false); return; }
@@ -6781,6 +7836,7 @@
                 showMsg("Vocês correram!", 'neg');
                 st.trucoState = 'none';
                 if (myPID !== 0) recordTrucoEvent('folds');
+                arcadeDescartou();
                 var oppT2 = getOppTeam(getTeam(myPID));
                 st.scores[oppT2] += st.handVal;
                 st.nextRoundFoldBy = myPID;
@@ -6805,7 +7861,11 @@
             // sumia no empate de versão (o pedido reaparecia e a rodada chegava a
             // voltar).
             if(animLock || st.turn !== myPID || st.trucoState !== 'none' || isPaused) return;
-            
+            // Mesa cheia é mão esperando ser decidida: ninguém joga nela (v0.15.5). No
+            // Multiplayer a distribuição podia acabar e destravar a mesa nessa espera, e
+            // a carta a mais deixava a mão sem decisão pra sempre.
+            if (mesaCheia()) return;
+
             armedCard = null;
             var isHid = window.isHiding;
             var c = st.hands[myPID].splice(idx, 1)[0];
@@ -6908,8 +7968,12 @@
                     if(st.scores[1] >= 12 || st.scores[2] >= 12) {
                         var iWon = st.scores[getTeam(refPID)] >= 12; autoSave(); triggerEndGame(iWon);
                     } else {
-                        var nxtFirst = getNextTurn(st.firstPlayerOfRound); 
-                        if (myPID === 1 || gameMode !== 'json') { autoSave(); setTimeout(function(){ startRound(nxtFirst); }, 800); } 
+                        var nxtFirst = getNextTurn(st.firstPlayerOfRound);
+                        if (myPID === 1 || gameMode !== 'json') {
+                            // No Arcade a espera fica guardada: recarregar aqui começa a rodada seguinte.
+                            if (st.arcade) st.proximaRodada = nxtFirst;
+                            autoSave(); setTimeout(function(){ startRound(nxtFirst); }, 800);
+                        }
                         else { st.needsNewRound = true; st.nextFirstPlayer = nxtFirst; autoSave(); }
                     }
                 } else { 
@@ -7181,11 +8245,13 @@
         }
 
 		function aiDecideTruco(pid) {
+            var rodadaDoPedido = st.roundId;
+            if (botEsperaAPausa(function() { if (st.roundId === rodadaDoPedido && st.trucoState === 'pending') aiDecideTruco(pid); })) return;
             var myTeam = getTeam(pid);
             // Resposta apertada: a Adaptativa pensa mais (no 1x1; nos times a
             // resposta é do grupo e entra com a Adaptativa nos times).
             if (getNumPlayers() === 2) {
-                var profR = aiPerfil(), vR = aiView(pid), rodada = st.roundId;
+                var profR = aiPerfil(pid), vR = aiView(pid), rodada = st.roundId;
                 if (aiPensarMais(pid, false, profR, function(e) { return aiRespostaApertada(vR, profR, e); }, function() {
                     if (st.roundId === rodada && st.trucoState === 'pending') aiDecideTruco(pid);
                 })) return;
@@ -7235,6 +8301,7 @@
                 st.trucoState = 'none';
                 var pts = st.handVal;
                 st.scores[getOppTeam(myTeam)] += pts;
+                arcadeCorreram(myTeam);
                 autoSave();
                 if(st.scores[getOppTeam(myTeam)] >= 12) { animLock = false; triggerEndGame(getTeam(myPID) === getOppTeam(myTeam)); return; }
                 scheduleNextRoundAfterRun();
@@ -7244,8 +8311,9 @@
         function aiPlay(pid) {
             // Fora de hora (temporizador atrasado): não faz nada e NÃO destrava —
             // quem mudou o estado é dono da trava.
-            if(st.turn !== pid || (st.trucoState !== 'none' && st.trucoState !== 'mao11' && st.trucoState !== 'partner_fold' && st.trucoState !== 'partner_ask')) return;
+            if(st.turn !== pid || mesaCheia() || (st.trucoState !== 'none' && st.trucoState !== 'mao11' && st.trucoState !== 'partner_fold' && st.trucoState !== 'partner_ask')) return;
             if(st.trucoState === 'mao11' || st.trucoState === 'partner_fold' || st.trucoState === 'partner_ask') { animLock = false; return; }
+            if (botEsperaAPausa(function() { aiPlay(pid); })) return;
 
             var myTeam  = getTeam(pid);
             var oppTeam = getOppTeam(myTeam);
@@ -7254,7 +8322,7 @@
             var oppX    = (st.scores[oppTeam] === thres);
             var maoDeFerro = (myX && oppX);
             var isRival = (myTeam !== getTeam(myPID));
-            var prof    = aiPerfil();
+            var prof    = aiPerfil(pid);
             var nTricks = st.trickResults.length;
             var view    = aiView(pid);
             // Travas de regra (Mão de 11/ferro, teto 12, último pedido do próprio
@@ -7685,9 +8753,9 @@
         }
         // Os humanos que já estão na mesa e os que faltam, no lugar do "Faltam N".
         function desenharAssentos() {
-            var esperados = st.expectedHumans || 2, cheios = Math.min((st.humanSeats || []).length, esperados), html = 'Na mesa ';
-            for (var i = 0; i < esperados; i++) html += '<span class="assento' + (i < cheios ? ' cheio' : '') + '"></span>';
-            getEl('invite-more-mesa').innerHTML = html + ' ' + cheios + ' de ' + esperados;
+            var esperados = st.expectedHumans || 2, cheios = Math.min((st.humanSeats || []).length, esperados), html = 'Na mesa <span class="barrinha-deitada">';
+            for (var i = 0; i < esperados; i++) html += '<span class="vaza-pip' + (i < cheios ? ' win' : '') + '"></span>';
+            getEl('invite-more-mesa').innerHTML = html + '</span> ' + cheios + ' de ' + esperados;
         }
 
         // CONVIDAR (Menu de Pausa): o convite em aberto pro mesmo assento volta
@@ -7751,7 +8819,7 @@
         function voltarDoConvite() {
             if (conviteAberto && conviteAberto.entrou) conviteAberto = null;
             nav('scr-webrtc-invite-more', 'scr-game');
-            if (isPaused) { isPaused = false; getEl('action-bar').classList.remove('pause-zone'); updateUI(); }
+            if (isPaused) { isPaused = false; getEl('action-bar').classList.remove('pause-zone'); updateUI(); sairDaPausa(); }
         }
         window.skipInviteMore = voltarDoConvite;
 
@@ -8188,7 +9256,9 @@
 
         // --- SISTEMA DE SYNC E PROCESSAMENTO DE ESTADO (COMUM PARA JSON E WEBRTC E WS) ---
         async function autoSave() {
-            if(gameMode === 'pc' || isSaving) return;
+            // No Single Player só a partida do Arcade é guardada (a cada ação, v0.15.5).
+            if (gameMode === 'pc') { salvarPartidaDoArcade(); return; }
+            if (isSaving) return;
             isSaving = true; st.version++; 
             
             if (gameMode === 'json' && fileHandle) {
@@ -8303,7 +9373,15 @@
                     }
                     animLock = true;
 
+                    // A mesa só é limpa se nada mudou desde o resultado (v0.15.5). Com a
+                    // máquina ocupada, o estado seguinte chegava antes desta espera, a mão
+                    // nova começava, e a limpeza atrasada apagava a mesa dela: se a última
+                    // carta da mão nova era deste aparelho, quem ia decidi-la não achava
+                    // mais as cartas, e os dois aparelhos ficavam esperando (antigo, achado
+                    // na suíte). Quando muda, o estado novo já trouxe a mesa e destravou.
+                    var estadoDaMao = st, versaoDaMao = st.version;
                     setTimeout(function() {
+                        if (st !== estadoDaMao || st.version !== versaoDaMao) return;
                         st.table = []; renderMesa(); unlockAnim(); checkAiTurn();
                     }, 1300);
                 } 
@@ -8460,11 +9538,224 @@
             }
         } catch(e) {}
 
+        // ─── Atualizações e Novidades (v0.15.5, pedido dele) ──────────────────
+        // O jogo pergunta ao GitHub pelo NÚMERO do repositório, que não muda quando o
+        // nome muda (o jogo vai mudar de nome): o Release mais novo, pra avisar de
+        // versão nova na Tela Inicial, e o desta versão, pras Novidades nas Opções.
+        // Sem login o GitHub aceita 60 consultas por hora; aqui são duas por abertura.
+        var GITHUB_RELEASES = 'https://api.github.com/repositories/1367875237/releases/';
+        function consultarGitHub(caminho, formatado, sinal) {
+            return fetch(GITHUB_RELEASES + caminho, {
+                headers: { Accept: formatado ? 'application/vnd.github.html+json' : 'application/vnd.github+json' },
+                signal: sinal
+            }).then(function(r) { if (!r.ok) throw new Error('GitHub ' + r.status); return r.json(); });
+        }
+        // "v0.15.2a" -> [0, 15, 2, 'a']: a letra vem depois da mesma versão sem letra.
+        function chaveDaVersao(v) {
+            var m = /^v?(\d+)\.(\d+)(?:\.(\d+))?([a-z]?)$/i.exec(String(v || '').trim());
+            return m ? [+m[1], +m[2], m[3] === undefined ? 0 : +m[3], (m[4] || '').toLowerCase()] : null;
+        }
+        function versaoMaisNova(a, b) {
+            var x = chaveDaVersao(a), y = chaveDaVersao(b);
+            if (!x || !y) return false;
+            for (var i = 0; i < 3; i++) if (x[i] !== y[i]) return x[i] > y[i];
+            return x[3] > y[3];
+        }
+
+        // O Verificador: só com a Tela Inicial à vista e só uma vez por abertura do
+        // jogo. Saiu da tela no meio, para na hora; ao voltar, começa de novo. Fica no
+        // mínimo 2 s "verificando" (pra dar pra ver) e desiste em 10 s.
+        // Estados: parado → verificando → tem | atualizado | falha → (baixando) → encerrado.
+        var atualizacao = { estado: 'parado', vez: 0, release: null, controle: null };
+        var ATUALIZACAO_MIN = 2000, ATUALIZACAO_MAX = 10000;
+        function telaInicialAberta() { var t = getEl('scr-start'); return !!t && !t.classList.contains('hidden'); }
+        function verificarAtualizacao() {
+            var vez = ++atualizacao.vez, inicio = Date.now();
+            var controle = typeof AbortController === 'function' ? new AbortController() : null;
+            atualizacao.estado = 'verificando'; atualizacao.release = null; atualizacao.controle = controle;
+            desenharAtualizacao();
+            var desiste = setTimeout(function() { if (controle) controle.abort(); }, ATUALIZACAO_MAX);
+            consultarGitHub('latest', false, controle && controle.signal).then(function(rel) { return rel; }, function() { return null; }).then(function(rel) {
+                clearTimeout(desiste);
+                if (vez !== atualizacao.vez) return;
+                setTimeout(function() {
+                    if (vez !== atualizacao.vez) return;
+                    if (!rel || !rel.tag_name) atualizacao.estado = 'falha';
+                    else if (versaoMaisNova(rel.tag_name, 'v' + APP_VERSION)) { atualizacao.estado = 'tem'; atualizacao.release = rel; }
+                    else {
+                        atualizacao.estado = 'atualizado';
+                        setTimeout(function() { if (vez === atualizacao.vez && atualizacao.estado === 'atualizado') encerrarAtualizacao(); }, 3000);
+                    }
+                    desenharAtualizacao();
+                }, Math.max(0, ATUALIZACAO_MIN - (Date.now() - inicio)));
+            });
+        }
+        function encerrarAtualizacao() { atualizacao.vez++; atualizacao.estado = 'encerrado'; desenharAtualizacao(); }
+        // A Tela Inicial apareceu ou sumiu (nav).
+        function acompanharTelaInicial() {
+            if (telaInicialAberta()) {
+                if (atualizacao.estado === 'parado') { verificarAtualizacao(); return; }
+            } else if (atualizacao.estado === 'verificando') {
+                atualizacao.vez++;
+                if (atualizacao.controle) atualizacao.controle.abort();
+                atualizacao.estado = 'parado';
+            }
+            desenharAtualizacao();
+        }
+        // BAIXAR (com versão nova) ou TENTAR NOVAMENTE (depois da falha).
+        window.acaoDaAtualizacao = function() {
+            if (atualizacao.estado === 'falha') { verificarAtualizacao(); return; }
+            if (atualizacao.estado !== 'tem') return;
+            var assets = (atualizacao.release && atualizacao.release.assets) || [];
+            var arquivo = assets.filter(function(a) { return /\.html?$/i.test(a.name || ''); })[0];
+            var endereco = arquivo ? arquivo.browser_download_url : (atualizacao.release && atualizacao.release.html_url);
+            if (!endereco) return;
+            // O GitHub manda o arquivo como download: o navegador salva e o jogo fica.
+            var a = document.createElement('a');
+            a.href = endereco; a.rel = 'noopener';
+            document.body.appendChild(a); a.click(); a.remove();
+            var vez = atualizacao.vez;
+            atualizacao.estado = 'baixando';
+            desenharAtualizacao();
+            setTimeout(function() { if (vez === atualizacao.vez && atualizacao.estado === 'baixando') encerrarAtualizacao(); }, 5000);
+        };
+        window.agoraNaoAtualizacao = function() { encerrarAtualizacao(); };
+
+        var atualizacaoGiro = null, atualizacaoPasso = 0;
+        function desenharAtualizacao() {
+            var gaveta = getEl('atualizacao-gaveta');
+            if (!gaveta) return;
+            var e = atualizacao.estado;
+            var naTela = telaInicialAberta() && ['verificando', 'tem', 'atualizado', 'falha', 'baixando'].indexOf(e) !== -1;
+            var versao = atualizacao.release ? atualizacao.release.tag_name : '';
+            getEl('atualizacao-texto').textContent = {
+                verificando: 'Verificando Atualizações...',
+                tem: 'Atualização ' + versao + ' disponível!',
+                atualizado: 'Atualizado!',
+                falha: 'Falha ao buscar atualizações',
+                baixando: 'Abra a nova versão ao terminar o download!'
+            }[e] || getEl('atualizacao-texto').textContent;
+            var botoes = getEl('atualizacao-botoes');
+            botoes.classList.toggle('hidden', e !== 'tem' && e !== 'falha');
+            getEl('btn-atualizacao-sim').textContent = e === 'falha' ? 'TENTAR NOVAMENTE' : 'BAIXAR';
+            // A barrinha: apagada com uma parte amarela rodando rápido enquanto verifica;
+            // verde com a amarela rodando devagar quando tem versão nova; toda verde
+            // quando está em dia; toda vermelha na falha. No Movimento Reduzido a parte
+            // amarela anda mais devagar, como o anel do foco.
+            var fundo = { tem: 'win', atualizado: 'win', baixando: 'win', falha: 'loss' }[e] || '';
+            var passo = { verificando: 200, tem: 650 }[e] || 0;
+            if (passo && prefs.reducedMotion) passo *= 2.5;
+            clearInterval(atualizacaoGiro); atualizacaoGiro = null;
+            var partes = getEl('atualizacao-barra').children;
+            var pintar = function() {
+                for (var i = 0; i < partes.length; i++) {
+                    partes[i].className = 'vaza-pip' + (passo && naTela && i === atualizacaoPasso % partes.length ? ' tie' : (fundo ? ' ' + fundo : ''));
+                }
+            };
+            pintar();
+            if (passo && naTela) atualizacaoGiro = setInterval(function() { atualizacaoPasso++; pintar(); }, passo);
+            // Sai da Tela Inicial: some na hora. Fecha (Agora Não, Atualizado): volta
+            // deslizando pra dentro da janela principal.
+            if (!telaInicialAberta()) { gaveta.classList.add('hidden'); gaveta.classList.remove('aberta'); return; }
+            if (naTela) {
+                var abrindo = gaveta.classList.contains('hidden');
+                gaveta.classList.remove('hidden');
+                posicionarAtualizacao();
+                if (abrindo && !prefs.reducedMotion) void gaveta.offsetHeight;
+                gaveta.classList.add('aberta');
+            } else if (!gaveta.classList.contains('hidden')) {
+                gaveta.classList.remove('aberta');
+                setTimeout(function() { if (!gaveta.classList.contains('aberta')) gaveta.classList.add('hidden'); }, prefs.reducedMotion ? 0 : 380);
+            }
+        }
+        // A gaveta fica colada embaixo da janela da Tela Inicial, um pouco mais estreita.
+        function posicionarAtualizacao() {
+            var gaveta = getEl('atualizacao-gaveta'), painel = getEl('scr-start');
+            if (!gaveta || gaveta.classList.contains('hidden') || !telaInicialAberta()) return;
+            var r = painel.getBoundingClientRect();
+            var largura = Math.min(r.width - 24, 380);
+            gaveta.style.top = r.bottom + 'px';
+            gaveta.style.left = (r.left + (r.width - largura) / 2 - 14) + 'px';
+            gaveta.style.width = (largura + 28) + 'px';
+            caberOsBotoesDaAtualizacao();
+        }
+        // Os dois botões cabem lado a lado: quando não cabem (TENTAR NOVAMENTE num
+        // celular estreito), a letra deles diminui o quanto precisa, até 10 px. Não
+        // cabem quando o último passa da borda da linha (a conta exata, sem a folga de
+        // 1 px do scrollWidth).
+        function caberOsBotoesDaAtualizacao() {
+            var linha = getEl('atualizacao-botoes'), botoes = linha.children, tam, i;
+            for (i = 0; i < botoes.length; i++) botoes[i].style.fontSize = '';
+            if (linha.classList.contains('hidden')) return;
+            var passa = function() { return botoes[botoes.length - 1].getBoundingClientRect().right > linha.getBoundingClientRect().right + 0.5; };
+            tam = parseFloat(getComputedStyle(botoes[0]).fontSize);
+            while (passa() && tam > 10) {
+                tam -= 0.5;
+                for (i = 0; i < botoes.length; i++) botoes[i].style.fontSize = tam + 'px';
+            }
+        }
+        window.addEventListener('resize', posicionarAtualizacao);
+        // A janela principal muda de altura sozinha (o aviso de partida em andamento).
+        if (typeof ResizeObserver === 'function') new ResizeObserver(posicionarAtualizacao).observe(getEl('scr-start'));
+
+        // As Novidades: o texto do Release desta versão, pedido ao GitHub uma vez por
+        // abertura, quando as Opções aparecem. Sem texto, o botão da versão fica
+        // desativado (antes do Release desta versão existir, inclusive).
+        var novidades = { estado: 'parado', html: '' };
+        function buscarNovidades() {
+            if (novidades.estado !== 'parado') return;
+            novidades.estado = 'buscando';
+            consultarGitHub('tags/v' + APP_VERSION, true).then(function(rel) {
+                novidades.html = textoSeguroDoGitHub(rel && rel.body_html);
+                novidades.estado = novidades.html ? 'pronto' : 'sem texto';
+                mostrarBotaoDaVersao();
+            }, function() { novidades.estado = 'falhou'; mostrarBotaoDaVersao(); });
+        }
+        function mostrarBotaoDaVersao() { var b = getEl('btn-versao'); if (b) b.disabled = novidades.estado !== 'pronto'; }
+        window.abrirNovidades = function() {
+            if (novidades.estado !== 'pronto') return;
+            getEl('novidades-titulo').textContent = 'Novidades da v' + APP_VERSION;
+            getEl('novidades-texto').innerHTML = novidades.html;
+            getEl('novidades-texto').scrollTop = 0;
+            nav('scr-options', 'scr-novidades');
+        };
+        // O texto vem formatado pelo próprio GitHub (o mesmo da página do Release), mas
+        // só entra no jogo o que é formatação: o resto vira texto ou some.
+        var TAGS_DO_GITHUB = { P: 1, BR: 1, UL: 1, OL: 1, LI: 1, EM: 1, I: 1, STRONG: 1, B: 1, BLOCKQUOTE: 1, A: 1, CODE: 1, PRE: 1, HR: 1, DEL: 1, S: 1, H1: 1, H2: 1, H3: 1, H4: 1, H5: 1, H6: 1 };
+        var TAGS_FORA = { SCRIPT: 1, STYLE: 1, SVG: 1, IMG: 1, IFRAME: 1, OBJECT: 1, EMBED: 1, VIDEO: 1, AUDIO: 1, FORM: 1, INPUT: 1, BUTTON: 1, TEXTAREA: 1, SELECT: 1 };
+        function textoSeguroDoGitHub(html) {
+            if (!html || typeof DOMParser !== 'function') return '';
+            var origem = new DOMParser().parseFromString(String(html), 'text/html').body;
+            var destino = document.createElement('div');
+            (function copiar(de, para) {
+                Array.prototype.forEach.call(de.childNodes, function(n) {
+                    if (n.nodeType === 3) { para.appendChild(document.createTextNode(n.nodeValue)); return; }
+                    if (n.nodeType !== 1) return;
+                    var tag = n.tagName.toUpperCase();
+                    // A âncora que o GitHub põe nos títulos é só o ícone do link.
+                    if (TAGS_FORA[tag] || (tag === 'A' && n.classList.contains('anchor'))) return;
+                    if (!TAGS_DO_GITHUB[tag]) { copiar(n, para); return; }
+                    var el = document.createElement(tag);
+                    if (tag === 'A') {
+                        var href = n.getAttribute('href') || '';
+                        if (/^https?:\/\//i.test(href)) { el.setAttribute('href', href); el.setAttribute('target', '_blank'); el.setAttribute('rel', 'noopener noreferrer'); }
+                    }
+                    copiar(n, el);
+                    para.appendChild(el);
+                });
+            })(origem, destino);
+            return destino.textContent.trim() ? destino.innerHTML : '';
+        }
+
         loadPrefs();
         applyPrefs();
 
-        var versionTagEl = getEl('options-version-tag');
-        if (versionTagEl) versionTagEl.innerText = 'v' + APP_VERSION;
+        var botaoDaVersao = getEl('btn-versao');
+        if (botaoDaVersao) botaoDaVersao.textContent = 'v' + APP_VERSION;
+        acompanharTelaInicial();
+        // A Bancada do Arcade abre pelo endereço, fora dos menus (v0.15.5), só com ela
+        // ligada (BANCADA_LIGADA).
+        if (BANCADA_LIGADA && location.hash === '#arcade-teste') abrirBancada('scr-start');
 
         updateHumanCountAvailability('mp');
         updateHumanCountAvailability('on');
