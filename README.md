@@ -19,4 +19,4 @@ Sim, o jogo foi feito com ajuda da IA (principalmente Claude Code), sempre sendo
 
 ## Próximos passos
 
-O Modo Arcade chega na próxima versão, e pretendo expandir o jogo com mais funções, inclusive um modo Multiplayer Online.
+Pretendo expandir o jogo com mais funções, inclusive um modo Multiplayer Online.
